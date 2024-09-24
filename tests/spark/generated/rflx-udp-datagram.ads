@@ -918,10 +918,6 @@ private
       and then Written_Last rem RFLX_Types.Byte'Size = 0
       and then Cursors_Invariant (Cursors, First, Verified_Last)
       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
-      and then ((if Invalid (Cursors (F_Source_Port)) then Invalid (Cursors (F_Destination_Port)))
-                and then (if Invalid (Cursors (F_Destination_Port)) then Invalid (Cursors (F_Length)))
-                and then (if Invalid (Cursors (F_Length)) then Invalid (Cursors (F_Checksum)))
-                and then (if Invalid (Cursors (F_Checksum)) then Invalid (Cursors (F_Payload))))
       and then ((if
                     Well_Formed (Cursors (F_Source_Port))
                  then

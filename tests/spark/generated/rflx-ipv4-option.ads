@@ -920,10 +920,6 @@ private
       and then Written_Last rem RFLX_Types.Byte'Size = 0
       and then Cursors_Invariant (Cursors, First, Verified_Last)
       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
-      and then ((if Invalid (Cursors (F_Copied)) then Invalid (Cursors (F_Option_Class)))
-                and then (if Invalid (Cursors (F_Option_Class)) then Invalid (Cursors (F_Option_Number)))
-                and then (if Invalid (Cursors (F_Option_Number)) then Invalid (Cursors (F_Option_Length)))
-                and then (if Invalid (Cursors (F_Option_Length)) then Invalid (Cursors (F_Option_Data))))
       and then ((if
                     Well_Formed (Cursors (F_Copied))
                  then

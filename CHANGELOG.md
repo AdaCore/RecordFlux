@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Remove unused `Buffer` arguments in generated code (eng/recordflux/RecordFlux#1802)
+- Remove unnecessary part of `Valid_Context` predicate (eng/recordflux/RecordFlux#1802)
 
 ## [0.24.0] - 2024-09-12
 

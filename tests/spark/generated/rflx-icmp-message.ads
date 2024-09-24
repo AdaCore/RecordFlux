@@ -1637,33 +1637,6 @@ private
       and then Written_Last rem RFLX_Types.Byte'Size = 0
       and then Cursors_Invariant (Cursors, First, Verified_Last)
       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
-      and then ((if Invalid (Cursors (F_Tag)) then Invalid (Cursors (F_Code_Destination_Unreachable)))
-                and then (if Invalid (Cursors (F_Tag)) then Invalid (Cursors (F_Code_Redirect)))
-                and then (if Invalid (Cursors (F_Tag)) then Invalid (Cursors (F_Code_Time_Exceeded)))
-                and then (if Invalid (Cursors (F_Tag)) then Invalid (Cursors (F_Code_Zero)))
-                and then (if
-                             Invalid (Cursors (F_Code_Destination_Unreachable))
-                             and then Invalid (Cursors (F_Code_Redirect))
-                             and then Invalid (Cursors (F_Code_Time_Exceeded))
-                             and then Invalid (Cursors (F_Code_Zero))
-                          then
-                             Invalid (Cursors (F_Checksum)))
-                and then (if Invalid (Cursors (F_Checksum)) then Invalid (Cursors (F_Gateway_Internet_Address)))
-                and then (if Invalid (Cursors (F_Checksum)) then Invalid (Cursors (F_Identifier)))
-                and then (if Invalid (Cursors (F_Checksum)) then Invalid (Cursors (F_Pointer)))
-                and then (if Invalid (Cursors (F_Checksum)) then Invalid (Cursors (F_Unused_32)))
-                and then (if Invalid (Cursors (F_Identifier)) then Invalid (Cursors (F_Sequence_Number)))
-                and then (if Invalid (Cursors (F_Pointer)) then Invalid (Cursors (F_Unused_24)))
-                and then (if Invalid (Cursors (F_Sequence_Number)) then Invalid (Cursors (F_Originate_Timestamp)))
-                and then (if
-                             Invalid (Cursors (F_Gateway_Internet_Address))
-                             and then Invalid (Cursors (F_Sequence_Number))
-                             and then Invalid (Cursors (F_Unused_24))
-                             and then Invalid (Cursors (F_Unused_32))
-                          then
-                             Invalid (Cursors (F_Data)))
-                and then (if Invalid (Cursors (F_Originate_Timestamp)) then Invalid (Cursors (F_Receive_Timestamp)))
-                and then (if Invalid (Cursors (F_Receive_Timestamp)) then Invalid (Cursors (F_Transmit_Timestamp))))
       and then ((if
                     Well_Formed (Cursors (F_Tag))
                  then

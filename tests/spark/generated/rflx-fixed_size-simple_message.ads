@@ -743,7 +743,6 @@ private
       and then Written_Last rem RFLX_Types.Byte'Size = 0
       and then Cursors_Invariant (Cursors, First, Verified_Last)
       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
-      and then ((if Invalid (Cursors (F_Message_Type)) then Invalid (Cursors (F_Data))))
       and then ((if
                     Well_Formed (Cursors (F_Message_Type))
                  then

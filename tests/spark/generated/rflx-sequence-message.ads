@@ -1014,9 +1014,6 @@ private
       and then Written_Last rem RFLX_Types.Byte'Size = 0
       and then Cursors_Invariant (Cursors, First, Verified_Last)
       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
-      and then ((if Invalid (Cursors (F_Length)) then Invalid (Cursors (F_Integer_Vector)))
-                and then (if Invalid (Cursors (F_Integer_Vector)) then Invalid (Cursors (F_Enumeration_Vector)))
-                and then (if Invalid (Cursors (F_Enumeration_Vector)) then Invalid (Cursors (F_AV_Enumeration_Vector))))
       and then ((if
                     Well_Formed (Cursors (F_Length))
                  then

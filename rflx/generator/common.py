@@ -486,39 +486,6 @@ def context_predicate(
     message: model.Message,
     prefix: str,
 ) -> Expr:
-    def invalid_successors_invariant() -> Expr:
-        """
-        Create the invariant that defines the state of successors of invalid fields.
-
-        This invariant ensures for all invalid message fields that all its successor fields are also
-        invalid.
-        """
-        return AndThen(
-            *[
-                IfThenElse(
-                    AndThen(
-                        *[
-                            Call(
-                                "Invalid",
-                                [Indexed(Variable("Cursors"), Variable(p.affixed_name))],
-                            )
-                            for p in message.direct_predecessors(f)
-                        ],
-                    ),
-                    Call(
-                        "Invalid",
-                        [
-                            Indexed(
-                                Variable("Cursors"),
-                                Variable(f.affixed_name),
-                            ),
-                        ],
-                    ),
-                )
-                for f in message.fields
-                if f not in message.direct_successors(model.INITIAL)
-            ],
-        )
 
     return AndThen(
         IfThenElse(
@@ -553,7 +520,6 @@ def context_predicate(
                 *[Variable(p.identifier) for p in message.parameter_types],
             ],
         ),
-        invalid_successors_invariant(),
         message_structure_invariant(message, prefix, embedded=True),
     )
 

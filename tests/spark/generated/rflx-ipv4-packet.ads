@@ -1803,22 +1803,6 @@ private
       and then Written_Last rem RFLX_Types.Byte'Size = 0
       and then Cursors_Invariant (Cursors, First, Verified_Last)
       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
-      and then ((if Invalid (Cursors (F_Version)) then Invalid (Cursors (F_IHL)))
-                and then (if Invalid (Cursors (F_IHL)) then Invalid (Cursors (F_DSCP)))
-                and then (if Invalid (Cursors (F_DSCP)) then Invalid (Cursors (F_ECN)))
-                and then (if Invalid (Cursors (F_ECN)) then Invalid (Cursors (F_Total_Length)))
-                and then (if Invalid (Cursors (F_Total_Length)) then Invalid (Cursors (F_Identification)))
-                and then (if Invalid (Cursors (F_Identification)) then Invalid (Cursors (F_Flag_R)))
-                and then (if Invalid (Cursors (F_Flag_R)) then Invalid (Cursors (F_Flag_DF)))
-                and then (if Invalid (Cursors (F_Flag_DF)) then Invalid (Cursors (F_Flag_MF)))
-                and then (if Invalid (Cursors (F_Flag_MF)) then Invalid (Cursors (F_Fragment_Offset)))
-                and then (if Invalid (Cursors (F_Fragment_Offset)) then Invalid (Cursors (F_TTL)))
-                and then (if Invalid (Cursors (F_TTL)) then Invalid (Cursors (F_Protocol)))
-                and then (if Invalid (Cursors (F_Protocol)) then Invalid (Cursors (F_Header_Checksum)))
-                and then (if Invalid (Cursors (F_Header_Checksum)) then Invalid (Cursors (F_Source)))
-                and then (if Invalid (Cursors (F_Source)) then Invalid (Cursors (F_Destination)))
-                and then (if Invalid (Cursors (F_Destination)) then Invalid (Cursors (F_Options)))
-                and then (if Invalid (Cursors (F_Options)) then Invalid (Cursors (F_Payload))))
       and then ((if
                     Well_Formed (Cursors (F_Version))
                  then
