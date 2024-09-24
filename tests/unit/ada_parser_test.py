@@ -719,6 +719,12 @@ def procedure_body(
                 ),
             ],
         ),
+        procedure_body(
+            parameters=[ada.Parameter(["P"], "T")],
+            statements=[
+                ada.Assignment(ada.Indexed(ada.Variable("X"), ada.Number(5)), ada.Number(42)),
+            ],
+        ),
     ],
 )
 def test_roundtrip_model(unit: ada.Unit) -> None:
@@ -1239,6 +1245,23 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
         package P
         is
 
+        end P;
+        package body P
+        is
+
+           procedure Proc (R : out T; I : Natural) is
+              X : T;
+           begin
+              X (I) := T'Val (R);
+              Y;
+           end Proc;
+
+        end P;
+        """,
+        """\
+        package P
+        is
+
            procedure S (C : T) with
              Pre =>
                V (C)
@@ -1349,7 +1372,7 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
         end P;
         """,
     ],
-    ids=range(60),
+    ids=range(61),
 )
 def test_roundtrip_text(data: str) -> None:
     data = textwrap.dedent(data)
