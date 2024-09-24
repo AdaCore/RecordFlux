@@ -864,15 +864,7 @@ class PackageInstantiationPart(PackagePart):
         self.associations = associations
 
 
-class Constraint:
-    pass
-
-
-class ScalarConstraint(Constraint):
-    pass
-
-
-class RangeConstraint(ScalarConstraint):
+class RangeConstraint:
     def __init__(self, first: ada.Expr, last: ada.Expr):
         self.first = first
         self.last = last
@@ -882,7 +874,7 @@ class RangeConstraint(ScalarConstraint):
         return ada.ValueRange(lower=self.first, upper=self.last)
 
 
-class SignedIntegerConstraint(ScalarConstraint):
+class SignedIntegerConstraint:
     pass
 
 
@@ -1030,18 +1022,40 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def subtype_declaration(
         self,
-        data: tuple[ID, tuple[ID, Constraint | None], list[ada.Aspect] | None],
+        data: tuple[
+            ID,
+            tuple[ID, RangeConstraint | SignedIntegerConstraint | None],
+            list[ada.Aspect] | None,
+        ],
     ) -> ada.Subtype:
-        identifier, (base_identifier, _), aspects = data
-        return ada.Subtype(identifier=identifier, base_identifier=base_identifier, aspects=aspects)
+        identifier, (base_identifier, constraint), aspects = data
+        if constraint is None:
+            return ada.Subtype(
+                identifier=identifier,
+                base_identifier=base_identifier,
+                aspects=aspects,
+            )
+        if isinstance(constraint, RangeConstraint):
+            return ada.RangeSubtype(
+                identifier=identifier,
+                base_identifier=base_identifier,
+                first=constraint.first,
+                last=constraint.last,
+            )
+        if isinstance(constraint, SignedIntegerConstraint):
+            raise ParseError("signed integer constraint invalid for subtypes")
+        assert_never(constraint)
 
     def subtype_indication(
         self,
-        data: tuple[ID, Constraint | None],
-    ) -> tuple[ID, Constraint | None]:
+        data: tuple[ID, RangeConstraint | SignedIntegerConstraint | None],
+    ) -> tuple[ID, RangeConstraint | SignedIntegerConstraint | None]:
         return data
 
-    def optional_constraint(self, data: list[Constraint]) -> Constraint | None:
+    def optional_constraint(
+        self,
+        data: list[RangeConstraint | SignedIntegerConstraint],
+    ) -> RangeConstraint | SignedIntegerConstraint | None:
         if len(data) == 0:
             return None
         return data[0]
@@ -1049,12 +1063,20 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def subtype_mark(self, data: list[ID]) -> ID:
         return data[0]
 
-    def constraint(self, data: tuple[ScalarConstraint]) -> Constraint:
+    def constraint(
+        self,
+        data: tuple[RangeConstraint | SignedIntegerConstraint],
+    ) -> RangeConstraint | SignedIntegerConstraint:
         return data[0]
 
     def object_declaration(
         self,
-        data: tuple[list[ID], bool, tuple[ID, Constraint | None], ada.Expr | None],
+        data: tuple[
+            list[ID],
+            bool,
+            tuple[ID, RangeConstraint | SignedIntegerConstraint | None],
+            ada.Expr | None,
+        ],
     ) -> ada.ObjectDeclaration:
         assert data[2][1] is None
         return ada.ObjectDeclaration(
@@ -1077,7 +1099,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def derived_type_definition(
         self,
-        data: tuple[tuple[ID, Constraint | None]],
+        data: tuple[tuple[ID, RangeConstraint | SignedIntegerConstraint | None]],
     ) -> ada.DerivedType:
         identifier, constraint = data[0]
         if constraint is None:
@@ -1092,7 +1114,9 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
                 first=constraint.first,
                 last=constraint.last,
             )
-        assert False, data
+        if isinstance(constraint, SignedIntegerConstraint):
+            raise ParseError("signed integer constraint invalid for derived types")
+        assert_never(constraint)
 
     def range(self, data: tuple[ada.Number, ada.Number]) -> RangeConstraint:
         return RangeConstraint(first=data[0], last=data[1])
@@ -1118,7 +1142,10 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def array_type_definition(self, data: tuple[ada.UnconstrainedArrayType]) -> ada.ArrayType:
         return data[0]
 
-    def component_definition(self, data: tuple[tuple[ID, Constraint | None]]) -> ID:
+    def component_definition(
+        self,
+        data: tuple[tuple[ID, RangeConstraint | SignedIntegerConstraint | None]],
+    ) -> ID:
         identifier, constraint = data[0]
         assert constraint is None
         return identifier
@@ -1192,7 +1219,10 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def access_type_definition(self, data: tuple[ID]) -> ada.AccessType:
         return ada.AccessType(identifier="__INVALID__", object_identifier=data[0])
 
-    def access_to_object_definition(self, data: tuple[tuple[ID, Constraint | None]]) -> ID:
+    def access_to_object_definition(
+        self,
+        data: tuple[tuple[ID, RangeConstraint | SignedIntegerConstraint | None]],
+    ) -> ID:
         identifier, constraint = data[0]
         assert constraint is None
         return identifier
@@ -1276,7 +1306,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def attribute_designator(self, data: tuple[ID, ada.Expr | None]) -> tuple[ID, ada.Expr | None]:
         return data[0], data[1]
 
-    def optional_argument(self, data: tuple[ada.Expr]) -> ada.Expr | None:
+    def optional_argument(self, data: list[ada.Expr]) -> ada.Expr | None:
         if len(data) == 0:
             return None
         return data[0]
@@ -2313,7 +2343,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def combined_array_definition(
         self,
-        data: tuple[tuple[ID, Constraint | None], ID],
+        data: tuple[tuple[ID, RangeConstraint | SignedIntegerConstraint | None], ID],
     ) -> ada.UnconstrainedArrayType | ada.ArrayType:
         (index_type, constraint), component_identifier = data
         if type(constraint) == SignedIntegerConstraint:

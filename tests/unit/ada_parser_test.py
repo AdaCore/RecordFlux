@@ -473,6 +473,16 @@ def procedure_body(
             ],
         ),
         package(
+            declaration_declarations=[
+                ada.RangeSubtype(
+                    identifier="S",
+                    base_identifier="T",
+                    first=ada.Number(1),
+                    last=ada.Number(5),
+                ),
+            ],
+        ),
+        package(
             formal_parameters=[],
         ),
         package(
@@ -1197,8 +1207,16 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
 
         end P;
         """,
+        """\
+        package P
+        is
+
+           subtype I is L range 1 .. L'Last;
+
+        end P;
+        """,
     ],
-    ids=range(55),
+    ids=range(56),
 )
 def test_roundtrip_text(data: str) -> None:
     data = textwrap.dedent(data)
