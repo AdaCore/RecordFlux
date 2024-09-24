@@ -394,7 +394,7 @@ ADA_GRAMMAR = lark.Lark(
         # 5.1 (4/2)
         compound_statement: \
                                     if_statement
-                                  | block_statement
+                                  | loop_statement | block_statement
 
         # 5.2 (2)
         assignment_statement: \
@@ -412,6 +412,19 @@ ADA_GRAMMAR = lark.Lark(
         elsif:                      "elsif" condition "then" sequence_of_statements
         optional_else:              elsebranch?
         elsebranch:                 "else" sequence_of_statements
+
+        # 5.5 (2)
+        loop_statement: \
+                                    iteration_scheme "loop" \
+                                        sequence_of_statements \
+                                    "end" "loop" ";"
+
+        ?iteration_scheme:          for_iteration_scheme
+
+        for_iteration_scheme:       "for" defining_identifier "in" optional_reverse \
+                                        expression ".." expression
+
+        !optional_reverse:          "reverse"?
 
         # 5.6 (2)
         block_statement:            "declare" \
@@ -1632,6 +1645,29 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         data: tuple[list[ada.Statement]],
     ) -> list[ada.Statement]:
         return data[0]
+
+    def loop_statement(
+        self,
+        data: tuple[tuple[ID, bool, ada.Expr, ada.Expr], list[ada.Statement]],
+    ) -> ada.ForLoop:
+        (identifier, reverse, lower, upper), statements = data
+        return ada.ForIn(
+            identifier=identifier,
+            iterator=ada.ValueRange(lower=lower, upper=upper),
+            statements=statements,
+            reverse=reverse,
+        )
+
+    def for_iteration_scheme(
+        self,
+        data: tuple[ID, bool, ada.Expr, ada.Expr],
+    ) -> tuple[ID, bool, ada.Expr, ada.Expr]:
+        return data[0], data[1], data[2], data[3]
+
+    def optional_reverse(self, data: list[lark.Token]) -> bool:
+        if len(data) == 0:
+            return False
+        return True
 
     def block_statement(
         self,
