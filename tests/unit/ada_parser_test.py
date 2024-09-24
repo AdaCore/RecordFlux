@@ -17,7 +17,10 @@ def package(  # noqa: PLR0913
     declaration_declarations: list[ada.Declaration] | None = None,
     declaration_private_declarations: list[ada.Declaration] | None = None,
     body_declarations: list[ada.Declaration] | None = None,
-    formal_parameters: list[ada.FormalSubprogramDeclaration | ada.TypeDeclaration] | None = None,
+    formal_parameters: (
+        list[ada.FormalSubprogramDeclaration | ada.TypeDeclaration | ada.FormalPackageDeclaration]
+        | None
+    ) = None,
 ) -> ada.PackageUnit:
     return ada.PackageUnit(
         declaration_context=declaration_context or [],
@@ -621,6 +624,26 @@ def procedure_body(
                 ),
             ],
         ),
+        package(
+            declaration=ada.PackageDeclaration(identifier="P"),
+            formal_parameters=[
+                ada.FormalPackageDeclaration(
+                    identifier="Q",
+                    generic_identifier="R",
+                    associations=[("P1", "A"), ("P2", None), ("others", None)],
+                ),
+            ],
+        ),
+        package(
+            declaration=ada.PackageDeclaration(identifier="P"),
+            formal_parameters=[
+                ada.FormalPackageDeclaration(
+                    identifier="Q",
+                    generic_identifier="R",
+                    associations=[(None, "A"), (None, "B"), ("others", None)],
+                ),
+            ],
+        ),
         procedure_body(
             parameters=[ada.Parameter(["P"], "T")],
             statements=[ada.CallStatement("G", [ada.Variable("P")])],
@@ -1215,8 +1238,16 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
 
         end P;
         """,
+        """\
+        generic
+           with package Q is new R (<>);
+        package P
+        is
+
+        end P;
+        """,
     ],
-    ids=range(56),
+    ids=range(57),
 )
 def test_roundtrip_text(data: str) -> None:
     data = textwrap.dedent(data)

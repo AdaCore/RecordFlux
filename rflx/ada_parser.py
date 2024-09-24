@@ -573,7 +573,8 @@ ADA_GRAMMAR = lark.Lark(
         generic_formal_parameter_declaration: \
                                     formal_object_declaration \
                                   | formal_type_declaration \
-                                  | formal_subprogram_declaration
+                                  | "with" ( formal_subprogram_declaration
+                                           | formal_package_declaration )
 
         # 12.3 (2/3)
         generic_package_instantiation_part: \
@@ -638,7 +639,21 @@ ADA_GRAMMAR = lark.Lark(
 
         # 12.6 (2.1/3)
         formal_concrete_subprogram_declaration: \
-                                    "with" unified_subprogram_declaration
+                                    unified_subprogram_declaration
+
+        # 12.7 (2/3)
+        formal_package_declaration: \
+                                    "package" defining_identifier "is" "new" name \
+                                        formal_package_actual_part ";"
+
+        # 12.7 (3/2)
+        formal_package_actual_part: \
+                                    "(" formal_package_association \
+                                        ( "," formal_package_association )* ")"
+
+        formal_package_association: (name "=>")? (formal_package_association_box | name)
+
+        formal_package_association_box: "<>"
 
         # 13.1.1 (2/3)
         aspect_specification:       "with"  aspect_part ( "," aspect_part )*
@@ -2093,6 +2108,38 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             aspects=data[0].aspects,
         )
 
+    def formal_package_declaration(
+        self,
+        data: tuple[ID, ID, list[tuple[ID | None, ID | None]]],
+    ) -> ada.FormalPackageDeclaration:
+        identifier, generic_identifier, associations = data
+        return ada.FormalPackageDeclaration(
+            identifier=identifier,
+            generic_identifier=generic_identifier,
+            associations=associations,
+        )
+
+    def formal_package_actual_part(
+        self,
+        data: list[tuple[ID | None, ID | None] | None],
+    ) -> list[tuple[ID | None, ID | None] | None] | None:
+        if data == [(None, None)]:
+            return None
+        return data
+
+    def formal_package_association(
+        self,
+        data: list[ID | None],
+    ) -> tuple[ID | None, ID | None] | None:
+        if len(data) == 0:
+            return None
+        if len(data) == 2:
+            return data[0], data[1]
+        return None, data[0]
+
+    def formal_package_association_box(self, _: tuple[lark.Token]) -> None:
+        return None
+
     def aspect_specification(self, data: list[ada.Aspect]) -> list[ada.Aspect]:
         return data
 
@@ -2371,7 +2418,12 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             tuple[
                 list[ada.ContextItem],
                 ada.PackageDeclaration | ada.PackageBody,
-                list[ada.FormalSubprogramDeclaration | ada.TypeDeclaration] | None,
+                list[
+                    ada.FormalSubprogramDeclaration
+                    | ada.TypeDeclaration
+                    | ada.FormalPackageDeclaration
+                ]
+                | None,
             ]
         ],
     ) -> ada.PackageUnit:
