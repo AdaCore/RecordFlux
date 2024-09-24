@@ -1475,16 +1475,28 @@ class FormalPackageDeclaration(FormalDeclaration):
         self,
         identifier: StrID,
         generic_identifier: StrID,
-        associations: Sequence[StrID] | None = None,
+        associations: Sequence[tuple[StrID | None, StrID | None]] | None = None,
     ) -> None:
         self.identifier = ID(identifier)
         self.generic_identifier = ID(generic_identifier)
-        self.associations = list(map(ID, associations or []))
+        self.associations = associations
 
     def __str__(self) -> str:
         associations = (
-            ", ".join([a.ada_str for a in self.associations]) if self.associations else "<>"
+            ", ".join(
+                f"{name_str}{value_str}"
+                for name_str, value_str in (
+                    (
+                        f"{ID(name).ada_str} => " if name else "",
+                        ID(value).ada_str if value else "<>",
+                    )
+                    for name, value in self.associations
+                )
+            )
+            if self.associations
+            else "<>"
         )
+
         return (
             f"with package {self.identifier.ada_str} is new {self.generic_identifier.ada_str}"
             f" ({associations});"
@@ -2586,7 +2598,9 @@ class PackageUnit(Unit):
         declaration: PackageDeclaration,
         body_context: list[ContextItem],
         body: PackageBody,
-        formal_parameters: list[FormalSubprogramDeclaration | TypeDeclaration] | None = None,
+        formal_parameters: (
+            list[FormalSubprogramDeclaration | TypeDeclaration | FormalPackageDeclaration] | None
+        ) = None,
     ) -> None:
         assert declaration.identifier == body.identifier
         self.declaration_context = declaration_context

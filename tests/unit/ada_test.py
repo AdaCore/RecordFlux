@@ -653,7 +653,21 @@ def test_aspects(aspect: ada.Aspect, expected: str) -> None:
 
 def test_formal_package_declaration() -> None:
     assert (
-        str(ada.FormalPackageDeclaration("A", "B", ["C", "D"])) == "with package A is new B (C, D);"
+        str(ada.FormalPackageDeclaration("A", "B", [(None, "C"), (None, "D")]))
+        == "with package A is new B (C, D);"
+    )
+    assert (
+        str(ada.FormalPackageDeclaration("A", "B", [("P1", "C"), ("P2", "D")]))
+        == "with package A is new B (P1 => C, P2 => D);"
+    )
+    assert str(ada.FormalPackageDeclaration("A", "B", None)) == "with package A is new B (<>);"
+    assert (
+        str(ada.FormalPackageDeclaration("A", "B", [("others", None)]))
+        == "with package A is new B (others => <>);"
+    )
+    assert (
+        str(ada.FormalPackageDeclaration("A", "B", [("P1", "A"), ("P2", None), ("others", None)]))
+        == "with package A is new B (P1 => A, P2 => <>, others => <>);"
     )
 
 
@@ -1062,12 +1076,18 @@ def test_declarative_items() -> None:
                             parameters=[ada.Parameter(["P1"], "T", ada.Number(42))],
                         ),
                     ),
+                    ada.FormalPackageDeclaration(
+                        "A",
+                        "B",
+                        [("P1", "A"), ("P2", None), ("others", None)],
+                    ),
                 ],
             ),
             """\
             generic
                type T is range 0 .. 124;
                with procedure P (P1 : T := 42);
+               with package A is new B (P1 => A, P2 => <>, others => <>);
             package P
             is
 
