@@ -91,6 +91,8 @@ def procedure_body(
             ],
         ),
         package(declaration_aspects=[ada.SparkMode(), ada.AlwaysTerminates(ada.TRUE)]),
+        package(declaration_aspects=[ada.SparkMode(off=True)]),
+        package(declaration_aspects=[ada.SparkMode(off=False)]),
         package(
             declaration_declarations=[
                 ada.ModularType("T1", ada.Number(8)),

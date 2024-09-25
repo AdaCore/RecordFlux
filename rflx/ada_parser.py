@@ -850,7 +850,9 @@ ADA_GRAMMAR = lark.Lark(
 
         aspect_size:                "Size" "=>" expression
 
-        aspect_spark_mode:          "SPARK_Mode" ( "=>" expression )?
+        aspect_spark_mode:          "SPARK_Mode" ( "=>" on_off )?
+
+        !on_off:                    "On" | "Off"
 
         !others:                    "others"
 
@@ -2446,10 +2448,15 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def aspect_size(self, data: tuple[ada.Expr]) -> ada.SizeAspect:
         return ada.SizeAspect(data[0])
 
-    def aspect_spark_mode(self, data: list[ada.Variable]) -> ada.SparkMode:
+    def aspect_spark_mode(self, data: list[bool]) -> ada.SparkMode:
         if not data:
             return ada.SparkMode()
-        return ada.SparkMode(off=data[0].name == "off")
+        return ada.SparkMode(off=not data[0])
+
+    def on_off(self, data: tuple[lark.Token]) -> bool:
+        if data[0].value == "On":
+            return True
+        return False
 
     def others(self, data: list[lark.Token]) -> ada.Variable:
         assert data[0] == "others"
