@@ -392,7 +392,7 @@ ADA_GRAMMAR = lark.Lark(
 
         # 5.1 (4/2)
         compound_statement: \
-                                    if_statement
+                                    if_statement | case_statement
                                   | loop_statement | block_statement
 
         # 5.3 (2)
@@ -407,6 +407,22 @@ ADA_GRAMMAR = lark.Lark(
         elsif:                      "elsif" condition "then" sequence_of_statements
         optional_else:              elsebranch?
         elsebranch:                 "else" sequence_of_statements
+
+        # 5.4 (2/3)
+        case_statement: \
+                                    "case" expression "is" \
+                                        case_statement_alternatives \
+                                    "end" "case" ";"
+
+        case_statement_alternatives: \
+                                    case_statement_alternative \
+                                    case_statement_alternative*
+
+        # 5.4 (3)
+        case_statement_alternative: \
+                                    "when" discrete_choice_list "=>" \
+                                        sequence_of_statements
+
 
         # 5.5 (2)
         loop_statement: \
@@ -1637,6 +1653,29 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         data: tuple[list[ada.Statement]],
     ) -> list[ada.Statement]:
         return data[0]
+
+    def case_statement(
+        self,
+        data: tuple[ada.Expr, list[tuple[list[ada.Expr], list[ada.Statement]]]],
+    ) -> ada.CaseStatement:
+        control_expression, alternatives = data
+        case_statements = [(choice[0], statements) for choice, statements in alternatives]
+        return ada.CaseStatement(
+            control_expression=control_expression,
+            case_statements=case_statements,
+        )
+
+    def case_statement_alternatives(
+        self,
+        data: list[tuple[list[ada.Expr], list[ada.Statement]]],
+    ) -> list[tuple[list[ada.Expr], list[ada.Statement]]]:
+        return data
+
+    def case_statement_alternative(
+        self,
+        data: tuple[list[ada.Expr], list[ada.Statement]],
+    ) -> tuple[list[ada.Expr], list[ada.Statement]]:
+        return data[0], data[1]
 
     def loop_statement(
         self,
