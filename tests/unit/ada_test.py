@@ -625,6 +625,7 @@ def test_conversion_rflx_expr() -> None:
         (ada.DefaultInitialCondition(ada.Variable("X")), "Default_Initial_Condition =>\n  X"),
         (ada.SparkMode(), "SPARK_Mode"),
         (ada.SparkMode(off=True), "SPARK_Mode =>\n  Off"),
+        (ada.SparkMode(off=False), "SPARK_Mode =>\n  On"),
         (ada.Ghost(), "Ghost"),
         (ada.AbstractState(ID("X")), "Abstract_State =>\n  X"),
         (ada.AbstractState(ID("X"), ID("Y")), "Abstract_State =>\n  (X, Y)"),

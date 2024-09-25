@@ -1292,7 +1292,7 @@ class DefaultInitialCondition(Aspect):
 
 
 class SparkMode(Aspect):
-    def __init__(self, off: bool = False) -> None:
+    def __init__(self, off: bool | None = None) -> None:
         self.off = off
 
     @property
@@ -1301,7 +1301,7 @@ class SparkMode(Aspect):
 
     @property
     def definition(self) -> str:
-        return "" if not self.off else "Off"
+        return "" if self.off is None else ("Off" if self.off else "On")
 
 
 class Ghost(Aspect):
