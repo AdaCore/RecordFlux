@@ -613,7 +613,7 @@ private
 
    pragma Warnings (Off, "unused variable ""*""");
 
-   function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return Boolean is
+   function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return Boolean is
      ((if Well_Formed (Cursors (F_Header)) then True)
       and then (if Well_Formed (Cursors (F_Vector)) then Valid (Cursors (F_Header))))
     with
@@ -630,7 +630,7 @@ private
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Valid_Next_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return Boolean is
+   function Valid_Next_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Fld : Field) return Boolean is
      ((case Fld is
           when F_Header =>
              True,
@@ -640,7 +640,7 @@ private
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer),
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last),
      Post =>
        True;
 
@@ -650,7 +650,7 @@ private
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
-   function Field_Size_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return RFLX_Types.Bit_Length'Base is
+   function Field_Size_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Fld : Field) return RFLX_Types.Bit_Length'Base is
      ((case Fld is
           when F_Header =>
              8,
@@ -659,8 +659,8 @@ private
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
-       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Fld);
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Fld);
 
    pragma Warnings (On, "formal parameter ""*"" is not referenced");
 
@@ -674,33 +674,33 @@ private
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
-   function Field_First_Header (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+   function Field_First_Header (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
      (First)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
-       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Header);
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Header);
 
-   function Field_First_Vector (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+   function Field_First_Vector (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
      (First + 8)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
-       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Vector);
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Vector);
 
-   function Field_First_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return RFLX_Types.Bit_Index'Base is
+   function Field_First_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Fld : Field) return RFLX_Types.Bit_Index'Base is
      ((case Fld is
           when F_Header =>
-             Field_First_Header (Cursors, First, Verified_Last, Written_Last, Buffer),
+             Field_First_Header (Cursors, First, Verified_Last, Written_Last),
           when F_Vector =>
-             Field_First_Vector (Cursors, First, Verified_Last, Written_Last, Buffer)))
+             Field_First_Vector (Cursors, First, Verified_Last, Written_Last)))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
-       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Fld),
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Fld),
      Post =>
        True;
 
@@ -739,7 +739,7 @@ private
       and then Verified_Last rem RFLX_Types.Byte'Size = 0
       and then Written_Last rem RFLX_Types.Byte'Size = 0
       and then Cursors_Invariant (Cursors, First, Verified_Last)
-      and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
+      and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
       and then ((if Invalid (Cursors (F_Header)) then Invalid (Cursors (F_Vector))))
       and then ((if
                     Well_Formed (Cursors (F_Header))
@@ -814,16 +814,16 @@ private
              True));
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
-     (Field_Size_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));
+     (Field_Size_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Fld));
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
-     (Field_First_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));
+     (Field_First_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Fld));
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
-     (Valid_Next_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));
+     (Valid_Next_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Fld));
 
    function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Ctx.Last - Field_First (Ctx, Fld) + 1);

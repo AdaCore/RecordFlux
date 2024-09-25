@@ -79,7 +79,7 @@ class ParserGenerator:
             return UnitPart()
 
         comparison_to_aggregate = any(
-            (isinstance(t, Composite) and common.has_aggregate_dependent_condition(message, f))
+            (isinstance(t, Composite) and message.has_aggregate_dependent_condition(f))
             for f, t in message.field_types.items()
         )
 
@@ -271,7 +271,7 @@ class ParserGenerator:
                                 ),
                             ),
                         ]
-                        if common.has_aggregate_dependent_condition(message)
+                        if message.has_aggregate_dependent_condition()
                         else []
                     ),
                     *(

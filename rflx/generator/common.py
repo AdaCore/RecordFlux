@@ -549,7 +549,7 @@ def context_predicate(
                 Variable("First"),
                 Variable("Verified_Last"),
                 Variable("Written_Last"),
-                Variable("Buffer"),
+                *([Variable("Buffer")] if message.has_aggregate_dependent_condition() else []),
                 *[Variable(p.identifier) for p in message.parameter_types],
             ],
         ),
@@ -779,7 +779,7 @@ def field_condition_call(  # noqa: PLR0913
             Variable(context),
             Variable(package * field.affixed_name),
             *([value] if has_scalar_value_dependent_condition(message) else []),
-            *([aggregate] if has_aggregate_dependent_condition(message) else []),
+            *([aggregate] if message.has_aggregate_dependent_condition() else []),
             *([size] if has_size_dependent_condition(message, field) else []),
         ],
     )
@@ -829,25 +829,6 @@ def has_scalar_value_dependent_condition(message: model.Message) -> bool:
         for l in message.structure
         for v in l.condition.variables()
         if v.identifier == l.source.identifier and isinstance(v.type_, (ty.Integer, ty.Enumeration))
-    )
-
-
-def has_aggregate_dependent_condition(
-    message: model.Message,
-    field: model.Field | None = None,
-) -> bool:
-    links = message.outgoing(field) if field else message.structure
-    fields = [field] if field else message.fields
-    return any(
-        r
-        for l in links
-        for r in l.condition.findall(lambda x: isinstance(x, (expr.Equal, expr.NotEqual)))
-        if isinstance(r, (expr.Equal, expr.NotEqual))
-        and r.findall(lambda x: isinstance(x, expr.Aggregate))
-        and any(
-            r.left == expr.Variable(f.identifier) or r.right == expr.Variable(f.identifier)
-            for f in fields
-        )
     )
 
 

@@ -3354,6 +3354,48 @@ def test_aggregate_equal_invalid_size_field() -> None:
     )
 
 
+@pytest.mark.parametrize(
+    "condition",
+    [
+        Equal(
+            Variable(ID("Magic", location=Location((3, 3)))),
+            Aggregate(Number(1), Number(2), Number(3), Number(4), Number(4)),
+            location=Location((4, 4)),
+        ),
+        Equal(
+            Aggregate(Number(1), Number(2), Number(3), Number(4), Number(4)),
+            Variable(ID("Magic", location=Location((3, 3)))),
+            location=Location((4, 4)),
+        ),
+    ],
+)
+def test_has_aggregate_dependent_condition(condition: Expr) -> None:
+    structure = [
+        Link(
+            INITIAL,
+            Field(ID("Magic", location=Location((1, 1)))),
+            size=Number(40, location=Location((1, 1))),
+            location=Location((1, 1)),
+        ),
+        Link(
+            Field(ID("Magic", location=Location((2, 2)))),
+            FINAL,
+            condition=condition,
+            location=Location((2, 2)),
+        ),
+    ]
+    types = {
+        Field(ID("Magic", location=Location((1, 1)))): OPAQUE,
+    }
+    m = Message(
+        ID("P::M", Location((1, 1))),
+        structure,
+        types,
+        location=Location((1, 1), end=(1, 2)),
+    )
+    assert m.has_aggregate_dependent_condition()
+
+
 def test_no_unreachable_field_multi() -> None:
     structure = [
         Link(INITIAL, Field(ID("F0", location=Location((1, 1))))),

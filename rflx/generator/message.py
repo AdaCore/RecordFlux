@@ -381,7 +381,11 @@ def create_valid_predecessors_invariant_function(
             Parameter(["First"], const.TYPES_BIT_INDEX),
             Parameter(["Verified_Last"], const.TYPES_BIT_LENGTH),
             Parameter(["Written_Last"], const.TYPES_BIT_LENGTH),
-            Parameter(["Buffer"], const.TYPES_BYTES_PTR),
+            *(
+                [Parameter(["Buffer"], const.TYPES_BYTES_PTR)]
+                if message.has_aggregate_dependent_condition()
+                else []
+            ),
             *common.message_parameters(message),
         ],
     )
@@ -484,7 +488,11 @@ def create_valid_next_internal_function(
             Parameter(["First"], const.TYPES_BIT_INDEX),
             Parameter(["Verified_Last"], const.TYPES_BIT_LENGTH),
             Parameter(["Written_Last"], const.TYPES_BIT_LENGTH),
-            Parameter(["Buffer"], const.TYPES_BYTES_PTR),
+            *(
+                [Parameter(["Buffer"], const.TYPES_BYTES_PTR)]
+                if message.has_aggregate_dependent_condition()
+                else []
+            ),
             *common.message_parameters(message),
             Parameter(["Fld"], "Field"),
         ],
@@ -541,7 +549,11 @@ def create_valid_next_internal_function(
                                         Variable("First"),
                                         Variable("Verified_Last"),
                                         Variable("Written_Last"),
-                                        Variable("Buffer"),
+                                        *(
+                                            [Variable("Buffer")]
+                                            if message.has_aggregate_dependent_condition()
+                                            else []
+                                        ),
                                         *param_args,
                                     ],
                                 ),
@@ -564,7 +576,11 @@ def create_field_size_internal_function(message: Message, prefix: str) -> UnitPa
             Parameter(["First"], const.TYPES_BIT_INDEX),
             Parameter(["Verified_Last"], const.TYPES_BIT_LENGTH),
             Parameter(["Written_Last"], const.TYPES_BIT_LENGTH),
-            Parameter(["Buffer"], const.TYPES_BYTES_PTR),
+            *(
+                [Parameter(["Buffer"], const.TYPES_BYTES_PTR)]
+                if message.has_aggregate_dependent_condition()
+                else []
+            ),
             *common.message_parameters(message),
             Parameter(["Fld"], "Field"),
         ],
@@ -610,7 +626,11 @@ def create_field_size_internal_function(message: Message, prefix: str) -> UnitPa
                                         Variable("First"),
                                         Variable("Verified_Last"),
                                         Variable("Written_Last"),
-                                        Variable("Buffer"),
+                                        *(
+                                            [Variable("Buffer")]
+                                            if message.has_aggregate_dependent_condition()
+                                            else []
+                                        ),
                                         *param_args,
                                     ],
                                 ),
@@ -621,7 +641,11 @@ def create_field_size_internal_function(message: Message, prefix: str) -> UnitPa
                                         Variable("First"),
                                         Variable("Verified_Last"),
                                         Variable("Written_Last"),
-                                        Variable("Buffer"),
+                                        *(
+                                            [Variable("Buffer")]
+                                            if message.has_aggregate_dependent_condition()
+                                            else []
+                                        ),
                                         *param_args,
                                         Variable("Fld"),
                                     ],
@@ -645,7 +669,7 @@ def create_field_first_internal_function(message: Message, prefix: str) -> UnitP
                 expr.Variable("First"),
                 expr.Variable("Verified_Last"),
                 expr.Variable("Written_Last"),
-                expr.Variable("Buffer"),
+                *([expr.Variable("Buffer")] if message.has_aggregate_dependent_condition() else []),
                 *[expr.Variable(param.name) for param in message.parameter_types],
             ],
         )
@@ -659,7 +683,7 @@ def create_field_first_internal_function(message: Message, prefix: str) -> UnitP
                 expr.Variable("First"),
                 expr.Variable("Verified_Last"),
                 expr.Variable("Written_Last"),
-                expr.Variable("Buffer"),
+                *([expr.Variable("Buffer")] if message.has_aggregate_dependent_condition() else []),
                 *[expr.Variable(param.name) for param in message.parameter_types],
                 fld,
             ],
@@ -736,7 +760,11 @@ def create_field_first_internal_function(message: Message, prefix: str) -> UnitP
                         Variable("First"),
                         Variable("Verified_Last"),
                         Variable("Written_Last"),
-                        Variable("Buffer"),
+                        *(
+                            [Variable("Buffer")]
+                            if message.has_aggregate_dependent_condition()
+                            else []
+                        ),
                         *param_args,
                     ],
                 ),
@@ -747,7 +775,11 @@ def create_field_first_internal_function(message: Message, prefix: str) -> UnitP
                         Variable("First"),
                         Variable("Verified_Last"),
                         Variable("Written_Last"),
-                        Variable("Buffer"),
+                        *(
+                            [Variable("Buffer")]
+                            if message.has_aggregate_dependent_condition()
+                            else []
+                        ),
                         *param_args,
                         Variable(fld),
                     ],
@@ -765,7 +797,11 @@ def create_field_first_internal_function(message: Message, prefix: str) -> UnitP
                     Parameter(["First"], const.TYPES_BIT_INDEX),
                     Parameter(["Verified_Last"], const.TYPES_BIT_LENGTH),
                     Parameter(["Written_Last"], const.TYPES_BIT_LENGTH),
-                    Parameter(["Buffer"], const.TYPES_BYTES_PTR),
+                    *(
+                        [Parameter(["Buffer"], const.TYPES_BYTES_PTR)]
+                        if message.has_aggregate_dependent_condition()
+                        else []
+                    ),
                     *common.message_parameters(message),
                 ],
             ),
@@ -781,7 +817,11 @@ def create_field_first_internal_function(message: Message, prefix: str) -> UnitP
             Parameter(["First"], const.TYPES_BIT_INDEX),
             Parameter(["Verified_Last"], const.TYPES_BIT_LENGTH),
             Parameter(["Written_Last"], const.TYPES_BIT_LENGTH),
-            Parameter(["Buffer"], const.TYPES_BYTES_PTR),
+            *(
+                [Parameter(["Buffer"], const.TYPES_BYTES_PTR)]
+                if message.has_aggregate_dependent_condition()
+                else []
+            ),
             *common.message_parameters(message),
             Parameter(["Fld"], "Field"),
         ],
@@ -2004,7 +2044,11 @@ def create_field_size_function(
                         Variable("Ctx.First"),
                         Variable("Ctx.Verified_Last"),
                         Variable("Ctx.Written_Last"),
-                        Variable("Ctx.Buffer"),
+                        *(
+                            [Variable("Ctx.Buffer")]
+                            if message.has_aggregate_dependent_condition()
+                            else []
+                        ),
                         *[Selected(Variable("Ctx"), fld.name) for fld in message.parameter_types],
                         Variable("Fld"),
                     ],
@@ -2057,7 +2101,11 @@ def create_field_first_function(prefix: str, message: Message) -> UnitPart:
                         Variable("Ctx.First"),
                         Variable("Ctx.Verified_Last"),
                         Variable("Ctx.Written_Last"),
-                        Variable("Ctx.Buffer"),
+                        *(
+                            [Variable("Ctx.Buffer")]
+                            if message.has_aggregate_dependent_condition()
+                            else []
+                        ),
                         *[Selected(Variable("Ctx"), fld.name) for fld in message.parameter_types],
                         Variable("Fld"),
                     ],
@@ -2192,7 +2240,7 @@ def create_field_condition_function(prefix: str, message: Message) -> UnitPart:
         elif isinstance(
             message.field_types[field],
             Composite,
-        ) and common.has_aggregate_dependent_condition(message, field):
+        ) and message.has_aggregate_dependent_condition(field):
             c = c.substituted(
                 lambda x: expr.Variable("Agg") if x == expr.Variable(field.name) else x,
             )
@@ -2208,7 +2256,7 @@ def create_field_condition_function(prefix: str, message: Message) -> UnitPart:
         ),
         *(
             [Parameter(["Agg"], const.TYPES_BYTES)]
-            if common.has_aggregate_dependent_condition(message)
+            if message.has_aggregate_dependent_condition()
             else []
         ),
         *(
@@ -2528,7 +2576,11 @@ def create_valid_next_function(message: Message) -> UnitPart:
                         Variable("Ctx.First"),
                         Variable("Ctx.Verified_Last"),
                         Variable("Ctx.Written_Last"),
-                        Variable("Ctx.Buffer"),
+                        *(
+                            [Variable("Ctx.Buffer")]
+                            if message.has_aggregate_dependent_condition()
+                            else []
+                        ),
                         *[Selected(Variable("Ctx"), fld.name) for fld in message.parameter_types],
                         Variable("Fld"),
                     ],

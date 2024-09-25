@@ -562,6 +562,24 @@ class Message(type_decl.TypeDecl):
     def has_implicit_size(self) -> bool:
         return any(l.has_implicit_size for l in self.structure)
 
+    def has_aggregate_dependent_condition(
+        self,
+        field: Field | None = None,
+    ) -> bool:
+        links = self.outgoing(field) if field else self.structure
+        fields = [field] if field else self.fields
+        return any(
+            r
+            for l in links
+            for r in l.condition.findall(lambda x: isinstance(x, (expr.Equal, expr.NotEqual)))
+            if isinstance(r, (expr.Equal, expr.NotEqual))
+            and r.findall(lambda x: isinstance(x, expr.Aggregate))
+            and any(
+                r.left == expr.Variable(f.identifier) or r.right == expr.Variable(f.identifier)
+                for f in fields
+            )
+        )
+
     @property
     def is_definite(self) -> bool:
         """

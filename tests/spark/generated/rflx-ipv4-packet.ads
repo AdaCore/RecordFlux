@@ -1440,7 +1440,7 @@ private
 
    pragma Warnings (Off, "unused variable ""*""");
 
-   function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return Boolean is
+   function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return Boolean is
      ((if Well_Formed (Cursors (F_Version)) then True)
       and then (if Well_Formed (Cursors (F_IHL)) then Valid (Cursors (F_Version)))
       and then (if Well_Formed (Cursors (F_DSCP)) then Valid (Cursors (F_IHL)))
@@ -1480,7 +1480,7 @@ private
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Valid_Next_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return Boolean is
+   function Valid_Next_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Fld : Field) return Boolean is
      ((case Fld is
           when F_Version =>
              True,
@@ -1535,7 +1535,7 @@ private
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer),
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last),
      Post =>
        True;
 
@@ -1545,7 +1545,7 @@ private
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
-   function Field_Size_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return RFLX_Types.Bit_Length'Base is
+   function Field_Size_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Fld : Field) return RFLX_Types.Bit_Length'Base is
      ((case Fld is
           when F_Version | F_IHL =>
              4,
@@ -1572,8 +1572,8 @@ private
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
-       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Fld);
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Fld);
 
    pragma Warnings (On, "formal parameter ""*"" is not referenced");
 
@@ -1587,183 +1587,183 @@ private
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
-   function Field_First_Version (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+   function Field_First_Version (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
      (First)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
-       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Version);
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Version);
 
-   function Field_First_IHL (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+   function Field_First_IHL (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
      (First + 4)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
-       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_IHL);
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_IHL);
 
-   function Field_First_DSCP (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+   function Field_First_DSCP (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
      (First + 8)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
-       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_DSCP);
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_DSCP);
 
-   function Field_First_ECN (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+   function Field_First_ECN (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
      (First + 14)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
-       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_ECN);
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_ECN);
 
-   function Field_First_Total_Length (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+   function Field_First_Total_Length (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
      (First + 16)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
-       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Total_Length);
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Total_Length);
 
-   function Field_First_Identification (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+   function Field_First_Identification (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
      (First + 32)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
-       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Identification);
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Identification);
 
-   function Field_First_Flag_R (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+   function Field_First_Flag_R (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
      (First + 48)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
-       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Flag_R);
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Flag_R);
 
-   function Field_First_Flag_DF (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+   function Field_First_Flag_DF (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
      (First + 49)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
-       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Flag_DF);
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Flag_DF);
 
-   function Field_First_Flag_MF (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+   function Field_First_Flag_MF (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
      (First + 50)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
-       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Flag_MF);
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Flag_MF);
 
-   function Field_First_Fragment_Offset (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+   function Field_First_Fragment_Offset (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
      (First + 51)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
-       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Fragment_Offset);
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Fragment_Offset);
 
-   function Field_First_TTL (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+   function Field_First_TTL (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
      (First + 64)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
-       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_TTL);
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_TTL);
 
-   function Field_First_Protocol (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+   function Field_First_Protocol (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
      (First + 72)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
-       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Protocol);
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Protocol);
 
-   function Field_First_Header_Checksum (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+   function Field_First_Header_Checksum (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
      (First + 80)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
-       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Header_Checksum);
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Header_Checksum);
 
-   function Field_First_Source (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+   function Field_First_Source (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
      (First + 96)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
-       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Source);
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Source);
 
-   function Field_First_Destination (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+   function Field_First_Destination (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
      (First + 128)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
-       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Destination);
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Destination);
 
-   function Field_First_Options (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+   function Field_First_Options (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
      (First + 160)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
-       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Options);
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Options);
 
-   function Field_First_Payload (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
-     (Field_First_Options (Cursors, First, Verified_Last, Written_Last, Buffer) + Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Options))
+   function Field_First_Payload (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
+     (Field_First_Options (Cursors, First, Verified_Last, Written_Last) + Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, F_Options))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
-       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Payload);
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Payload);
 
-   function Field_First_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return RFLX_Types.Bit_Index'Base is
+   function Field_First_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Fld : Field) return RFLX_Types.Bit_Index'Base is
      ((case Fld is
           when F_Version =>
-             Field_First_Version (Cursors, First, Verified_Last, Written_Last, Buffer),
+             Field_First_Version (Cursors, First, Verified_Last, Written_Last),
           when F_IHL =>
-             Field_First_IHL (Cursors, First, Verified_Last, Written_Last, Buffer),
+             Field_First_IHL (Cursors, First, Verified_Last, Written_Last),
           when F_DSCP =>
-             Field_First_DSCP (Cursors, First, Verified_Last, Written_Last, Buffer),
+             Field_First_DSCP (Cursors, First, Verified_Last, Written_Last),
           when F_ECN =>
-             Field_First_ECN (Cursors, First, Verified_Last, Written_Last, Buffer),
+             Field_First_ECN (Cursors, First, Verified_Last, Written_Last),
           when F_Total_Length =>
-             Field_First_Total_Length (Cursors, First, Verified_Last, Written_Last, Buffer),
+             Field_First_Total_Length (Cursors, First, Verified_Last, Written_Last),
           when F_Identification =>
-             Field_First_Identification (Cursors, First, Verified_Last, Written_Last, Buffer),
+             Field_First_Identification (Cursors, First, Verified_Last, Written_Last),
           when F_Flag_R =>
-             Field_First_Flag_R (Cursors, First, Verified_Last, Written_Last, Buffer),
+             Field_First_Flag_R (Cursors, First, Verified_Last, Written_Last),
           when F_Flag_DF =>
-             Field_First_Flag_DF (Cursors, First, Verified_Last, Written_Last, Buffer),
+             Field_First_Flag_DF (Cursors, First, Verified_Last, Written_Last),
           when F_Flag_MF =>
-             Field_First_Flag_MF (Cursors, First, Verified_Last, Written_Last, Buffer),
+             Field_First_Flag_MF (Cursors, First, Verified_Last, Written_Last),
           when F_Fragment_Offset =>
-             Field_First_Fragment_Offset (Cursors, First, Verified_Last, Written_Last, Buffer),
+             Field_First_Fragment_Offset (Cursors, First, Verified_Last, Written_Last),
           when F_TTL =>
-             Field_First_TTL (Cursors, First, Verified_Last, Written_Last, Buffer),
+             Field_First_TTL (Cursors, First, Verified_Last, Written_Last),
           when F_Protocol =>
-             Field_First_Protocol (Cursors, First, Verified_Last, Written_Last, Buffer),
+             Field_First_Protocol (Cursors, First, Verified_Last, Written_Last),
           when F_Header_Checksum =>
-             Field_First_Header_Checksum (Cursors, First, Verified_Last, Written_Last, Buffer),
+             Field_First_Header_Checksum (Cursors, First, Verified_Last, Written_Last),
           when F_Source =>
-             Field_First_Source (Cursors, First, Verified_Last, Written_Last, Buffer),
+             Field_First_Source (Cursors, First, Verified_Last, Written_Last),
           when F_Destination =>
-             Field_First_Destination (Cursors, First, Verified_Last, Written_Last, Buffer),
+             Field_First_Destination (Cursors, First, Verified_Last, Written_Last),
           when F_Options =>
-             Field_First_Options (Cursors, First, Verified_Last, Written_Last, Buffer),
+             Field_First_Options (Cursors, First, Verified_Last, Written_Last),
           when F_Payload =>
-             Field_First_Payload (Cursors, First, Verified_Last, Written_Last, Buffer)))
+             Field_First_Payload (Cursors, First, Verified_Last, Written_Last)))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
-       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
-       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Fld),
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Fld),
      Post =>
        True;
 
@@ -1802,7 +1802,7 @@ private
       and then Verified_Last rem RFLX_Types.Byte'Size = 0
       and then Written_Last rem RFLX_Types.Byte'Size = 0
       and then Cursors_Invariant (Cursors, First, Verified_Last)
-      and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
+      and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
       and then ((if Invalid (Cursors (F_Version)) then Invalid (Cursors (F_IHL)))
                 and then (if Invalid (Cursors (F_IHL)) then Invalid (Cursors (F_DSCP)))
                 and then (if Invalid (Cursors (F_DSCP)) then Invalid (Cursors (F_ECN)))
@@ -1997,16 +1997,16 @@ private
              True));
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
-     (Field_Size_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));
+     (Field_Size_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Fld));
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
-     (Field_First_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));
+     (Field_First_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Fld));
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
-     (Valid_Next_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));
+     (Valid_Next_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Fld));
 
    function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Ctx.Last - Field_First (Ctx, Fld) + 1);

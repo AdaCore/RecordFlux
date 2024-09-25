@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rejection of variable declarations with type `Opaque` (eng/recordflux/RecordFlux#633)
 - Fatal error caused by variable in case expression (eng/recordflux/RecordFlux#1800)
 
+### Changed
+
+- Remove unused `Buffer` arguments in generated code (eng/recordflux/RecordFlux#1802)
+
 ## [0.24.0] - 2024-09-12
 
 ### Added
