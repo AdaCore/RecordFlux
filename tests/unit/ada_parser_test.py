@@ -463,6 +463,18 @@ def procedure_body(
         ),
         package(
             declaration_declarations=[
+                ada.DerivedRecordType(
+                    identifier="R",
+                    type_identifier="S",
+                    record_extension=[
+                        ada.Component("C1", "T"),
+                        ada.Component("C2", "T", default=ada.Number(1)),
+                    ],
+                ),
+            ],
+        ),
+        package(
+            declaration_declarations=[
                 ada.AccessType(
                     identifier="P",
                     object_identifier="T",

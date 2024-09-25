@@ -115,7 +115,7 @@ ADA_GRAMMAR = lark.Lark(
 
         # 3.4 (2/2)
         derived_type_definition: \
-                                    "new" subtype_indication
+                                    "new" subtype_indication optional_record_extension_part
 
         # 3.5 (2)
         ?range_constraint:          "range" (range | box)
@@ -210,6 +210,12 @@ ADA_GRAMMAR = lark.Lark(
 
         # 3.8.1 (5/3)
         discrete_choice:            choice_expression | others
+
+        # 3.9.1 (2)
+        ?record_extension_part:     "with" record_definition
+
+        optional_record_extension_part: \
+                                    record_extension_part?
 
         # 3.10 (2/2)
         access_type_definition: \
@@ -1148,9 +1154,18 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def derived_type_definition(
         self,
-        data: tuple[tuple[ID, RangeConstraint | SignedIntegerConstraint | None]],
+        data: tuple[
+            tuple[ID, RangeConstraint | SignedIntegerConstraint | None],
+            ada.RecordType | None,
+        ],
     ) -> ada.DerivedType:
-        identifier, constraint = data[0]
+        (identifier, constraint), extension = data
+        if extension:
+            return ada.DerivedRecordType(
+                identifier="__INVALID__",
+                type_identifier=identifier,
+                record_extension=extension.components,
+            )
         if constraint is None:
             return ada.PlainDerivedType(
                 identifier="__INVALID__",
@@ -1263,6 +1278,11 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         return data
 
     def discrete_choice(self, data: list[ada.Expr]) -> ada.Expr:
+        return data[0]
+
+    def optional_record_extension_part(self, data: list[ada.RecordType]) -> ada.RecordType | None:
+        if len(data) == 0:
+            return None
         return data[0]
 
     def access_type_definition(self, data: tuple[ID]) -> ada.AccessType:
