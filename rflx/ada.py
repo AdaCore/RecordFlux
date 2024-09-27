@@ -2266,6 +2266,12 @@ class Parameter(Base):
         return ""
 
 
+class InParameter(Parameter):
+    @property
+    def mode(self) -> str:
+        return "in "
+
+
 class OutParameter(Parameter):
     @property
     def mode(self) -> str:
