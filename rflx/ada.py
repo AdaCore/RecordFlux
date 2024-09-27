@@ -65,6 +65,7 @@ class Not(Expr):
     def __init__(self, expression: Expr) -> None:
         super().__init__()
         self.expression = expression
+        self._update_str()
 
     def _update_str(self) -> None:
         self._str = intern(f"not {self.parenthesized(self.expression)}")
@@ -102,6 +103,7 @@ class BinExpr(Expr):
         super().__init__()
         self.left = left
         self.right = right
+        self._update_str()
 
     def _update_str(self) -> None:
         self._str = intern(
@@ -131,6 +133,7 @@ class AssExpr(Expr):
     def __init__(self, *terms: Expr) -> None:
         super().__init__()
         self.terms = list(terms)
+        self._update_str()
 
     def _update_str(self) -> None:
         self._str = intern(self.symbol.join(map(self.parenthesized, self.terms)))
@@ -212,6 +215,7 @@ class Number(Expr):
         super().__init__()
         self.value = value
         self.base = base
+        self._update_str()
 
     def __neg__(self) -> Number:
         return Number(-self.value)
@@ -633,6 +637,7 @@ class Aggregate(Expr):
     def __init__(self, *elements: Expr) -> None:
         super().__init__()
         self.elements = list(elements)
+        self._update_str()
 
     def _update_str(self) -> None:
         assert len(self.elements) > 1
@@ -656,8 +661,8 @@ class String(Aggregate):
                 if quotes % 2 != 0:
                     raise ValueError(f"unescaped quotation mark in string: {data}")
                 quotes = 0
-        super().__init__(*[Number(ord(d)) for d in data])
         self.data = data
+        super().__init__(*[Number(ord(d)) for d in data])
 
     def _update_str(self) -> None:
         self._str = intern(f'"{self.data}"')
@@ -678,6 +683,7 @@ class NamedAggregate(Expr):
     def __init__(self, *elements: tuple[StrID | Expr, Expr]) -> None:
         super().__init__()
         self.elements = [(ID(n) if isinstance(n, str) else n, e) for n, e in elements]
+        self._update_str()
 
     def _update_str(self) -> None:
         assert len(self.elements) > 0
@@ -795,6 +801,7 @@ class IfExpr(Expr):
         super().__init__()
         self.condition_expressions = condition_expressions
         self.else_expression = else_expression
+        self._update_str()
 
     def _update_str(self) -> None:
         condition_expressions = [(str(c), str(e)) for c, e in self.condition_expressions]
@@ -950,6 +957,7 @@ class ValueRange(Expr):
         self.lower = lower
         self.upper = upper
         self.type_identifier = ID(type_identifier) if type_identifier else None
+        self._update_str()
 
     def _update_str(self) -> None:
         if self.type_identifier is None:
