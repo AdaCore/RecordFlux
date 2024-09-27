@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import reduce
 from pathlib import Path
-from typing import Literal
+from typing import Literal, TypeVar
 
 import lark.grammar
 from lark.exceptions import VisitError
@@ -25,10 +25,10 @@ ADA_GRAMMAR = lark.Lark(
         identifier:                 /[a-zA-Z][a-zA-Z0-9_]*/
 
         # 2.4 (2)
-        numeric_literal:            decimal_literal
+        ?numeric_literal:           decimal_literal
 
         # 2.4.1 (2)
-        decimal_literal:            numeral
+        ?decimal_literal:           numeral
 
         # 2.4.1 (3)
         numeral:                    /\d(_?\d)*/
@@ -49,21 +49,21 @@ ADA_GRAMMAR = lark.Lark(
                                     ")"
 
         # 2.8 (3/3)
-        pragma_argument_association: \
+        ?pragma_argument_association: \
                                     expression
 
         # 3.1 (3/3)
-        basic_declaration: \
+        ?basic_declaration: \
                                     type_declaration | subtype_declaration \
                                   | object_declaration \
                                   | unified_subprogram_declaration \
                                   | pragma
 
         # 3.1 (4)
-        defining_identifier:        identifier
+        ?defining_identifier:       identifier
 
         # 3.2.1 (2)
-        type_declaration:           combined_type_declaration
+        ?type_declaration:          combined_type_declaration
 
         # 3.2.1 (3/3)
         # Type declarations must be combined, as the parser does not backtrack.
@@ -73,7 +73,7 @@ ADA_GRAMMAR = lark.Lark(
         # Contrary to the LRM, we need to include the "is" of the type declaration as part of
         # the type definition as we must treat "is (" as a single token inside
         # enumeration_type_definition to keep the parser LR(1).
-        type_definition: \
+        ?type_definition: \
                                     enumeration_type_definition | ("is" (integer_type_definition
                                   | array_type_definition
                                   | record_type_definition | access_type_definition
@@ -91,10 +91,10 @@ ADA_GRAMMAR = lark.Lark(
         optional_constraint:        constraint?
 
         # 3.2.2 (4)
-        subtype_mark:               name
+        ?subtype_mark:              name
 
         # 3.2.2 (5)
-        constraint:                 scalar_constraint
+        ?constraint:                scalar_constraint
 
         # 3.2.2 (6)
         ?scalar_constraint: \
@@ -130,19 +130,21 @@ ADA_GRAMMAR = lark.Lark(
                                         ( "," enumeration_literal_specification )* ")"
 
         # 3.5.1 (3)
-        enumeration_literal_specification: defining_identifier
+        ?enumeration_literal_specification: \
+                                    defining_identifier
 
         # 3.5.4 (2)
-        integer_type_definition:    signed_integer_type_definition | modular_type_definition
+        ?integer_type_definition:   signed_integer_type_definition | modular_type_definition
 
         # 3.5.4 (3)
-        signed_integer_type_definition: "range" expression ".." expression
+        signed_integer_type_definition: \
+                                    "range" expression ".." expression
 
         # 3.5.4 (4)
         modular_type_definition:    "mod" expression
 
         # 3.6 (2)
-        array_type_definition: \
+        ?array_type_definition: \
                                     combined_array_definition
 
         # 3.6 (3)
@@ -161,7 +163,7 @@ ADA_GRAMMAR = lark.Lark(
         discrete_range:             range
 
         # 3.7 (2/2)
-        discriminant_part:          known_discriminant_part
+        ?discriminant_part:         known_discriminant_part
 
         optional_discriminant_part: discriminant_part?
 
@@ -176,13 +178,13 @@ ADA_GRAMMAR = lark.Lark(
                                         optional_default_expression
 
         # 3.7 (6)
-        default_expression:         expression
+        ?default_expression:        expression
 
         optional_default_expression: \
                                     (":=" default_expression)?
 
         # 3.8 (2)
-        record_type_definition:     record_definition
+        ?record_type_definition:    record_definition
 
         # 3.8 (3)
         record_definition: \
@@ -196,7 +198,7 @@ ADA_GRAMMAR = lark.Lark(
                                     component_item component_item*
 
         # 3.8 (5/1)
-        component_item:             component_declaration
+        ?component_item:            component_declaration
 
 
         # 3.8 (6/3)
@@ -209,7 +211,7 @@ ADA_GRAMMAR = lark.Lark(
         discrete_choice_list:       discrete_choice ( "|" discrete_choice )*
 
         # 3.8.1 (5/3)
-        discrete_choice:            choice_expression | others
+        ?discrete_choice:           choice_expression | others
 
         # 3.9.1 (2)
         ?record_extension_part:     "with" record_definition
@@ -234,30 +236,24 @@ ADA_GRAMMAR = lark.Lark(
         declarative_part:           declarative_item*
 
         # 3.11 (3)
-        declarative_item: \
+        ?declarative_item: \
                                     basic_declarative_item
 
         # 3.11 (4/1)
-        basic_declarative_item: \
+        ?basic_declarative_item: \
                                     basic_declaration | use_clause
 
         # 4.1 (2/3)
-        name:                       direct_name
-                                  | indexed_component | slice
+        ?name:                      direct_name
+                                  | function_call | slice
                                   | selected_component | attribute_reference
                                   | qualified_expression
 
         # 4.1 (3)
-        direct_name:                identifier
+        ?direct_name:               identifier
 
         # 4.1 (4)
-        prefix:                     name
-
-        # 4.1.1 (2)
-        indexed_component:          prefix indexed_component_expressions
-
-        indexed_component_expressions: \
-                                    "(" expression ( "," expression )* ")"
+        ?prefix:                    name
 
         # 4.1.2 (2)
         slice:                      prefix "(" discrete_range ")"
@@ -266,7 +262,7 @@ ADA_GRAMMAR = lark.Lark(
         selected_component:         prefix "." selector_name
 
         # 4.1.3 (3)
-        selector_name:              identifier
+        ?selector_name:             identifier
 
         # 4.1.4 (2)
         attribute_reference:        prefix "'" attribute_designator
@@ -278,7 +274,7 @@ ADA_GRAMMAR = lark.Lark(
         optional_argument:          ( "(" expression ")" )?
 
         # 4.3 (2)
-        aggregate:                  array_aggregate
+        ?aggregate:                 array_aggregate
 
         # 4.3.3 (2)
         array_aggregate: \
@@ -316,7 +312,7 @@ ADA_GRAMMAR = lark.Lark(
         !in_operator:               "in"
 
         # 4.4 (3.1/3)
-        membership_choice_list:     membership_choice
+        ?membership_choice_list:    membership_choice
 
         # 4.4 (3.2/3)
         membership_choice:          range
@@ -336,7 +332,6 @@ ADA_GRAMMAR = lark.Lark(
         primary: \
                                     true | false
                                   | numeric_literal | string_literal | aggregate
-                                  | function_call
                                   | name | "(" expression ")"
                                   | conditional_expression
 
@@ -353,20 +348,20 @@ ADA_GRAMMAR = lark.Lark(
         !multiplying_operator:      "*" | "/" | "mod" | "rem"
 
         # 4.5.7 (2/3)
-        conditional_expression:     if_expression | case_expression
+        ?conditional_expression:    if_expression | case_expression
 
         # 4.5.7 (3/3)
         if_expression: \
                                     "if" condition "then" expression \
                                     if_expr_elsifs \
-                                    if_expr_else
+                                    optional_if_expr_else
 
         if_expr_elsifs:             if_expr_elsif*
         if_expr_elsif:              ("elsif" condition "then" expression)
-        if_expr_else:               ("else" expression)?
+        optional_if_expr_else:      ("else" expression)?
 
         # 4.5.7 (4/3)
-        condition:                  expression
+        ?condition:                 expression
 
         # 4.5.7 (5/3)
         case_expression: \
@@ -388,16 +383,16 @@ ADA_GRAMMAR = lark.Lark(
         sequence_of_statements:     statement statement*
 
         # 5.1 (3)
-        statement: \
+        ?statement: \
                                     simple_statement | compound_statement
 
         # 5.1 (4/2)
-        simple_statement:           pragma_statement
+        ?simple_statement:          pragma_statement
                                   | unified_assignment_procedure_call_statement
                                   | simple_return_statement
 
         # 5.1 (4/2)
-        compound_statement: \
+        ?compound_statement: \
                                     if_statement | case_statement
                                   | loop_statement | block_statement
 
@@ -412,7 +407,7 @@ ADA_GRAMMAR = lark.Lark(
         optional_elsifs:            elsif*
         elsif:                      "elsif" condition "then" sequence_of_statements
         optional_else:              elsebranch?
-        elsebranch:                 "else" sequence_of_statements
+        ?elsebranch:                "else" sequence_of_statements
 
         # 5.4 (2/3)
         case_statement: \
@@ -450,17 +445,6 @@ ADA_GRAMMAR = lark.Lark(
                                         handled_sequence_of_statements \
                                     "end" ";"
 
-        # 6.1 (4.1/2)
-        procedure_specification:    "procedure" defining_program_unit_name parameter_profile
-
-        # 6.1 (4.2/2)
-        function_specification:     "function" defining_designator parameter_and_result_profile
-
-        # 6.1 (5)
-        designator:                 name
-
-        optional_designator:        designator?
-
         # 6.1 (6)
         ?defining_designator:       defining_program_unit_name | defining_operator_symbol
 
@@ -472,17 +456,6 @@ ADA_GRAMMAR = lark.Lark(
 
         # 6.1 (11)
         ?defining_operator_symbol:  operator_symbol
-
-        # 6.1 (12)
-        parameter_profile:          parameter_profile_formal_part
-
-        parameter_profile_formal_part: formal_part?
-
-        # 6.1 (13/2)
-        parameter_and_result_profile: \
-                                    parameter_and_result_profile_formal_part "return" subtype_mark
-
-        parameter_and_result_profile_formal_part: formal_part?
 
         # 6.1 (14)
         formal_part: \
@@ -507,7 +480,7 @@ ADA_GRAMMAR = lark.Lark(
                                     "(" parameter_association ("," parameter_association)* ")"
 
         # 6.4 (5)
-        parameter_association: \
+        ?parameter_association: \
                                     (selector_name "=>")? explicit_actual_parameter
 
         # 6.4 (6)
@@ -550,7 +523,7 @@ ADA_GRAMMAR = lark.Lark(
                                     overriding_indicator?
 
         # 8.4 (2)
-        use_clause:                 use_package_clause | use_type_clause
+        ?use_clause:                use_package_clause | use_type_clause
 
         # 8.4 (3)
         use_package_clause:         "use" name ("," name)* ";"
@@ -567,7 +540,7 @@ ADA_GRAMMAR = lark.Lark(
                                   | library_unit_body
 
         # 10.1.1 (5)
-        library_unit_declaration:   \
+        ?library_unit_declaration:   \
                                     package_declaration
                                   | generic_declaration
 
@@ -580,21 +553,21 @@ ADA_GRAMMAR = lark.Lark(
         context_clause:             context_item*
 
         # 10.1.2 (3)
-        context_item:               with_clause | use_clause | pragma
+        ?context_item:              with_clause | use_clause | pragma
 
         # 10.1.2 (4/2)
-        with_clause:                nonlimited_with_clause
+        ?with_clause:               nonlimited_with_clause
 
         # 10.1.2 (4.2/2)
         nonlimited_with_clause:     "with" name ("," name)* ";"
 
 
         # 11.2 (2)
-        handled_sequence_of_statements: \
+        ?handled_sequence_of_statements: \
                                     sequence_of_statements
 
         # 12.1 (2)
-        generic_declaration:        generic_package_declaration
+        ?generic_declaration:       generic_package_declaration
 
         # 12.1 (4)
         generic_package_declaration: \
@@ -626,7 +599,8 @@ ADA_GRAMMAR = lark.Lark(
                                         explicit_generic_actual_parameter
 
         # 12.3 (5)
-        explicit_generic_actual_parameter: expression
+        ?explicit_generic_actual_parameter: \
+                                    expression
 
         # 12.4 (2/3)
         formal_object_declaration: \
@@ -635,7 +609,7 @@ ADA_GRAMMAR = lark.Lark(
                                         optional_aspect_specification ";"
 
         # 12.5 (2/3)
-        formal_type_declaration: \
+        ?formal_type_declaration: \
                                     formal_complete_type_declaration
 
         # 12.5 (2.1/3)
@@ -654,22 +628,28 @@ ADA_GRAMMAR = lark.Lark(
                                   | formal_access_type_definition
 
         # 12.5.1 (2)
-        !formal_private_type_definition: "private"
+        !formal_private_type_definition: \
+                                    "private"
 
         # 12.5.2 (2)
-        formal_discrete_type_definition: is_lpar "<>" ")"
+        formal_discrete_type_definition: \
+                                    is_lpar "<>" ")"
 
         # 12.5.2 (3)
-        formal_signed_integer_type_definition: "range" "<>"
+        formal_signed_integer_type_definition: \
+                                    "range" "<>"
 
         # 12.5.3 (2)
-        ?formal_array_type_definition: array_type_definition
+        ?formal_array_type_definition: \
+                                    array_type_definition
 
         # 12.5.4 (2)
-        ?formal_access_type_definition: access_type_definition
+        ?formal_access_type_definition: \
+                                    access_type_definition
 
         # 12.6 (2/2)
-        formal_subprogram_declaration: formal_concrete_subprogram_declaration
+        ?formal_subprogram_declaration: \
+                                    formal_concrete_subprogram_declaration
 
         # 12.6 (2.1/3)
         formal_concrete_subprogram_declaration: \
@@ -687,15 +667,12 @@ ADA_GRAMMAR = lark.Lark(
 
         formal_package_association: (name "=>")? (formal_package_association_box | name)
 
-        formal_package_association_box: "<>"
+        !formal_package_association_box: "<>"
 
         # 13.1.1 (2/3)
         aspect_specification:       "with"  aspect_part ( "," aspect_part )*
 
         optional_aspect_specification: aspect_specification?
-
-        # 13.1.1 (3/3)
-        aspect_mark:                identifier
 
         # SPARK rules
 
@@ -706,7 +683,7 @@ ADA_GRAMMAR = lark.Lark(
                                   | others "=>" expression
 
         # SPARK RM 6.1.4
-        global_specification:       moded_global
+        ?global_specification:      moded_global
                                   | global_list
                                   | null_global_specification
 
@@ -719,7 +696,7 @@ ADA_GRAMMAR = lark.Lark(
 
         !mode_selector:             "Input" | "Output" | "In_Out"
 
-        global_item:                name
+        ?global_item:               name
 
         null_global_specification:  null
 
@@ -814,7 +791,7 @@ ADA_GRAMMAR = lark.Lark(
 
         !private_type_definition:   "private"
 
-        aspect_part:                aspect_always_terminates
+        ?aspect_part:               aspect_always_terminates
                                   | aspect_annotate
                                   | aspect_contract_cases
                                   | aspect_convention
@@ -833,20 +810,20 @@ ADA_GRAMMAR = lark.Lark(
 
         aspect_annotate:            "Annotate" "=>" expression
 
-        aspect_contract_cases:      "Contract_Cases" "=>" contract_case_list
+        ?aspect_contract_cases:     "Contract_Cases" "=>" contract_case_list
 
         aspect_convention:          "Convention" "=>" expression
 
         aspect_default_initial_condition: \
                                     "Default_Initial_Condition" "=>" expression
 
-        aspect_depends:             "Depends" "=>" dependency_relation
+        ?aspect_depends:            "Depends" "=>" dependency_relation
 
         aspect_dynamic_predicate:   "Dynamic_Predicate" "=>" expression
 
         !aspect_ghost:              "Ghost"
 
-        aspect_global:              "Global" "=>" global_specification
+        ?aspect_global:             "Global" "=>" global_specification
 
         aspect_import:              "Import"
 
@@ -873,8 +850,6 @@ ADA_GRAMMAR = lark.Lark(
                                     subtype_indication
 
         !box:                        "<>"
-
-        renames:                    "renames" name
 
         unified_assignment_procedure_call_statement: \
                                     name (":=" expression)? ";"
@@ -1029,18 +1004,15 @@ class UnifiedRenames:
     aspects: list[ada.Aspect] | None
 
 
+T = TypeVar("T")
+
+
 class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
-    def __default__(self, token: lark.Token, _: None, meta: lark.tree.Meta) -> None:
+    def __default__(self, token: lark.Token, _: None, _meta: lark.tree.Meta) -> None:
         raise ParseError(f'missing handler for rule "{token}"')
 
     def identifier(self, data: list[lark.lexer.Token]) -> ID:
         return ID(data[0])
-
-    def numeric_literal(self, data: list[ada.Number]) -> ada.Number:
-        return data[0]
-
-    def decimal_literal(self, data: list[ada.Number]) -> ada.Number:
-        return data[0]
 
     def numeral(self, data: list[lark.Token]) -> ada.Number:
         assert isinstance(data[0].value, str)
@@ -1049,31 +1021,14 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def string_literal(self, data: list[lark.lexer.Token]) -> ada.String:
         return ada.String(data[0][1:-1])
 
-    def pragma(self, data: tuple[ID, list[ada.Expr]]) -> ada.Pragma:
+    def pragma(self, data: tuple[ID, list[ada.Expr] | None]) -> ada.Pragma:
         return ada.Pragma(identifier=data[0], parameters=data[1])
 
-    def optional_pragma_arguments(self, data: list[list[ada.Expr]]) -> list[ada.Expr]:
-        if len(data) == 0:
-            return []
-        return data[0]
+    def optional_pragma_arguments(self, data: list[list[ada.Expr]]) -> list[ada.Expr] | None:
+        return self._optional(data)
 
     def pragma_arguments(self, data: list[ada.Expr]) -> list[ada.Expr]:
         return data
-
-    def pragma_argument_association(self, data: list[ada.Expr]) -> ada.Expr:
-        return data[0]
-
-    def basic_declaration(self, data: list[ada.Declaration]) -> ada.Declaration:
-        return data[0]
-
-    def defining_identifier(self, data: list[ID]) -> ID:
-        return data[0]
-
-    def type_declaration(self, data: list[ada.Declaration]) -> ada.Declaration:
-        return data[0]
-
-    def type_definition(self, data: list[ada.Declaration]) -> ada.Declaration:
-        return data[0]
 
     def subtype_declaration(
         self,
@@ -1111,18 +1066,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         self,
         data: list[RangeConstraint | SignedIntegerConstraint],
     ) -> RangeConstraint | SignedIntegerConstraint | None:
-        if len(data) == 0:
-            return None
-        return data[0]
-
-    def subtype_mark(self, data: list[ID]) -> ID:
-        return data[0]
-
-    def constraint(
-        self,
-        data: tuple[RangeConstraint | SignedIntegerConstraint],
-    ) -> RangeConstraint | SignedIntegerConstraint:
-        return data[0]
+        return self._optional(data)
 
     def object_declaration(
         self,
@@ -1133,7 +1077,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             ada.Expr | None,
         ],
     ) -> ada.ObjectDeclaration:
-        assert data[2][1] is None
+        if data[2][1] is not None:
+            raise ParseError("invalid constraint in object declaration")
         return ada.ObjectDeclaration(
             identifiers=data[0],
             type_identifier=data[2][0],
@@ -1188,12 +1133,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def enumeration_type_definition(self, data: list[ID]) -> ada.EnumerationType:
         return ada.EnumerationType("__INVALID__", literals={i: None for i in data[1:]})
 
-    def enumeration_literal_specification(self, data: list[ID]) -> ID:
-        return data[0]
-
-    def integer_type_definition(self, data: list[ada.Declaration]) -> ada.Declaration:
-        return data[0]
-
     def signed_integer_type_definition(
         self,
         data: tuple[ada.Number, ada.Number],
@@ -1203,30 +1142,23 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def modular_type_definition(self, data: list[ada.Expr]) -> ada.Declaration:
         return ada.ModularType(identifier="__INVALID__", modulus=data[0])
 
-    def array_type_definition(self, data: tuple[ada.UnconstrainedArrayType]) -> ada.ArrayType:
-        return data[0]
-
     def component_definition(
         self,
         data: tuple[tuple[ID, RangeConstraint | SignedIntegerConstraint | None]],
     ) -> ID:
         identifier, constraint = data[0]
-        assert constraint is None
+        if constraint is not None:
+            raise ParseError("invalid constraint in component definition")
         return identifier
 
     def discrete_range(self, data: tuple[RangeConstraint]) -> ada.ValueRange:
         return data[0].to_value_range
 
-    def discriminant_part(self, data: tuple[list[ada.Discriminant]]) -> list[ada.Discriminant]:
-        return data[0]
-
     def optional_discriminant_part(
         self,
         data: list[list[ada.Discriminant]],
     ) -> list[ada.Discriminant] | None:
-        if len(data) == 0:
-            return None
-        return data[0]
+        return self._optional(data)
 
     def known_discriminant_part(self, data: list[ada.Discriminant]) -> list[ada.Discriminant]:
         return data
@@ -1242,16 +1174,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             default=default,
         )
 
-    def default_expression(self, data: list[ada.Expr]) -> ada.Expr:
-        return data[0]
-
     def optional_default_expression(self, data: list[ada.Expr]) -> ada.Expr | None:
-        if len(data) == 0:
-            return None
-        return data[0]
-
-    def record_type_definition(self, data: list[ada.RecordType]) -> ada.RecordType:
-        return data[0]
+        return self._optional(data)
 
     def record_definition(self, data: list[list[ada.Component]]) -> ada.RecordType:
         if not data:
@@ -1260,9 +1184,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def component_list(self, data: list[ada.Component]) -> list[ada.Component]:
         return data
-
-    def component_item(self, data: list[ada.Component]) -> ada.Component:
-        return data[0]
 
     def component_declaration(self, data: tuple[list[ID], ID, ada.Expr]) -> ada.Component:
         identifier_list, type_identifier, default = data
@@ -1277,13 +1198,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def discrete_choice_list(self, data: list[ada.Expr]) -> list[ada.Expr]:
         return data
 
-    def discrete_choice(self, data: list[ada.Expr]) -> ada.Expr:
-        return data[0]
-
     def optional_record_extension_part(self, data: list[ada.RecordType]) -> ada.RecordType | None:
-        if len(data) == 0:
-            return None
-        return data[0]
+        return self._optional(data)
 
     def access_type_definition(self, data: tuple[ID]) -> ada.AccessType:
         return ada.AccessType(identifier="__INVALID__", object_identifier=data[0])
@@ -1293,7 +1209,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         data: tuple[tuple[ID, RangeConstraint | SignedIntegerConstraint | None]],
     ) -> ID:
         identifier, constraint = data[0]
-        assert constraint is None
+        if constraint is not None:
+            raise ParseError("invalid constraint in access to object definition")
         return identifier
 
     def null_exclusion(self, data: list[lark.Token]) -> bool:
@@ -1308,39 +1225,12 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def declarative_part(self, data: list[ada.Declaration]) -> list[ada.Declaration]:
         return data
 
-    def declarative_item(
-        self,
-        data: list[ada.Declaration | ada.SubprogramBody],
-    ) -> ada.Declaration | ada.SubprogramBody:
-        return data[0]
-
-    def basic_declarative_item(self, data: list[ada.Declaration]) -> ada.Declaration:
-        return data[0]
-
-    def name(self, data: list[ID | ada.Attribute]) -> ID | ada.Attribute:
-        return data[0]
-
-    def direct_name(self, data: list[ID]) -> ID:
-        return data[0]
-
-    def prefix(self, data: list[ID]) -> ID:
-        return data[0]
-
-    def indexed_component(self, data: tuple[ID, list[ada.Expr]]) -> ada.Indexed:
-        return ada.Indexed(ada.Variable(data[0]), *data[1])
-
-    def indexed_component_expressions(self, data: list[ada.Expr]) -> list[ada.Expr]:
-        return data
-
     def slice(self, data: tuple[ID, ada.ValueRange]) -> ada.Slice:
         name, value_range = data
         return ada.Slice(ada.Variable(name), value_range.lower, value_range.upper)
 
     def selected_component(self, data: tuple[ID, ID]) -> ID:
         return data[0] * data[1]
-
-    def selector_name(self, data: list[ID]) -> ID:
-        return data[0]
 
     def attribute_reference(self, data: tuple[ID, tuple[ID, ada.Expr | None]]) -> ada.Attribute:
         prefix, (identifier, expression) = data
@@ -1376,15 +1266,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         return data[0], data[1]
 
     def optional_argument(self, data: list[ada.Expr]) -> ada.Expr | None:
-        if len(data) == 0:
-            return None
-        return data[0]
-
-    def aggregate(
-        self,
-        data: list[ada.Aggregate | ada.NamedAggregate],
-    ) -> ada.Aggregate | ada.NamedAggregate:
-        return data[0]
+        return self._optional(data)
 
     def array_aggregate(
         self,
@@ -1398,7 +1280,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             return ada.NamedAggregate(*named_arguments)
         if positional_arguments:
             return ada.Aggregate(*positional_arguments)
-        assert False, data
+        assert False
 
     def array_component_association(self, data: list[ID | ada.Expr]) -> tuple[ID | None, ada.Expr]:
         if len(data) == 1:
@@ -1436,16 +1318,14 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         return data[0].value
 
     def choice_expression(self, data: list[ada.Expr | str]) -> ada.Expr:
-        if len(data) == 1:
-            assert isinstance(data[0], ada.Expr)
-            return data[0]
-        raise NotImplementedError
+        assert len(data) == 1
+        assert isinstance(data[0], ada.Expr)
+        return data[0]
 
     def choice_relation(self, data: list[ada.Expr | str]) -> ada.Expr:
-        if len(data) == 1:
-            assert isinstance(data[0], ada.Expr)
-            return data[0]
-        raise NotImplementedError
+        assert len(data) == 1
+        assert isinstance(data[0], ada.Expr)
+        return data[0]
 
     def relation(self, data: list[ada.Expr | str]) -> ada.Expr:
         operators: dict[str, type[ada.Relation]] = {
@@ -1471,9 +1351,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def in_operator(self, data: list[lark.Token]) -> str:
         assert isinstance(data[0].value, str)
         return data[0].value
-
-    def membership_choice_list(self, data: list[ada.Expr]) -> ada.Expr:
-        return data[0]
 
     def membership_choice(self, data: tuple[RangeConstraint]) -> ada.Expr:
         return data[0].to_value_range
@@ -1537,7 +1414,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         return ada.Not(data[0])
 
     def primary(self, data: list[ada.Expr | ID]) -> ada.Expr:
-        # TODO(senier): How exactly do we distinguish ID and Variable?
         if isinstance(data[0], ID):
             return ada.Variable(data[0])
         return data[0]
@@ -1560,9 +1436,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         assert isinstance(data[0].value, str)
         return data[0].value
 
-    def conditional_expression(self, data: list[ada.Expr]) -> ada.Expr:
-        return data[0]
-
     def if_expression(
         self,
         data: tuple[
@@ -1583,9 +1456,9 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def if_expr_elsifs(
         self,
-        data: list[tuple[ada.Expr, ada.Expr]],
+        data: list[list[ada.Expr]],
     ) -> list[tuple[ada.Expr, ada.Expr]]:
-        return data
+        return [(c, e) for c, e in data]  # noqa: C416
 
     def if_expr_elsif(
         self,
@@ -1593,13 +1466,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     ) -> tuple[ada.Expr, ada.Expr]:
         return data
 
-    def if_expr_else(self, data: list[ada.Expr]) -> ada.Expr | None:
-        if not data:
-            return None
-        return data[0]
-
-    def condition(self, data: list[ada.Expr]) -> ada.Expr:
-        return data[0]
+    def optional_if_expr_else(self, data: list[ada.Expr]) -> ada.Expr | None:
+        return self._optional(data)
 
     def case_expression(
         self,
@@ -1625,15 +1493,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def sequence_of_statements(self, data: list[ada.Statement]) -> list[ada.Statement]:
         return data
 
-    def statement(self, data: list[ada.Statement]) -> ada.Statement:
-        return data[0]
-
-    def simple_statement(self, data: list[ada.Statement]) -> ada.Statement:
-        return data[0]
-
-    def compound_statement(self, data: list[ada.Statement]) -> ada.Statement:
-        return data[0]
-
     def if_statement(
         self,
         data: tuple[
@@ -1645,7 +1504,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     ) -> ada.IfStatement:
         condition_statements = [(data[0], data[1])]
         if data[2]:
-            condition_statements.extend(data[2])
+            condition_statements.extend((c, e) for c, e in data[2])
         return ada.IfStatement(condition_statements=condition_statements, else_statements=data[3])
 
     def optional_elsifs(
@@ -1666,15 +1525,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         self,
         data: list[list[ada.Statement]],
     ) -> list[ada.Statement] | None:
-        if not data:
-            return None
-        return data[0]
-
-    def elsebranch(
-        self,
-        data: tuple[list[ada.Statement]],
-    ) -> list[ada.Statement]:
-        return data[0]
+        return self._optional(data)
 
     def case_statement(
         self,
@@ -1728,80 +1579,21 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     ) -> ada.Declare:
         return ada.Declare(declarations=data[0], statements=data[1])
 
-    def procedure_specification(
-        self,
-        data: tuple[ID, list[ada.Parameter] | None],
-    ) -> ada.ProcedureSpecification:
-        identifier, parameters = data
-        return ada.ProcedureSpecification(
-            identifier=identifier,
-            parameters=parameters,
-        )
-
-    def function_specification(
-        self,
-        data: tuple[ID, tuple[ID, list[ada.Parameter] | None]],
-    ) -> ada.FunctionSpecification:
-        identifier, (return_type, parameters) = data
-        return ada.FunctionSpecification(
-            identifier=identifier,
-            return_type=return_type,
-            parameters=parameters,
-        )
-
-    def designator(self, data: list[ID]) -> ID:
-        return reduce(lambda l, r: l * r, data)
-
-    def optional_designator(self, data: list[ID]) -> ID | None:
-        if len(data) == 0:
-            return None
-        return data[0]
-
     def defining_program_unit_name(self, data: list[ID]) -> ID:
         return reduce(lambda l, r: l * r, data)
 
     def operator_symbol(self, data: tuple[lark.Token]) -> ID:
         return ID(data[0].value)
 
-    def parameter_profile(
-        self,
-        data: list[list[ada.Parameter] | None],
-    ) -> list[ada.Parameter] | None:
-        return data[0]
-
-    def parameter_profile_formal_part(
-        self,
-        data: list[list[ada.Parameter]],
-    ) -> list[ada.Parameter] | None:
-        if not data:
-            return None
-        return data[0]
-
-    def parameter_and_result_profile(
-        self,
-        data: tuple[list[ada.Parameter] | None, ID],
-    ) -> tuple[ID, list[ada.Parameter] | None]:
-        return data[1], data[0]
-
-    def parameter_and_result_profile_formal_part(
-        self,
-        data: list[list[ada.Parameter]],
-    ) -> list[ada.Parameter] | None:
-        if not data:
-            return None
-        return data[0]
-
     def formal_part(self, data: list[ada.Parameter]) -> list[ada.Parameter]:
         return data
 
     def optional_formal_part(self, data: list[list[ada.Parameter]]) -> list[ada.Parameter] | None:
-        if len(data) == 0:
-            return None
-        return data[0]
+        return self._optional(data)
 
     def parameter_specification(
         self,
-        data: tuple[list[ID], str, ID, ada.Expr | None],
+        data: tuple[list[ID], Literal["", "in", "out", "in out"], ID, ada.Expr | None],
     ) -> ada.Parameter:
         identifiers, mode, type_identifier, default = data
 
@@ -1820,17 +1612,24 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             )
 
         if mode == "in":
+            return ada.InParameter(
+                identifiers=identifiers,
+                type_identifier=type_identifier,
+                default=default,
+            )
+
+        if mode == "":
             return ada.Parameter(
                 identifiers=identifiers,
                 type_identifier=type_identifier,
                 default=default,
             )
 
-        assert False, f"Unexpected mode {mode}"
+        assert_never(mode)
 
-    def mode(self, data: list[lark.Token]) -> str:
+    def mode(self, data: list[lark.Token]) -> Literal["", "in", "out", "in out"]:
         if not data:
-            return "in"
+            return ""
         if "in" in data:
             if "out" in data:
                 return "in out"
@@ -1852,12 +1651,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         arguments = [e for i, e in data if not i]
         named_arguments = [(i, e) for i, e in data if i]
         return arguments or None, named_arguments or None
-
-    def parameter_association(
-        self,
-        data: list[tuple[ID | None, ada.Expr]],
-    ) -> tuple[ID | None, ada.Expr]:
-        return data[0]
 
     def explicit_actual_parameter(self, data: list[ada.Expr]) -> tuple[ID | None, ada.Expr]:
         return None, data[0]
@@ -1889,7 +1682,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             )
 
         if isinstance(part, PackageSpecificationPart):
-            assert identifier == part.identifier
+            if identifier != part.identifier:
+                raise ParseError("inconsistent package identifiers")
             return ada.PackageDeclaration(
                 identifier=identifier,
                 declarations=part.declarations,
@@ -1920,14 +1714,9 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             return None
         return data
 
-    def use_clause(
-        self,
-        data: list[ada.UsePackageClause | ada.UseTypeClause],
-    ) -> ada.UsePackageClause | ada.UseTypeClause:
-        return data[0]
-
     def use_package_clause(self, data: list[ID]) -> ada.UsePackageClause:
-        assert len(data) == 1
+        if len(data) != 1:
+            raise ParseError("multiple packages in one use-clause not implemented")
         return ada.UsePackageClause(identifier=data[0])
 
     def use_type_clause(self, data: list[ID]) -> ada.UseTypeClause:
@@ -1963,20 +1752,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     ]:
         return data[0][1], data[0][0]
 
-    def library_unit_declaration(
-        self,
-        data: tuple[
-            tuple[
-                list[ada.FormalSubprogramDeclaration | ada.TypeDeclaration] | None,
-                ada.PackageDeclaration,
-            ]
-        ],
-    ) -> tuple[
-        list[ada.FormalSubprogramDeclaration | ada.TypeDeclaration] | None,
-        ada.PackageDeclaration,
-    ]:
-        return data[0]
-
     def library_unit_body(
         self,
         data: list[ada.PackageBody],
@@ -1986,34 +1761,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def context_clause(self, data: list[ada.ContextItem]) -> list[ada.ContextItem]:
         return data
 
-    def context_item(self, data: list[ada.ContextItem]) -> ada.ContextItem:
-        return data[0]
-
-    def with_clause(self, data: list[ada.WithClause]) -> ada.WithClause:
-        return data[0]
-
     def nonlimited_with_clause(self, data: list[ID]) -> ada.WithClause:
         return ada.WithClause(data[0])
-
-    def handled_sequence_of_statements(
-        self,
-        data: list[list[ada.Statement]],
-    ) -> list[ada.Statement]:
-        return data[0]
-
-    def generic_declaration(
-        self,
-        data: tuple[
-            tuple[
-                list[ada.FormalSubprogramDeclaration | ada.TypeDeclaration],
-                ada.PackageDeclaration,
-            ]
-        ],
-    ) -> tuple[
-        list[ada.FormalSubprogramDeclaration | ada.TypeDeclaration] | None,
-        ada.PackageDeclaration,
-    ]:
-        return data[0]
 
     def generic_package_declaration(
         self,
@@ -2046,7 +1795,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         data: tuple[ID, list[ada.Aspect] | None, list[ada.Declaration] | None, ID],
     ) -> ada.PackageBody:
         identifier, aspects, declarations, end_identifier = data
-        assert identifier == end_identifier
+        if identifier != end_identifier:
+            raise ParseError("inconsistent package identifiers")
 
         return ada.PackageBody(
             identifier=identifier,
@@ -2059,9 +1809,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         return len(data) == 1
 
     def optional_overriding_indicator(self, data: list[bool | None]) -> bool | None:
-        if len(data) == 0:
-            return None
-        return data[0]
+        return self._optional(data)
 
     def generic_package_instantiation_part(
         self,
@@ -2073,9 +1821,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         self,
         data: list[list[tuple[ID | None, ada.Expr]]],
     ) -> list[tuple[ID | None, ada.Expr]] | None:
-        if len(data) == 0:
-            return None
-        return data[0]
+        return self._optional(data)
 
     def generic_actual_part(
         self,
@@ -2095,9 +1841,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         assert isinstance(data[1], ada.Expr)
         return data[0], data[1]
 
-    def explicit_generic_actual_parameter(self, data: list[ada.Expr]) -> ada.Expr:
-        return data[0]
-
     def formal_object_declaration(
         self,
         data: tuple[list[ID], ID, ada.Expr | None, list[ada.Aspect] | None],
@@ -2109,9 +1852,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             expression=default_expression,
             aspects=aspects,
         )
-
-    def formal_type_declaration(self, data: list[ada.TypeDeclaration]) -> ada.TypeDeclaration:
-        return data[0]
 
     def formal_complete_type_declaration(
         self,
@@ -2183,12 +1923,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def formal_signed_integer_type_definition(self, _: None) -> ada.SignedIntegerType:
         return ada.SignedIntegerType("__INVALID__")
 
-    def formal_subprogram_declaration(
-        self,
-        data: tuple[ada.FormalSubprogramDeclaration],
-    ) -> ada.FormalSubprogramDeclaration:
-        return data[0]
-
     def formal_concrete_subprogram_declaration(
         self,
         data: tuple[ada.Declaration],
@@ -2223,8 +1957,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         self,
         data: list[ID | None],
     ) -> tuple[ID | None, ID | None] | None:
-        if len(data) == 0:
-            return None
         if len(data) == 2:
             return data[0], data[1]
         return None, data[0]
@@ -2235,17 +1967,11 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def aspect_specification(self, data: list[ada.Aspect]) -> list[ada.Aspect]:
         return data
 
-    def aspect_mark(self, data: list[ID]) -> ID:
-        return data[0]
-
     def contract_case_list(self, data: list[list[ada.Expr]]) -> ada.ContractCases:
         return ada.ContractCases(*[(c, e) for c, e in data])  # noqa: C416
 
     def contract_case(self, data: list[ada.Expr]) -> list[ada.Expr]:
         return data
-
-    def global_specification(self, data: tuple[ada.Global]) -> ada.Global:
-        return data[0]
 
     def moded_global(
         self,
@@ -2257,16 +1983,19 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
         for mode, ids in data:
             if mode == "Input":
-                assert inputs is None
+                if inputs is not None:
+                    raise ParseError("duplicate Input")
                 inputs = ids
             elif mode == "Output":
-                assert outputs is None
+                if outputs is not None:
+                    raise ParseError("duplicate Output")
                 outputs = ids
             elif mode == "In_Out":
-                assert in_outs is None
+                if in_outs is not None:
+                    raise ParseError("duplicate In_Out")
                 in_outs = ids
             else:
-                assert False, mode
+                assert_never(mode)
 
         return ada.Global(inputs=inputs, outputs=outputs, in_outs=in_outs)
 
@@ -2283,9 +2012,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         assert isinstance(data[0].value, str)
         assert data[0].value in ("Input", "Output", "In_Out")
         return data[0].value
-
-    def global_item(self, data: tuple[ID]) -> ID:
-        return data[0]
 
     def null_global_specification(self, data: tuple[str]) -> ada.Global:
         assert data[0] == "null"
@@ -2319,9 +2045,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         self,
         data: list[list[ada.Aspect]],
     ) -> list[ada.Aspect] | None:
-        if len(data) == 0:
-            return None
-        return data[0]
+        return self._optional(data)
 
     def combined_type_declaration(
         self,
@@ -2392,15 +2116,14 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
                 aspects=aspects,
             )
         if isinstance(definition, ada.EnumerationType):
-            size = (
-                next(a.expression for a in aspects if isinstance(a, ada.SizeAspect))
-                if aspects
-                else None
-            )
+            size_aspect = [a for a in aspects if isinstance(a, ada.SizeAspect)] if aspects else None
+            if size_aspect and len(size_aspect) > 1:
+                raise ParseError("multiple size aspects")
+
             return ada.EnumerationType(
                 identifier=identifier,
                 literals=definition.literals,
-                size=size,
+                size=size_aspect[0].expression if size_aspect else None,
             )
         if isinstance(definition, ada.RecordType):
             return ada.RecordType(
@@ -2413,14 +2136,11 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
                 tagged=definition.tagged,
             )
 
-        assert False, data
+        assert_never(definition)
 
     def private_type_definition(self, data: list[lark.Token]) -> ada.PrivateType:
         assert data[0] == "private"
         return ada.PrivateType("__INVALID__")
-
-    def aspect_part(self, data: tuple[ada.Aspect]) -> ada.Aspect:
-        return data[0]
 
     def aspect_always_terminates(self, data: tuple[ada.Expr]) -> ada.AlwaysTerminates:
         return ada.AlwaysTerminates(expression=data[0] if data else None)
@@ -2429,9 +2149,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         return ada.Annotate(
             *[e.name for e in data[0].elements if isinstance(e, ada.Variable)],
         )
-
-    def aspect_contract_cases(self, data: tuple[ada.ContractCases]) -> ada.ContractCases:
-        return data[0]
 
     def aspect_convention(self, data: tuple[ada.Variable]) -> ada.Convention:
         kind = {"Intrinsic": ada.ConventionKind.Intrinsic}
@@ -2443,18 +2160,12 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     ) -> ada.DefaultInitialCondition:
         return ada.DefaultInitialCondition(data[0])
 
-    def aspect_depends(self, data: tuple[ada.Depends]) -> ada.Depends:
-        return data[0]
-
     def aspect_dynamic_predicate(self, data: tuple[ada.Expr]) -> ada.DynamicPredicate:
         return ada.DynamicPredicate(data[0])
 
     def aspect_ghost(self, data: tuple[lark.Token]) -> ada.Ghost:
         assert data[0] == "Ghost"
         return ada.Ghost()
-
-    def aspect_global(self, data: tuple[ada.Global]) -> ada.Global:
-        return data[0]
 
     def aspect_import(self, _: list[None]) -> ada.Import:
         return ada.Import()
@@ -2496,7 +2207,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
                 index_type=index_type,
                 component_identifier=component_identifier,
             )
-        assert constraint is None, constraint
+        if constraint is not None:
+            raise ParseError("discrete array subtypes not implemented")
         return ada.ArrayType(
             identifier="__INVALID__",
             index_type=index_type,
@@ -2506,9 +2218,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def box(self, _: tuple[lark.Token]) -> SignedIntegerConstraint:
         return SignedIntegerConstraint()
 
-    def renames(self, data: tuple[ID]) -> RenamingDeclaration:
-        return RenamingDeclaration(data[0])
-
     def unified_assignment_procedure_call_statement(
         self,
         data: list[ID | ada.Expr],
@@ -2516,17 +2225,16 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         if len(data) == 1:
             if isinstance(data[0], ID):
                 return ada.CallStatement(identifier=data[0])
-            indexed = data[0]
-            assert isinstance(indexed, ada.Indexed), type(indexed)
-            assert isinstance(indexed.prefix, ada.Variable)
+            call = data[0]
+            assert isinstance(call, ada.Call), type(call)
             return ada.CallStatement(
-                identifier=indexed.prefix.identifier,
-                arguments=indexed.elements,
+                identifier=call.identifier,
+                arguments=call.arguments,
+                named_arguments=call.named_arguments,
             )
-        if len(data) == 2:
-            assert isinstance(data[1], ada.Expr)
-            return ada.Assignment(data[0], data[1])
-        assert False, data
+        assert len(data) == 2
+        assert isinstance(data[1], ada.Expr)
+        return ada.Assignment(data[0], data[1])
 
     def file(
         self,
@@ -2544,17 +2252,21 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         ],
     ) -> ada.PackageUnit:
         data_len = len(data[:-1])
-        assert data_len in [1, 2], data
+        if data_len not in [1, 2]:
+            raise ParseError(f"expected exactly two units, got {data_len}")
 
         declaration_context, declaration, formal_parameters = data[0]
-        assert isinstance(declaration, ada.PackageDeclaration), declaration
+        if not isinstance(declaration, ada.PackageDeclaration):
+            raise ParseError("expected package declaration")
 
         if data_len == 1:
             body_context: list[ada.ContextItem] = []
             body = ada.PackageBody(identifier=declaration.identifier)
-        elif data_len == 2:
+        else:
+            assert data_len == 2
             body_context, tmp, _ = data[1]
-            assert isinstance(tmp, ada.PackageBody)
+            if not isinstance(tmp, ada.PackageBody):
+                raise ParseError("expected package body as second unit")
             body = tmp
 
         return ada.PackageUnit(
@@ -2663,7 +2375,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
                     aspects=declaration.part.aspect_parts,
                 )
             if isinstance(declaration.part, UnifiedBody):
-                assert procedure_specification.identifier == declaration.part.name
+                if procedure_specification.identifier != declaration.part.name:
+                    raise ParseError("inconsistent identifier")
                 return ada.SubprogramBody(
                     specification=procedure_specification,
                     declarations=declaration.part.declarations,
@@ -2745,9 +2458,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         | UnifiedRenames
         | None
     ):
-        if len(data) == 0:
-            return None
-        return data[0]
+        return self._optional(data)
 
     def unified_with(self, data: tuple[list[ada.Aspect], UnifiedBody | None]) -> UnifiedWith:
         return UnifiedWith(aspect_parts=data[0], body=data[1])
@@ -2756,9 +2467,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         return data
 
     def optional_unified_body(self, data: list[UnifiedBody]) -> UnifiedBody | None:
-        if len(data) == 0:
-            return None
-        return data[0]
+        return self._optional(data)
 
     def unified_body(
         self,
@@ -2817,9 +2526,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         | UnifiedAbstract
         | None
     ):
-        if len(data) == 0:
-            return None
-        return data[0]
+        return self._optional(data)
 
     def unified_generic_procedure_instantiation(
         self,
@@ -2831,21 +2538,24 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     ) -> UnifiedGenericProcedureInstantiation:
         return UnifiedGenericProcedureInstantiation(data[0], data[1], data[2])
 
+    @staticmethod
+    def _optional(data: list[T]) -> T | None:
+        if len(data) == 0:
+            return None
+        return data[0]
+
 
 def parse(text: str, source: Path | None = None) -> ada.PackageUnit:
     try:
         return TreeToAda().transform(ADA_GRAMMAR.parse(f"{text}\0"))
-    except lark.UnexpectedToken:
-        raise
     except VisitError as e:
-        if isinstance(e.orig_exc, ParseError):
-            assert isinstance(e.obj, lark.Tree)  # noqa: PT017
-            fail(
-                str(e.orig_exc),
-                location=Location(
-                    start=(e.obj.meta.line, e.obj.meta.column),
-                    end=(e.obj.meta.end_line, e.obj.meta.end_column),
-                    source=source,
-                ),
-            )
-        raise
+        assert isinstance(e.orig_exc, ParseError)  # noqa: PT017
+        assert isinstance(e.obj, lark.Tree)  # noqa: PT017
+        fail(
+            str(e.orig_exc),
+            location=Location(
+                start=(e.obj.meta.line, e.obj.meta.column),
+                end=(e.obj.meta.end_line, e.obj.meta.end_column),
+                source=source,
+            ),
+        )

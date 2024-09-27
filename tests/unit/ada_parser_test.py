@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import textwrap
 
+import lark
 import pytest
 
 from rflx import ada, ada_parser
@@ -115,6 +116,7 @@ def procedure_body(
                         ada.Number(1),
                     ),
                 ),
+                ada.ModularType("T6", ada.Rem(ada.Number(15), ada.Number(8))),
             ],
         ),
         package(
@@ -368,6 +370,10 @@ def procedure_body(
                                     ada.Equal(ada.Variable("P"), ada.Number(42)),
                                     [ada.ReturnStatement(ada.TRUE)],
                                 ),
+                                (
+                                    ada.Equal(ada.Variable("P"), ada.Number(43)),
+                                    [ada.ReturnStatement(ada.FALSE)],
+                                ),
                             ],
                             else_statements=[ada.ReturnStatement(ada.FALSE)],
                         ),
@@ -602,7 +608,7 @@ def procedure_body(
                         identifier="F",
                         parameters=[ada.OutParameter("C", "T"), ada.InOutParameter("B", "T")],
                     ),
-                    aspects=[ada.Depends({"C": ["B"], "B": "null"})],
+                    aspects=[ada.Depends({ID("C"): [ID("B")], ID("B"): ["null"]})],
                 ),
             ],
         ),
@@ -644,7 +650,7 @@ def procedure_body(
                 ada.FormalPackageDeclaration(
                     identifier="Q",
                     generic_identifier="R",
-                    associations=[("P1", "A"), ("P2", None), ("others", None)],
+                    associations=[(ID("P1"), ID("A")), (ID("P2"), None), (ID("others"), None)],
                 ),
             ],
         ),
@@ -654,7 +660,7 @@ def procedure_body(
                 ada.FormalPackageDeclaration(
                     identifier="Q",
                     generic_identifier="R",
-                    associations=[(None, "A"), (None, "B"), ("others", None)],
+                    associations=[(None, ID("A")), (None, ID("B")), (ID("others"), None)],
                 ),
             ],
         ),
@@ -736,7 +742,7 @@ def procedure_body(
         procedure_body(
             parameters=[ada.Parameter(["P"], "T")],
             statements=[
-                ada.Assignment(ada.Indexed(ada.Variable("X"), ada.Number(5)), ada.Number(42)),
+                ada.Assignment(ada.Call("X", [ada.Number(5)]), ada.Number(42)),
             ],
         ),
         procedure_body(
@@ -752,681 +758,841 @@ def procedure_body(
                 ),
             ],
         ),
+        procedure_body(
+            parameters=[ada.Parameter(["P"], "T")],
+            statements=[ada.ReturnStatement()],
+        ),
+        procedure_body(
+            parameters=[ada.InOutParameter(["P"], "T")],
+            statements=[ada.Assignment(ada.Variable("P"), ada.Call("F", [ada.Variable("P")]))],
+        ),
+        procedure_body(
+            parameters=[ada.InOutParameter(["P"], "String")],
+            statements=[
+                ada.Assignment(
+                    ada.Variable("P"),
+                    ada.Concatenation(ada.String("Left"), ada.String("Right")),
+                ),
+            ],
+        ),
     ],
 )
-def test_roundtrip_model(unit: ada.Unit) -> None:
+def test_roundtrip_model(unit: ada.PackageUnit) -> None:
     result = ada_parser.parse(unit.ads + unit.adb)
-    assert result.ads == unit.ads
-    assert result.adb == unit.adb
+    assert repr(result) == repr(unit)
 
 
 @pytest.mark.parametrize(
-    ("data"),
+    ("spec", "body"),
     [
-        """\
-        package P
-        is
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           function F (P : Boolean) return Natural is
-             (if P then 0 else 42);
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           pragma Assert (if X > 5 then True else False);
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           function Fits_Into_Upper (V : U64; Bits, Lower : Natural) return Boolean is
-             (if
-                  Bits < U64'Size
-               then
-                  V <= 2**Bits - 2**Lower
-               elsif
-                  Lower > 0
-                  and then Lower < U64'Size
-               then
-                  V <= U64'Last - 2**Lower + 1);
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-        end P;
-        package body P
-        is
-
-           function Mask_Upper (V : U64; Mask : Natural) return U64 is
-           begin
-              return V
-                     and 2**Mask - 1;
-           end Mask_Upper;
-
-        end P;
-        """,
-        """\
-        with F;
-        with G;
-
-        package P is new G (F.A, F.B, F.C);
-        """,
-        """\
-        package P
-        is
-
-           function F (Val : Integer) return Boolean is
-             (case Val is
-                  when 0 =>
-                     False,
-                  when 1 =>
-                     True,
-                  when others =>
-                     False);
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           type T is new Natural;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           type T is new Natural range 1 .. 42;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           type A is array (I range <>) of B;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           type P is access T;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           type T is range 1 .. U'Last * 8;
-
-        end P;
-        """,
-        """\
-        generic
-        package P
-        is
-
-        end P;
-        """,
-        """\
-        generic
-           type PT is private;
-        package P
-        is
-
-        end P;
-        """,
-        """\
-        generic
-           with procedure P (P1 : T);
-        package P
-        is
-
-        end P;
-        """,
-        """\
-        generic
-           with function F (P1 : T) return U;
-        package P
-        is
-
-        end P;
-        """,
-        """\
-        generic
-           E : T;
-        package P
-        is
-
-        end P;
-        """,
-        """\
-        generic
-           type PT is private;
-           with procedure P (P1 : T);
-           with function F (P1 : T) return U;
-           E : T;
-        package P
-        is
-
-        end P;
-        """,
-        """\
-        generic
-           with function F (P1 : T := 42) return U;
-        package P
-        is
-
-        end P;
-        """,
-        """\
-        generic
-           type PT (D : T) is private;
-        package P
-        is
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           use type T;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           use type T, U, V;
-
-           use type W;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           type PT is private;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           type PT (D1 : T; D2 : T) is private;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           type PT (D1 : T; D2 : T := 42) is private;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           procedure F (C : T) with
-             Pre =>
-               not C'Constrained;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           procedure F (C : out T; B : in out T) with
-             Depends =>
-               (C => B, B => null);
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           procedure F (C : T) with
-             Post =>
-               P (C) = P (C)'Old;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           procedure S (C : T) with
-             Pre =>
-               P (C) = L'(if V (C) then E (C) else F (C))'Old;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           procedure S (C : T) with
-             Contract_Cases =>
-               (P (C) =>
-                   True,
-                others =>
-                   False);
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           procedure P (C : T) with
-             Global =>
-               null;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           G1, G2 : Integer;
-
-           procedure P (C : T) with
-             Global =>
-               (Input => G1, In_Out => G2);
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           procedure P (C : T; D : in out T; E : out T) with
-             Depends =>
-               (D => (D, C), E => C);
-
-        end P;
-        """,
-        """\
-        package P with
-          Always_Terminates
-        is
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           type T (D : U) is private with
-             Default_Initial_Condition =>
-               P (D)
-               and Q (D);
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           type T is private;
-
-        private
-
-           type T is range 0 .. 42;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           type Color is (Red, Green, Blue);
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           type Color is (Red, Green, Blue) with
-             Size =>
-               8;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           type R is
-              record
-                 F : T;
-              end record;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           type N is null record;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           type T (D : U) is private with
-             Dynamic_Predicate =>
-               P (D)
-               and Q (D);
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-        end P;
-        package body P
-        is
-
-           procedure Proc (V : T) is
-           begin
-              C (V);
-           end Proc;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-        end P;
-        package body P
-        is
-
-           procedure Proc (R : out T) is
-           begin
-              R := 42;
-           end Proc;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-        end P;
-        package body P
-        is
-
-           procedure Proc (R : out T) is
-           begin
-              R := (F1 => 1, F2 => 2, F3 => 3);
-           end Proc;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-        end P;
-        package body P
-        is
-
-           procedure Proc (R : out T) is
-           begin
-              R := B (1 .. B'Last - 1);
-           end Proc;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-        end P;
-        package body P
-        is
-
-           procedure Proc (R : out T) is
-           begin
-              declare
-                 X : T := 1;
-              begin
-                 R := B (X .. B'Last - 1);
-              end;
-           end Proc;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-        end P;
-        package body P
-        is
-
-           procedure Proc (R : out T) is
-              X : T;
-           begin
-              for I in 1 .. 10 loop
-                 X := X + 1;
-              end loop;
-              R := X;
-           end Proc;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-        end P;
-        package body P
-        is
-
-           procedure Proc (R : out T) is
-              X : T;
-           begin
-              for I in reverse 1 .. 10 loop
-                 X := X + 1;
-              end loop;
-              R := X;
-           end Proc;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-        end P;
-        package body P
-        is
-
-           procedure Proc (R : out T; I : Natural) is
-              X : T;
-           begin
-              X (I) := T'Val (R);
-              Y;
-           end Proc;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-        end P;
-        package body P
-        is
-
-           procedure Proc (R : out T; I : Natural) is
-           begin
-              case I is
-                 when 1 =>
-                    R := 1;
-                 when 2 =>
-                    R := 2;
-                 when others =>
-                    R := 0;
-              end case;
-           end Proc;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           procedure S (C : T) with
-             Pre =>
-               V (C)
-               and then (S (C) >= C.First + I (E)) - 1;
-
-        end P;
-        """,
-        """\
-        generic
-           type T is range <>;
-        package P
-        is
-
-        end P;
-        """,
-        """\
-        generic
-           type T is (<>);
-        package P
-        is
-
-        end P;
-        """,
-        """\
-        generic
-           type T is array (I) of E;
-        package P
-        is
-
-        end P;
-        """,
-        """\
-        generic
-           type T is array (I range <>) of E;
-        package P
-        is
-
-        end P;
-        """,
-        """\
-        generic
-           type T is access U;
-        package P
-        is
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           function "+" (L : Natural; R : Natural) return Natural is abstract;
-
-           function "-" (L, R : Natural) return Natural is abstract;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           function F (L : Natural; R : Natural) return Natural renames U;
-
-           procedure P (P : Natural) renames U;
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           function F is new G (X, 42);
-
-           function F is new G (P1 => X, P2 => 42);
-
-           procedure P is new G (X, 42);
-
-           procedure P is new G (P1 => X, P2 => 42);
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           pragma Assert (L'Pos (L'Last) /= M'Pos (M'Last));
-
-           pragma Assert (L'Succ (A) = B);
-
-           pragma Assert (L'Val (A) = B);
-
-        end P;
-        """,
-        """\
-        package P
-        is
-
-           subtype I is L range 1 .. L'Last;
-
-        end P;
-        """,
-        """\
-        generic
-           with package Q is new R (<>);
-        package P
-        is
-
-        end P;
-        """,
+        (
+            """\
+            package P
+            is
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               function F (P : Boolean) return Natural is
+                 (if P then 0 else 42);
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               pragma Assert (if X > 5 then True else False);
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               function Fits_Into_Upper (V : U64; Bits, Lower : Natural) return Boolean is
+                 (if
+                      Bits < U64'Size
+                   then
+                      V <= 2**Bits - 2**Lower
+                   elsif
+                      Lower > 0
+                      and then Lower < U64'Size
+                   then
+                      V <= U64'Last - 2**Lower + 1);
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+            end P;""",
+            """\
+            package body P
+            is
+
+               function Mask_Upper (V : U64; Mask : Natural) return U64 is
+               begin
+                  return V
+                         and 2**Mask - 1;
+               end Mask_Upper;
+
+            end P;""",
+        ),
+        (
+            """\
+            with F;
+            with G;
+
+            package P is new G (F.A, F.B, F.C);""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               function F (Val : Integer) return Boolean is
+                 (case Val is
+                      when 0 =>
+                         False,
+                      when 1 =>
+                         True,
+                      when others =>
+                         False);
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               type T is new Natural;
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               type T is new Natural range 1 .. 42;
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               type A is array (I range <>) of B;
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               type P is access T;
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               type T is range 1 .. U'Last * 8;
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            generic
+            package P
+            is
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            generic
+               type PT is private;
+            package P
+            is
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            generic
+               with procedure P (P1 : T);
+            package P
+            is
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            generic
+               with function F (P1 : T) return U;
+            package P
+            is
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            generic
+               E : T;
+            package P
+            is
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            generic
+               type PT is private;
+               with procedure P (P1 : T);
+               with function F (P1 : T) return U;
+               E : T;
+            package P
+            is
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            generic
+               with function F (P1 : T := 42) return U;
+            package P
+            is
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            generic
+               type PT (D : T) is private;
+            package P
+            is
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               use type T;
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               use type T, U, V;
+
+               use type W;
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               type PT is private;
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               type PT (D1 : T; D2 : T) is private;
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               type PT (D1 : T; D2 : T := 42) is private;
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               procedure F (C : T) with
+                 Pre =>
+                   not C'Constrained;
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               procedure F (C : out T; B : in out T; D : in T) with
+                 Depends =>
+                   (C => B, B => null);
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               procedure F (C : T) with
+                 Post =>
+                   P (C) = P (C)'Old;
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               procedure S (C : T) with
+                 Pre =>
+                   P (C) = L'(if V (C) then E (C) else F (C))'Old;
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               procedure S (C : T) with
+                 Contract_Cases =>
+                   (P (C) =>
+                       True,
+                    others =>
+                       False);
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               procedure P (C : T) with
+                 Global =>
+                   null;
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               G1, G2, G3 : Integer;
+
+               procedure P (C : T) with
+                 Global =>
+                   (Input => G1, Output => G2, In_Out => G3);
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               procedure P (C : T; D : in out T; E : out T) with
+                 Depends =>
+                   (D => (D, C), E => C);
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P with
+              Always_Terminates
+            is
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               type T (D : U) is private with
+                 Default_Initial_Condition =>
+                   P (D)
+                   and Q (D);
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               type T is private;
+
+            private
+
+               type T is range 0 .. 42;
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               type Color is (Red, Green, Blue);
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               type Color is (Red, Green, Blue) with
+                 Size =>
+                   8;
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               type R is
+                  record
+                     F : T;
+                  end record;
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               type N is null record;
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               type T (D : U) is private with
+                 Dynamic_Predicate =>
+                   P (D)
+                   and Q (D);
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+            end P;""",
+            """\
+            package body P
+            is
+
+               procedure Proc (V : T) is
+               begin
+                  C (V);
+               end Proc;
+
+            end P;""",
+        ),
+        (
+            """\
+            package P
+            is
+
+            end P;""",
+            """\
+            package body P
+            is
+
+               procedure Proc (R : out T) is
+               begin
+                  R := 42;
+               end Proc;
+
+            end P;""",
+        ),
+        (
+            """\
+            package P
+            is
+
+            end P;""",
+            """\
+            package body P
+            is
+
+               procedure Proc (R : out T) is
+               begin
+                  R := (F1 => 1, F2 => 2, F3 => 3);
+               end Proc;
+
+            end P;""",
+        ),
+        (
+            """\
+            package P
+            is
+
+            end P;""",
+            """\
+            package body P
+            is
+
+               procedure Proc (R : out T) is
+               begin
+                  R := B (1 .. B'Last - 1);
+               end Proc;
+
+            end P;""",
+        ),
+        (
+            """\
+            package P
+            is
+
+            end P;""",
+            """\
+            package body P
+            is
+
+               procedure Proc (R : out T) is
+               begin
+                  declare
+                     X : T := 1;
+                  begin
+                     R := B (X .. B'Last - 1);
+                  end;
+               end Proc;
+
+            end P;""",
+        ),
+        (
+            """\
+            package P
+            is
+
+            end P;""",
+            """\
+            package body P
+            is
+
+               procedure Proc (R : out T) is
+                  X : T;
+               begin
+                  for I in 1 .. 10 loop
+                     X := X + 1;
+                  end loop;
+                  R := X;
+               end Proc;
+
+            end P;""",
+        ),
+        (
+            """\
+            package P
+            is
+
+            end P;""",
+            """\
+            package body P
+            is
+
+               procedure Proc (R : out T) is
+                  X : T;
+               begin
+                  for I in reverse 1 .. 10 loop
+                     X := X + 1;
+                  end loop;
+                  R := X;
+               end Proc;
+
+            end P;""",
+        ),
+        (
+            """\
+            package P
+            is
+
+            end P;""",
+            """\
+            package body P
+            is
+
+               procedure Proc (R : out T; I : Natural) is
+                  X : T;
+               begin
+                  X (I) := T'Val (R);
+                  Y;
+               end Proc;
+
+            end P;""",
+        ),
+        (
+            """\
+            package P
+            is
+
+            end P;""",
+            """\
+            package body P
+            is
+
+               procedure Proc (R : out T; I : Natural) is
+               begin
+                  case I is
+                     when 1 =>
+                        R := 1;
+                     when 2 =>
+                        R := 2;
+                     when others =>
+                        R := 0;
+                  end case;
+               end Proc;
+
+            end P;""",
+        ),
+        (
+            """\
+            package P
+            is
+
+            end P;""",
+            """\
+            package body P
+            is
+
+               function F (I : Natural) return Natural is
+               begin
+                  return I + 1;
+               end F;
+
+            end P;""",
+        ),
+        (
+            """\
+            package P
+            is
+
+               procedure S (C : T) with
+                 Pre =>
+                   V (C)
+                   and then (S (C) >= C.First + I (E)) - 1;
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            generic
+               type T is range <>;
+            package P
+            is
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            generic
+               type T is (<>);
+            package P
+            is
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            generic
+               type T is array (I) of E;
+            package P
+            is
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            generic
+               type T is array (I range <>) of E;
+            package P
+            is
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            generic
+               type T is access U;
+            package P
+            is
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               function "+" (L : Natural; R : Natural) return Natural is abstract;
+
+               function "-" (L, R : Natural) return Natural is abstract;
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               function F (L : Natural; R : Natural) return Natural renames U;
+
+               procedure P (P : Natural) renames U;
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               function F is new G (X, 42);
+
+               function F is new G (P1 => X, P2 => 42);
+
+               procedure P is new G (X, 42);
+
+               procedure P is new G (P1 => X, P2 => 42);
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               pragma Assert (L'Pos (L'Last) /= M'Pos (M'Last));
+
+               pragma Assert (L'Succ (A) = B);
+
+               pragma Assert (L'Val (A) = B);
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            package P
+            is
+
+               subtype I is L range 1 .. L'Last;
+
+            end P;""",
+            None,
+        ),
+        (
+            """\
+            generic
+               with package Q is new R (<>);
+               with package S is new T (others => <>);
+            package P
+            is
+
+            end P;""",
+            None,
+        ),
     ],
-    ids=range(62),
+    ids=range(63),
 )
-def test_roundtrip_text(data: str) -> None:
-    data = textwrap.dedent(data)
-    result = ada_parser.parse(data)
-    assert result.ads + result.adb == data
+def test_roundtrip_text(spec: str, body: str | None) -> None:
+    spec = textwrap.dedent(spec)
+    body = textwrap.dedent(body or "")
+    result = ada_parser.parse(spec + body)
+    assert result.ads == spec
+    assert result.adb == body
 
 
 @pytest.mark.parametrize(
@@ -1444,6 +1610,227 @@ def test_roundtrip_text(data: str) -> None:
         end P;
         """,
             "<stdin>:5:6: error: identifier lists unsupported for record component declaration",
+        ),
+        (
+            """\
+        package P
+        is
+
+           subtype S is T range <>;
+
+        end P;
+        """,
+            "<stdin>:4:4: error: signed integer constraint invalid for subtypes",
+        ),
+        (
+            """\
+        package P
+        is
+
+           type S is new T range <>;
+
+        end P;
+        """,
+            "<stdin>:4:14: error: signed integer constraint invalid for derived types",
+        ),
+        (
+            """\
+        package P
+        is
+
+           X : T := (1, 2, P => 3);
+
+        end P;
+        """,
+            "<stdin>:4:13: error: invalid mixed positional and named aggregate",
+        ),
+        (
+            """\
+        package P
+        is
+
+           type E is (E1, E2) with Size => 8, Size => 16;
+
+        end P;
+        """,
+            "<stdin>:4:4: error: multiple size aspects",
+        ),
+        (
+            """\
+        package P
+        is
+
+        end Q;
+        """,
+            "<stdin>:1:1: error: inconsistent package identifiers",
+        ),
+        (
+            """\
+        package P
+        is
+
+        end P;
+
+        package body P
+        is
+
+        end Q;
+        """,
+            "<stdin>:6:1: error: inconsistent package identifiers",
+        ),
+        (
+            """\
+        package P
+        is
+
+            procedure P
+               with Global => (In_Out => X, In_Out =>X);
+
+        end P;
+        """,
+            "<stdin>:5:23: error: duplicate In_Out",
+        ),
+        (
+            """\
+        package P
+        is
+
+            procedure P
+               with Global => (Input => X, Input =>X);
+
+        end P;
+        """,
+            "<stdin>:5:23: error: duplicate Input",
+        ),
+        (
+            """\
+        package P
+        is
+
+            procedure P
+               with Global => (Output => X, Output =>X);
+
+        end P;
+        """,
+            "<stdin>:5:23: error: duplicate Output",
+        ),
+        (
+            """\
+        package P
+        is
+
+            type T is array (T range 1 .. 5) of U;
+
+        end P;
+        """,
+            "<stdin>:4:15: error: discrete array subtypes not implemented",
+        ),
+        (
+            """\
+        package P
+        is
+
+        end P;
+
+        package P
+        is
+
+        end P;
+
+        package P
+        is
+
+        end P;
+        """,
+            "<stdin>:1:1: error: expected exactly two units, got 3",
+        ),
+        (
+            """\
+        package body P
+        is
+
+        end P;
+        """,
+            "<stdin>:1:1: error: expected package declaration",
+        ),
+        (
+            """\
+        package P
+        is
+
+        end P;
+
+        package Q
+        is
+
+        end Q;
+        """,
+            "<stdin>:1:1: error: expected package body as second unit",
+        ),
+        (
+            """\
+        package P
+        is
+
+        end P;
+
+        package body P
+        is
+
+           procedure P is
+           begin
+              null;
+           end Q;
+
+        end P;
+        """,
+            "<stdin>:9:4: error: inconsistent identifier",
+        ),
+        (
+            """\
+        package P
+        is
+
+           X : T range 0 .. 1;
+
+        end P;
+        """,
+            "<stdin>:4:4: error: invalid constraint in object declaration",
+        ),
+        (
+            """\
+        package P
+        is
+
+           type R is record
+              E : T range <>;
+           end record;
+
+        end P;
+        """,
+            "<stdin>:5:11: error: invalid constraint in component definition",
+        ),
+        (
+            """\
+        package P
+        is
+
+           type P is access T range <>;
+
+        end P;
+        """,
+            "<stdin>:4:14: error: invalid constraint in access to object definition",
+        ),
+        (
+            """\
+        use Q, R;
+
+        package P
+        is
+
+        end P;
+        """,
+            "<stdin>:1:1: error: multiple packages in one use-clause not implemented",
         ),
     ],
 )
@@ -1531,8 +1918,7 @@ def test_roundtrip_declarations(
 
            {data}
 
-        end P;
-        """.format(
+        end P;""".format(
             aspect_specification=aspect_specification,
             null_exclusion=null_exclusion,
             overriding_indicator=overriding_indicator,
@@ -1541,3 +1927,9 @@ def test_roundtrip_declarations(
     )
     result = ada_parser.parse(text)
     assert result.ads + result.adb == text
+
+
+def test_missing_handler() -> None:
+    dummy_grammar = lark.Lark('start: dummy\ndummy: "dummy"')
+    with pytest.raises(ada_parser.ParseError, match='missing handler for rule "dummy"'):
+        ada_parser.TreeToAda().transform(dummy_grammar.parse("dummy"))
