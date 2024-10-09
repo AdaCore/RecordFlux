@@ -645,6 +645,26 @@ audit: $(RFLX) rapidflux_devel
 	@echo Auditing Rust dependencies
 	@cargo audit
 
+# --- Workflow optimization utilities ---
+
+.PHONY: touch_build_tree
+
+# Touch the main build artifacts to mark them up to date to prevent their
+# recompilation when that isn't required and desirable. The order of touching
+# must correspond to the relative build order.
+touch_build_tree:
+	@# Langkit-based parser
+	touch $(BUILD_DEPS)
+	touch $(GENERATED_DIR)/python/librflxlang
+	touch $(GENERATED_DIR)/lib/relocatable/dev/librflxlang.so
+	touch $(PARSER)
+	@# RapidFlux
+	find librapidflux rapidflux -type f -exec touch {} +
+	touch target/debug/librapidflux.so
+	touch $(RAPIDFLUX)
+	@# RecordFlux
+	touch $(DEVEL_VENV)/bin/rflx
+
 # --- Clean ---
 
 .PHONY: clean clean_build clean_cache clean_all

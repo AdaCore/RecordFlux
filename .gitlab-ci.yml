@@ -132,18 +132,8 @@ setup:
         . .venv$PYTHON_VERSION/bin/activate;
         make init;
       fi
-    # Prevent regeneration of Langkit-based parser.
-    # The full set of dependencies must be touched in the relative build order.
-    - touch .venv$PYTHON_VERSION/lib/python$PYTHON_VERSION/site-packages/langkit
-    - touch generated/python/librflxlang
-    - touch generated/lib/relocatable/dev/librflxlang.so
-    - touch rflx/lang/librflxlang.so
-    # Prevent recompilation of RapidFlux library.
-    - find librapidflux rapidflux -type f -exec touch {} \;
-    - touch target/debug/librapidflux.so
-    - touch rflx/rapidflux.so
-    # Prevent reinstallation of RecordFlux
-    - touch .venv$PYTHON_VERSION/bin/rflx
+    # Prevent the regeneration and rebuild of RecordFlux and its components
+    - make touch_build_tree
 
 changelog:
   rules:
