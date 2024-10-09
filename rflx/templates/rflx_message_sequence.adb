@@ -9,8 +9,7 @@ is
       Initialize (Ctx, Buffer, RFLX_Types.To_First_Bit_Index (Buffer'First), RFLX_Types.To_Last_Bit_Index (Buffer'Last));
    end Initialize;
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length)
-   is
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) is
       Buffer_First : constant RFLX_Types.Index := Buffer'First;
       Buffer_Last : constant RFLX_Types.Index := Buffer'Last;
    begin
@@ -55,9 +54,9 @@ is
    end Switch;
 
    procedure Update (Ctx : in out Context; Element_Ctx : in out Element_Context) is
-      Buffer        : RFLX_Types.Bytes_Ptr;
+      Buffer : RFLX_Types.Bytes_Ptr;
       Valid_Message : constant Boolean := Element_Valid_Message (Element_Ctx);
-      Last          : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First;
+      Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First;
    begin
       if Valid_Message then
          Last := Element_Last (Element_Ctx);

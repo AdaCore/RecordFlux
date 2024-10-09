@@ -10,27 +10,20 @@
 
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, """Always_Terminates"" is not a valid aspect identifier");
-
 with RFLX.RFLX_Generic_Types.Generic_Operators;
 
 generic
    with package Operators is new RFLX.RFLX_Generic_Types.Generic_Operators (<>);
 package RFLX.RFLX_Generic_Types.Generic_Operations with
-   SPARK_Mode,
-   Always_Terminates
+  SPARK_Mode,
+  Always_Terminates
 is
+
    use Operators;
 
    use type U64;
 
-   function Extract
-      (Buffer : Bytes;
-       First  : Index;
-       Last   : Index;
-       Off    : Offset;
-       Size   : Positive;
-       BO     : Byte_Order) return U64
-   with
+   function Extract (Buffer : Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order) return U64 with
      Pre =>
        First >= Buffer'First
        and then Last <= Buffer'Last
@@ -40,17 +33,10 @@ is
        and then Length (((Offset'Pos (Off) + Size) - 1) / Byte'Size) < Length (Last - First + 1)
        and then ((Offset'Pos (Off) + Size) - 1) / Byte'Size <= Natural'Size
        and then Byte'Size - Natural (Offset'Pos (Off) mod Byte'Size) < Long_Integer'Size - 1,
-    Post =>
+     Post =>
        (if Size < U64'Size then Extract'Result < 2**Size);
 
-   function Extract
-      (Buffer : Bytes;
-       First  : Index;
-       Last   : Index;
-       Off    : Offset;
-       Size   : Positive;
-       BO     : Byte_Order) return Base_Integer
-   with
+   function Extract (Buffer : Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order) return Base_Integer with
      Pre =>
        First >= Buffer'First
        and then Last <= Buffer'Last
@@ -60,18 +46,10 @@ is
        and then Length (((Offset'Pos (Off) + Size) - 1) / Byte'Size) < Length (Last - First + 1)
        and then ((Offset'Pos (Off) + Size) - 1) / Byte'Size <= Natural'Size
        and then Byte'Size - Natural (Offset'Pos (Off) mod Byte'Size) < Long_Integer'Size - 1,
-    Post =>
+     Post =>
        U64 (Extract'Result) < 2**Size;
 
-   procedure Insert
-      (Val    : U64;
-       Buffer : in out Bytes;
-       First  : Index;
-       Last   : Index;
-       Off    : Offset;
-       Size   : Positive;
-       BO     : Byte_Order)
-   with
+   procedure Insert (Val : U64; Buffer : in out Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order) with
      Pre =>
        First >= Buffer'First
        and then Last <= Buffer'Last
@@ -81,17 +59,10 @@ is
        and then Last - First <= Index'Last - 1
        and then Length (((Offset'Pos (Off) + Size) - 1) / Byte'Size) < Length (Last - First + 1),
      Post =>
-       Buffer'First = Buffer'Old'First and Buffer'Last = Buffer'Old'Last;
+       Buffer'First = Buffer'Old'First
+       and Buffer'Last = Buffer'Old'Last;
 
-   procedure Insert
-      (Val    : Base_Integer;
-       Buffer : in out Bytes;
-       First  : Index;
-       Last   : Index;
-       Off    : Offset;
-       Size   : Positive;
-       BO     : Byte_Order)
-   with
+   procedure Insert (Val : Base_Integer; Buffer : in out Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order) with
      Pre =>
        First >= Buffer'First
        and then Last <= Buffer'Last
@@ -101,6 +72,7 @@ is
        and then Last - First <= Index'Last - 1
        and then Length (((Offset'Pos (Off) + Size) - 1) / Byte'Size) < Length (Last - First + 1),
      Post =>
-       Buffer'First = Buffer'Old'First and Buffer'Last = Buffer'Old'Last;
+       Buffer'First = Buffer'Old'First
+       and Buffer'Last = Buffer'Old'Last;
 
 end RFLX.RFLX_Generic_Types.Generic_Operations;

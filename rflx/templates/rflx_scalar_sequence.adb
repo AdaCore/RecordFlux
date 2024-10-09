@@ -10,8 +10,7 @@ is
       Initialize (Ctx, Buffer, RFLX_Types.To_First_Bit_Index (Buffer'First), RFLX_Types.To_Last_Bit_Index (Buffer'Last));
    end Initialize;
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length)
-   is
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) is
       Buffer_First : constant RFLX_Types.Index := Buffer'First;
       Buffer_Last : constant RFLX_Types.Index := Buffer'Last;
    begin
@@ -41,12 +40,16 @@ is
    end Copy;
 
    procedure Next (Ctx : in out Context) is
-      Last_Bit     : constant RFLX_Types.Bit_Index := Ctx.Sequence_Last + {prefix}RFLX_Types.Bit_Index (Element_Size);
+      Last_Bit : constant RFLX_Types.Bit_Index := Ctx.Sequence_Last + {prefix}RFLX_Types.Bit_Index (Element_Size);
       Buffer_First : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Sequence_Last + 1);
-      Buffer_Last  : constant RFLX_Types.Index := RFLX_Types.To_Index (Last_Bit);
-      Offset       : constant RFLX_Types.Offset := RFLX_Types.Offset ((8 - Last_Bit mod 8) mod 8);
+      Buffer_Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Last_Bit);
+      Offset : constant RFLX_Types.Offset := RFLX_Types.Offset ((8 - Last_Bit mod 8) mod 8);
    begin
-      if Buffer_First >= Ctx.Buffer'First and Buffer_Last <= Ctx.Buffer'Last and Buffer_First <= Buffer_Last then
+      if
+         Buffer_First >= Ctx.Buffer'First
+         and Buffer_Last <= Ctx.Buffer'Last
+         and Buffer_First <= Buffer_Last
+      then
          Ctx.Next_Element := {prefix}RFLX_Types.Operations.Extract (Ctx.Buffer.all, Buffer_First, Buffer_Last, Offset, Element_Size, RFLX_Types.High_Order_First);
          if Valid_Element (Ctx) then
             if Size (Ctx) = 0 then
@@ -67,15 +70,19 @@ is
 
    procedure Append_Element (Ctx : in out Context; Value : Element_Type) is
       Last_Bit : RFLX_Types.Bit_Index;
-      First    : RFLX_Types.Index;
-      Last     : RFLX_Types.Index;
-      Offset   : RFLX_Types.Offset;
+      First : RFLX_Types.Index;
+      Last : RFLX_Types.Index;
+      Offset : RFLX_Types.Offset;
    begin
       Last_Bit := Ctx.Sequence_Last + {prefix}RFLX_Types.Bit_Index (Element_Size);
       First := RFLX_Types.To_Index (Ctx.Sequence_Last + 1);
       Last := RFLX_Types.To_Index (Last_Bit);
       Offset := RFLX_Types.Offset ((8 - Last_Bit mod 8) mod 8);
-      if First >= Ctx.Buffer'First and Last <= Ctx.Buffer'Last and First <= Last then
+      if
+         First >= Ctx.Buffer'First
+         and Last <= Ctx.Buffer'Last
+         and First <= Last
+      then
          {prefix}RFLX_Types.Operations.Insert (To_Base_Int (Value), Ctx.Buffer.all, First, Last, Offset, Element_Size, RFLX_Types.High_Order_First);
       end if;
       if Size (Ctx) = 0 then

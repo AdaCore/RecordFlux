@@ -10,7 +10,6 @@
 
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, """Always_Terminates"" is not a valid aspect identifier");
-
 with Ada.Unchecked_Deallocation;
 with RFLX.RFLX_Arithmetic;
 
@@ -46,18 +45,15 @@ is
 
    pragma Compile_Time_Error (Byte'Size /= 8, "Byte must be of size 8");
 
-   pragma Compile_Time_Error (Byte'Pos (Byte'Last) - Byte'Pos (Byte'First) + 1 /= 2**Byte'Size,
-                              "Byte must cover entire value range");
+   pragma Compile_Time_Error (Byte'Pos (Byte'Last) - Byte'Pos (Byte'First) + 1 /= 2**Byte'Size, "Byte must cover entire value range");
 
    pragma Compile_Time_Error (Length'First /= 0, "Length'First must be 0");
 
-   pragma Compile_Time_Error (Length'Pos (Length'Last) /= Index'Pos (Index'Last),
-                              "Length'Last must be equal to Index'Last");
+   pragma Compile_Time_Error (Length'Pos (Length'Last) /= Index'Pos (Index'Last), "Length'Last must be equal to Index'Last");
 
    pragma Compile_Time_Error (Bit_Length'First /= 0, "Bit_Length'First must be 0");
 
-   pragma Compile_Time_Error (Bit_Length'Pos (Bit_Length'Last) /= Length'Pos (Length'Last) * 8,
-                              "Bit_Length'Last must be equal to Length'Last * 8");
+   pragma Compile_Time_Error (Bit_Length'Pos (Bit_Length'Last) /= Length'Pos (Length'Last) * 8, "Bit_Length'Last must be equal to Length'Last * 8");
 
    subtype U64 is RFLX.RFLX_Arithmetic.U64;
 
@@ -84,6 +80,7 @@ is
      ((Bit_Length (Idx) - 1) * 8 + 8);
 
    function Fits_Into (V : U64; Bits : Natural) return Boolean renames RFLX_Arithmetic.Fits_Into;
+
    function Fits_Into (V : Base_Integer; Bits : Natural) return Boolean renames RFLX_Arithmetic.Fits_Into;
 
    type Offset is mod 8;
@@ -92,11 +89,20 @@ is
 
    pragma Warnings (Off, "precondition is always False");
 
-   function Unreachable return Boolean is (False) with Pre => False;
+   function Unreachable return Boolean is
+     (False) with
+     Pre =>
+       False;
 
-   function Unreachable return Bit_Length is (0) with Pre => False;
+   function Unreachable return Bit_Length is
+     (0) with
+     Pre =>
+       False;
 
-   function Unreachable return Length is (0) with Pre => False;
+   function Unreachable return Length is
+     (0) with
+     Pre =>
+       False;
 
    pragma Warnings (On, "precondition is always False");
 

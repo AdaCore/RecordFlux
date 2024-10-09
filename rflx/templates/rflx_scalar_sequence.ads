@@ -185,15 +185,13 @@ private
    type Context (Buffer_First, Buffer_Last : RFLX_Types.Index := RFLX_Types.Index'First; First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First; Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First) is
       record
          Sequence_Last : RFLX_Types.Bit_Length := First - 1;
-         Buffer        : RFLX_Types.Bytes_Ptr := null;
-         State         : Context_State := S_Valid;
+         Buffer : RFLX_Types.Bytes_Ptr := null;
+         State : Context_State := S_Valid;
          First_Element : {prefix}RFLX_Types.Base_Integer := {prefix}RFLX_Types.Base_Integer'First;
-         Next_Element  : {prefix}RFLX_Types.Base_Integer := {prefix}RFLX_Types.Base_Integer'First;
+         Next_Element : {prefix}RFLX_Types.Base_Integer := {prefix}RFLX_Types.Base_Integer'First;
       end record with
      Dynamic_Predicate =>
-       (if Buffer /= null then
-         Buffer'First = Buffer_First
-         and Buffer'Last = Buffer_Last)
+       (if Buffer /= null then Buffer'First = Buffer_First and Buffer'Last = Buffer_Last)
        and RFLX_Types.To_Index (First) >= Buffer_First
        and RFLX_Types.To_Index (Last) <= Buffer_Last
        and First mod RFLX_Types.Byte'Size = 1
@@ -205,10 +203,12 @@ private
        and (if Sequence_Last > First - 1 and State = S_Valid then Valid (First_Element));
 
    function Has_Element (Ctx : Context) return Boolean is
-     (Ctx.State = S_Valid and Ctx.Last - Ctx.Sequence_Last >= {prefix}RFLX_Types.Bit_Index (Element_Size));
+     (Ctx.State = S_Valid
+      and Ctx.Last - Ctx.Sequence_Last >= {prefix}RFLX_Types.Bit_Index (Element_Size));
 
    function Valid_Element (Ctx : Context) return Boolean is
-     (Ctx.State = S_Valid and Valid (Ctx.Next_Element));
+     (Ctx.State = S_Valid
+      and Valid (Ctx.Next_Element));
 
    function Valid (Ctx : Context) return Boolean is
      (Ctx.State = S_Valid);
