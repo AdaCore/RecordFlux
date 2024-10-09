@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from pathlib import Path
 
@@ -7,9 +9,22 @@ from rflx import ada_parser
 from rflx.generator import const
 
 
-def read_spec_and_body(spec: Path) -> str:
-    body = spec.with_suffix(".adb")
-    return spec.read_text() + (body.read_text() if body.exists() else "")
+def read_spec_and_body(spec_file: Path) -> tuple[str, str]:
+    body_file = spec_file.with_suffix(".adb")
+    spec = "".join(
+        l for l in spec_file.read_text().splitlines(keepends=True) if re.match(r"^\s*--", l) is None
+    )
+    body = (
+        "".join(
+            l
+            for l in body_file.read_text().splitlines(keepends=True)
+            if re.match(r"^\s*--", l) is None
+        )
+        if body_file.exists()
+        else ""
+    )
+
+    return (spec.rstrip("\n"), body.rstrip("\n"))
 
 
 @pytest.mark.parametrize(
@@ -19,16 +34,9 @@ def read_spec_and_body(spec: Path) -> str:
         for spec in const.TEMPLATE_DIR.glob("*.ads")
     ],
 )
-def test_templates(data: str) -> None:
-    data = data.replace("{prefix}", "")
-    result = ada_parser.parse(data)
+def test_templates(data: tuple[str, str]) -> None:
+    spec, body = data
+    result = ada_parser.parse(spec + body)
 
-    data = re.sub(r"\s*--.*", "", data)
-    data = re.sub(r"\*\*", " ** ", data)
-    data = re.sub(r"\s+", "\n", data)
-
-    result_text = result.ads + result.adb
-    result_text = re.sub(r"\*\*", " ** ", result_text)
-    result_text = re.sub(r"\s+", "\n", result_text)
-
-    assert result_text == data
+    assert result.ads == spec
+    assert result.adb == body
