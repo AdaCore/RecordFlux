@@ -406,7 +406,7 @@ def calls(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> expr.Call:
 
 @st.composite
 def aggregates(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> expr.Aggregate:
-    return expr.Aggregate(*draw(st.lists(elements, min_size=1)))
+    return expr.Aggregate(*draw(st.lists(elements, min_size=2)))
 
 
 @st.composite
