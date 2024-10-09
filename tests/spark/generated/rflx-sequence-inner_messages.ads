@@ -19,4 +19,3 @@ with RFLX.RFLX_Types;
 pragma Warnings (On, "unit ""*RFLX_Types"" is not referenced");
 
 package RFLX.Sequence.Inner_Messages is new RFLX.RFLX_Message_Sequence (RFLX.Sequence.Inner_Message.Context, RFLX.Sequence.Inner_Message.Initialize, RFLX.Sequence.Inner_Message.Take_Buffer, RFLX.Sequence.Inner_Message.Copy, RFLX.Sequence.Inner_Message.Has_Buffer, RFLX.Sequence.Inner_Message.Size, RFLX.Sequence.Inner_Message.Message_Last, RFLX.Sequence.Inner_Message.Initialized, RFLX.Sequence.Inner_Message.Well_Formed_Message);
-
