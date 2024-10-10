@@ -252,7 +252,7 @@ A RecordFlux specification looks as follows:
 
     package Protocol is
        -- Invalid indentation
-        type Len is range 0 .. 2 ** 8 - 1 with Size => 8;
+        type Len is unsigned 8;
     end Protocol;
 
 Some more text...
@@ -347,7 +347,7 @@ A RecordFlux specification looks as follows:
 .. code:: rflx
 
     package Protocol is
-       type Len is range 0 .. 2 ** 8 - 1 with Size => 8;
+       type Len is unsigned 8;
        type Values is (E1, E2, E3) with Size => 16;
     end Protocol;
 

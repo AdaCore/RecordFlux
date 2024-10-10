@@ -35,8 +35,8 @@ def test_definite_parameterized_message_provability(tmp_path: Path) -> None:
 def test_message_field_conditions_provability(tmp_path: Path) -> None:
     spec = """\
       package Test is
-         type Byte is range 0 .. 2 ** 8 - 1 with Size => 8;
-         type Length_16 is range 0 .. 2 ** 16 - 1 with Size => 16;
+         type Byte is unsigned 8;
+         type Length_16 is unsigned 16;
 
          type My_Seq is sequence of Byte;
 
@@ -61,7 +61,7 @@ def test_parameterized_message_set_scalar(tmp_path: Path) -> None:
     spec = """\
       package Test is
 
-         type Length_16 is range 0 .. 2 ** 16 - 1 with Size => 16;
+         type Length_16 is unsigned 16;
 
          type Signature_Length is range 0 .. 512 with Size => 16;
 
@@ -88,7 +88,7 @@ def test_parameterized_message_set_scalar(tmp_path: Path) -> None:
 def test_message_large_number_of_fields(tmp_path: Path) -> None:
     spec = """\
       package Test is
-         type Byte is range 0 .. 2 ** 8 - 1 with Size => 8;
+         type Byte is unsigned 8;
 
          type Repr is
             message
@@ -141,7 +141,7 @@ def test_message_access_to_optional_field_in_condition(tmp_path: Path) -> None:
              BB => 1)
          with Size => 8;
 
-         type T is range 0 .. 2 ** 16 - 1 with Size => 16;
+         type T is unsigned 16;
 
          type Message is
             message

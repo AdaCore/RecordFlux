@@ -61,6 +61,7 @@ from rflx.model import (
     UncheckedDerivedMessage,
     UncheckedMessage,
     UncheckedRefinement,
+    UnsignedInteger,
     type_decl,
 )
 from rflx.model.message import ByteOrder, annotate_path
@@ -293,7 +294,7 @@ def test_missing_type() -> None:
 
 
 def test_illegal_first_aspect_at_initial_link() -> None:
-    t = Integer("P::T", Number(0), Number(1), Number(1))
+    t = type_decl.UnsignedInteger("P::T", Number(1))
 
     structure = [
         Link(INITIAL, Field("X"), first=Number(2, location=Location((10, 20)))),
@@ -333,7 +334,7 @@ def test_name_conflict_field_enum() -> None:
 
 
 def test_duplicate_link() -> None:
-    t = Integer("P::T", Number(0), Number(1), Number(1))
+    t = type_decl.UnsignedInteger("P::T", Number(1))
     x = Field(ID("X", location=Location((1, 5))))
 
     structure = [
@@ -355,7 +356,7 @@ def test_duplicate_link() -> None:
 
 
 def test_multiple_duplicate_links() -> None:
-    t = Integer("P::T", Number(0), Number(1), Number(1))
+    t = UnsignedInteger("P::T", Number(1))
     x = Field(ID("X", location=Location((1, 5))))
     y = Field(ID("Y", location=Location((2, 5))))
 
@@ -430,7 +431,7 @@ def test_unreachable_field() -> None:
 
 
 def test_cycle() -> None:
-    t = Integer("P::T", Number(0), Number(1), Number(1))
+    t = UnsignedInteger("P::T", Number(1))
     structure = [
         Link(INITIAL, Field(ID("X")), location=Location((3, 5))),
         Link(Field(ID("X")), Field(ID("Y")), location=Location((4, 5))),
@@ -453,7 +454,7 @@ def test_cycle() -> None:
 
 
 def test_direct_cycle() -> None:
-    t = Integer("P::T", Number(0), Number(1), Number(1))
+    t = UnsignedInteger("P::T", Number(1))
     x = Field(ID("X"))
     y = Field(ID("Y"))
 
@@ -476,7 +477,7 @@ def test_direct_cycle() -> None:
 
 
 def test_nested_cycle() -> None:
-    t = Integer("P::T", Number(0), Number(1), Number(1))
+    t = UnsignedInteger("P::T", Number(1))
     a = Field(ID("A"))
     b = Field(ID("B"))
     c = Field(ID("C"))
@@ -517,7 +518,7 @@ def test_nested_cycle() -> None:
 
 
 def test_two_cycles() -> None:
-    t = Integer("P::T", Number(0), Number(1), Number(1))
+    t = UnsignedInteger("P::T", Number(1))
     a = Field(ID("A"))
     b = Field(ID("B"))
     c = Field(ID("C"))
@@ -913,7 +914,7 @@ def test_undefined_variable(
     operation: abc.Callable[[Expr, Expr], Expr],
     condition: tuple[Expr, Expr],
 ) -> None:
-    mod_type = Integer("P::MT", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
+    mod_type = UnsignedInteger("P::MT", Number(32))
     enum_type = Enumeration(
         "P::ET",
         [("Val1", Number(0)), ("Val2", Number(1))],
@@ -941,7 +942,7 @@ def test_undefined_variable(
 
 
 def test_undefined_variable_boolean_condition_value() -> None:
-    mod_type = Integer("P::MT", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
+    mod_type = UnsignedInteger("P::MT", Number(32))
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2"), condition=Variable("X", location=Location((10, 20)))),
@@ -957,7 +958,7 @@ def test_undefined_variable_boolean_condition_value() -> None:
 
 
 def test_undefined_variable_size() -> None:
-    mod_type = Integer("P::MT", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
+    mod_type = UnsignedInteger("P::MT", Number(32))
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2"), size=Variable("Field_Size", location=Location((10, 20)))),
@@ -973,7 +974,7 @@ def test_undefined_variable_size() -> None:
 
 
 def test_undefined_variable_first() -> None:
-    mod_type = Integer("P::MT", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
+    mod_type = UnsignedInteger("P::MT", Number(32))
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2"), size=Variable("Field_First", location=Location((10, 20)))),
@@ -1015,7 +1016,7 @@ def test_undefined_variables() -> None:
 def test_subsequent_variable() -> None:
     f1 = Field(ID("F1", location=Location((1, 1))))
     f2 = Field(ID("F2", location=Location((2, 2))))
-    t = Integer("P::T", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
+    t = UnsignedInteger("P::T", Number(32))
     structure = [
         Link(INITIAL, f1),
         Link(f1, f2, Equal(Variable("F2", location=Location((1024, 57))), Number(42))),
@@ -1191,7 +1192,7 @@ def test_invalid_relation_to_aggregate() -> None:
 
 @pytest.mark.parametrize("lower", [Number(0), Number(1)])
 def test_invalid_element_in_relation_to_aggregate(lower: Number) -> None:
-    integer = Integer("P::Integer", lower, Number(255), Number(8))
+    integer = Integer("P::Integer", lower, Number(255), Number(8), allow_full_unsigned=True)
     structure = [
         Link(INITIAL, Field(ID("F1", location=Location((1, 2))))),
         Link(
@@ -1324,7 +1325,7 @@ def test_field_size_is_aggregate() -> None:
         Link(Field(ID("G", location=Location((4, 1)))), FINAL, location=Location((4, 2))),
     ]
 
-    i = Integer("P::I", Number(0), Number(1), Number(1))
+    i = UnsignedInteger("P::I", Number(1))
     types = {Field("F"): i, Field("G"): OPAQUE}
 
     assert_message_model_error(
@@ -1419,10 +1420,8 @@ def test_opaque_not_byte_aligned_dynamic() -> None:
             ],
             {
                 Field(ID("L1", location=Location((1, 3)))): models.integer(),
-                Field(ID("L2", location=Location((2, 6)))): Integer(
+                Field(ID("L2", location=Location((2, 6)))): UnsignedInteger(
                     "P::T",
-                    Number(0),
-                    Number(3),
                     Number(2),
                 ),
                 Field(ID("O1", location=Location((3, 5)))): OPAQUE,
@@ -2414,8 +2413,8 @@ def test_incongruent_overlay() -> None:
         Link(Field("F3"), Field("F4"), location=Location((4, 4))),
         Link(Field("F4"), FINAL, location=Location((5, 5))),
     ]
-    u8 = Integer("P::U8", Number(0), Sub(Pow(Number(2), Number(8)), Number(1)), Number(8))
-    u16 = Integer("P::U16", Number(0), Sub(Pow(Number(2), Number(16)), Number(1)), Number(16))
+    u8 = UnsignedInteger("P::U8", Number(8))
+    u16 = UnsignedInteger("P::U16", Number(16))
     types = {
         Field(ID("F1", location=Location((1, 1)))): u8,
         Field(ID("F2", location=Location((2, 2)))): u8,
@@ -6381,10 +6380,8 @@ def test_refinement_type_error_in_condition() -> None:
             Link(Field(ID("P", location=Location((3, 3)))), FINAL, location=Location((3, 3))),
         ],
         {
-            Field(ID("L", location=Location((1, 1)))): Integer(
+            Field(ID("L", location=Location((1, 1)))): UnsignedInteger(
                 "P::T",
-                Number(0),
-                Number(255),
                 Number(8),
             ),
             Field(ID("P", location=Location((2, 2)))): OPAQUE,
@@ -6963,7 +6960,7 @@ def test_message_refinement_with_scalar() -> None:
         refinement.checked(
             [
                 Message("P::Foo", [], {}),
-                Integer(ID("P::Bar"), Number(0), Number(255), size=Number(8)),
+                UnsignedInteger(ID("P::Bar"), size=Number(8)),
             ],
         )
 

@@ -16,13 +16,13 @@ from rflx.model import (
     OPAQUE,
     Enumeration,
     Field,
-    Integer,
     Link,
     Message,
     Model,
     State,
     StateMachine,
     Transition,
+    UnsignedInteger,
     declaration as decl,
     statement as stmt,
 )
@@ -81,7 +81,7 @@ def test_message_field_first_conflict() -> None:
         """\
         package Test is
 
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
 
            type M is
               message
@@ -107,7 +107,7 @@ def test_message_field_size_conflict() -> None:
         """\
         package Test is
 
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
 
            type M is
               message
@@ -209,7 +209,7 @@ def test_refinement_invalid_field() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
            type PDU is
               message
                  Foo : T;
@@ -248,7 +248,7 @@ def test_model_name_conflict_messages() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
            type PDU is
               message
                  Foo : T;
@@ -290,7 +290,7 @@ def test_model_name_conflict_derivations() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
            type Foo is
               message
                  Foo : T;
@@ -308,7 +308,7 @@ def test_model_name_conflict_state_machines() -> None:
     assert_error_string(
         """\
         package Test is
-           type X is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type X is unsigned 8;
 
            generic
            machine X is
@@ -330,7 +330,7 @@ def test_model_illegal_first_aspect_on_initial_link() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
            type PDU is
               message
                  null
@@ -348,7 +348,7 @@ def test_model_errors_in_type_and_state_machine() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is range 0 .. 2 ** 65 - 1 with Size => 65;
+           type T is unsigned 65;
 
            generic
            machine S is
@@ -357,7 +357,7 @@ def test_model_errors_in_type_and_state_machine() -> None:
         end Test;
         """,
         r"^"
-        r'<stdin>:2:25: error: last of "T" exceeds limit \(2\*\*63 - 1\)\n'
+        r'<stdin>:2:23: error: last of "T" exceeds limit \(2\*\*63 - 1\)\n'
         r"<stdin>:4:4: error: empty states"
         r"$",
     )
@@ -368,7 +368,7 @@ def test_message_with_two_size_fields() -> None:
     p.parse_string(
         """\
         package Test is
-           type Length is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type Length is unsigned 8;
            type Packet is
               message
                  Length_1 : Length;
@@ -389,7 +389,7 @@ def test_message_same_field_and_type_name_with_different_size() -> None:
         """\
         package Test is
 
-           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type T is unsigned 8;
 
            type M is
               message
@@ -409,7 +409,7 @@ def test_invalid_implicit_size() -> None:
         """\
         package Test is
 
-           type Kind is range 0 .. 2 ** 16 - 1 with Size => 16;
+           type Kind is unsigned 16;
 
            type M is
               message
@@ -437,7 +437,7 @@ def test_invalid_use_of_message_type_with_implicit_size() -> None:
         """\
         package Test is
 
-           type T is range 0 .. 2 ** 16 - 1 with Size => 16;
+           type T is unsigned 16;
 
            type Inner is
               message
@@ -489,7 +489,7 @@ def test_invalid_message_with_field_after_field_with_implicit_size() -> None:
         """\
         package Test is
 
-           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type T is unsigned 8;
 
            type M is
               message
@@ -578,10 +578,8 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
         expr.Number(8),
         always_valid=False,
     )
-    length = Integer(
+    length = UnsignedInteger(
         "Test::Length",
-        expr.Number(0),
-        expr.Sub(expr.Pow(expr.Number(2), expr.Number(16)), expr.Number(1)),
         expr.Number(16),
     )
     message = Message(
@@ -669,10 +667,8 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
         ],
         [BOOLEAN, OPAQUE, tag, length, message],
     )
-    t = Integer(
+    t = UnsignedInteger(
         "Test::T",
-        expr.Number(0),
-        expr.Sub(expr.Pow(expr.Number(2), expr.Number(16)), expr.Number(1)),
         expr.Number(16),
     )
     model = Model([BOOLEAN, OPAQUE, tag, length, message, state_machine, t])
@@ -792,9 +788,9 @@ def test_rfi_files(tmp_path: Path, rfi_content: str, match_error: str) -> None:
         package Test is
            type Message_Type is (MT_Null => 0, MT_Data => 1) with Size => 8;
 
-           type Length is range 0 .. 2 ** 16 - 1 with Size => 16;
+           type Length is unsigned 16;
 
-           type Value is range 0 .. 255 with Size => 8;
+           type Value is unsigned 8;
 
            type Message is
               message
@@ -1009,7 +1005,7 @@ def test_message_negative_field_size(tmp_path: Path, capfd: pytest.CaptureFixtur
         textwrap.dedent(
             """\
         package Test is
-           type I is range 0 .. 2 ** 32 - 1 with Size => 32;
+           type I is unsigned 32;
            type M is
               message
                  F1 : I
@@ -1539,7 +1535,7 @@ def test_type_range_last_exceeds_limit(
         textwrap.dedent(
             """\
             package Test is
-               type T is range 0 .. 2 ** 64 - 1 with Size => 64;
+               type T is range 1 .. 2 ** 64 - 1 with Size => 64;
             end Test;
             """,
         ),
@@ -1555,7 +1551,7 @@ def test_type_range_last_exceeds_limit(
             error: last of "T" exceeds limit (2**63 - 1)
              --> {file_path}:2:25
               |
-            2 |    type T is range 0 .. 2 ** 64 - 1 with Size => 64;
+            2 |    type T is range 1 .. 2 ** 64 - 1 with Size => 64;
               |                         ^^^^^^^^^^^
               |
               """,
@@ -1764,7 +1760,7 @@ def test_invalid_refinement_base(tmp_path: Path, capfd: pytest.CaptureFixture[st
         textwrap.dedent(
             """\
             package Test is
-               type I is range 0 .. 255 with Size => 8;
+               type I is unsigned 8;
                type I2 is new I;
             end Test;
             """,
@@ -1782,7 +1778,7 @@ def test_invalid_refinement_base(tmp_path: Path, capfd: pytest.CaptureFixture[st
             error: invalid derivation
              --> {tmp_file}:3:9
               |
-            2 |    type I is range 0 .. 255 with Size => 8;
+            2 |    type I is unsigned 8;
               |         - note: base type must be a message
             3 |    type I2 is new I;
               |         ^^
@@ -1905,7 +1901,7 @@ def test_condition_is_always_true(
         textwrap.dedent(
             """\
                 package Test is
-                   type T is range 0 .. 255 with Size => 8;
+                   type T is unsigned 8;
                    type M is
                       message
                          A : T
@@ -1930,8 +1926,8 @@ def test_condition_is_always_true(
             error: condition is always true
              --> {file_path}:7:19
               |
-            2 |    type T is range 0 .. 255 with Size => 8;
-              |         ---------------------------------- note: unsatisfied "A <= 255"
+            2 |    type T is unsigned 8;
+              |         --------------- note: unsatisfied "A <= 255"
             3 |    type M is
             ...
             6 |             then B
@@ -2002,7 +1998,7 @@ def test_aggregate_type_in_condition(
         textwrap.dedent(
             """\
             package Test is
-               type I is range 0 .. 255 with Size => 8;
+               type I is unsigned 8;
                type M (A : I) is
                   message
                      X : Boolean
@@ -2177,7 +2173,7 @@ def test_reserved_word_link_condition(
         textwrap.dedent(
             f"""\
             package Test is
-               type I is range 0 .. 255 with Size => 8;
+               type I is unsigned 8;
                type M (A : Boolean) is
                   message
                      X : Boolean
@@ -2227,7 +2223,7 @@ def test_size_aspect_defined_twice_in_message_field(
         textwrap.dedent(
             """\
             package Test is
-               type I is range 0 .. 255 with Size => 8;
+               type I is unsigned 8;
                type M is
                   message
                      One : I
@@ -2251,8 +2247,8 @@ def test_size_aspect_defined_twice_in_message_field(
             error: fixed size field "One" does not permit a size aspect
              --> {file_path}:6:26
               |
-            2 |    type I is range 0 .. 255 with Size => 8;
-              |                                          - note: associated type size \
+            2 |    type I is unsigned 8;
+              |                       - note: associated type size \
 defined here
             3 |    type M is
             4 |       message

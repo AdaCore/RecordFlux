@@ -249,7 +249,7 @@ def test_verify(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 
     document = tmp_path / "test.rflx"
     document.write_text(
-        "package Test is type T is range 0 .. 2 ** 64 - 1 with Size => 64; end Test;",
+        "package Test is type T is unsigned 64; end Test;",
     )
     document_uri = document.absolute().as_uri()
 
@@ -268,7 +268,7 @@ def test_verify(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
             document.absolute().as_uri(),
             [
                 Diagnostic(
-                    Range(Position(0, 37), Position(0, 48)),
+                    Range(Position(0, 35), Position(0, 37)),
                     'last of "T" exceeds limit (2**63 - 1)',
                     DiagnosticSeverity.Error,
                 ),

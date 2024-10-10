@@ -1,7 +1,7 @@
 DEFINITE_MESSAGE_WITH_BUILTIN_TYPE_SPEC = """\
        package Test is
 
-          type Length is range 0 .. 2 ** 7 - 1 with Size => 7;
+          type Length is unsigned 7;
 
           type Message is
              message

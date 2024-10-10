@@ -29,6 +29,7 @@ from rflx.model import (
     TypeDecl,
     UncheckedMessage,
     UncheckedModel,
+    UnsignedInteger,
     type_decl,
 )
 from rflx.model.cache import Digest
@@ -51,17 +52,13 @@ def test_illegal_redefinition_of_builtin_type() -> None:
             [
                 BOOLEAN,
                 OPAQUE,
-                Integer(
+                UnsignedInteger(
                     ID("P::Boolean"),
-                    Number(0),
-                    Number(255),
                     Number(8),
                     location=Location((1, 2)),
                 ),
-                Integer(
+                UnsignedInteger(
                     ID("P::Opaque"),
-                    Number(0),
-                    Number(255),
                     Number(8),
                     location=Location((3, 4)),
                 ),
@@ -81,7 +78,7 @@ def test_name_conflict_types() -> None:
     ):
         Model(
             [
-                Integer(ID("P::T"), Number(0), Number(255), Number(8), location=Location((10, 20))),
+                UnsignedInteger(ID("P::T"), Number(8), location=Location((10, 20))),
                 Integer(ID("P::T"), Number(1), Number(100), Number(8), location=Location((11, 30))),
             ],
         )
@@ -172,8 +169,8 @@ def test_name_conflict_between_literal_and_type() -> None:
                     Number(8),
                     always_valid=False,
                 ),
-                Integer("P::Foo", Number(0), Number(255), Number(8), Location((4, 16))),
-                Integer("P::Bar", Number(0), Number(255), Number(8), Location((5, 16))),
+                UnsignedInteger("P::Foo", Number(8), Location((4, 16))),
+                UnsignedInteger("P::Bar", Number(8), Location((5, 16))),
             ],
         )
 
@@ -455,7 +452,7 @@ def test_write_specification_file_multiple_packages_missing_deps(tmp_path: Path)
 
 
 def test_write_specification_files_line_too_long(tmp_path: Path) -> None:
-    t = Integer("P::" + "T" * 120, Number(0), Number(255), Number(8))
+    t = UnsignedInteger("P::" + "T" * 120, Number(8))
     Model([t]).write_specification_files(tmp_path)
     expected_path = tmp_path / Path("p.rflx")
     assert list(tmp_path.glob("*.rflx")) == [expected_path]
@@ -659,10 +656,8 @@ def test_unchecked_model_checked(
         ),
         (
             [
-                type_decl.UncheckedInteger(
+                type_decl.UncheckedUnsignedInteger(
                     ID("P::T", Location((1, 1))),
-                    Number(0),
-                    Number(255),
                     Number(8),
                     Location((1, 2)),
                 ),

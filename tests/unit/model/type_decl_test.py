@@ -22,6 +22,7 @@ from rflx.model import (
     UncheckedInteger,
     UncheckedSequence,
     UncheckedTypeDecl,
+    UnsignedInteger,
 )
 from rflx.rapidflux import Location, RecordFluxError
 from tests.data import models
@@ -29,7 +30,7 @@ from tests.utils import assert_equal
 
 
 def test_type_name() -> None:
-    t = Integer("Package::Type_Name", Number(0), Number(255), Number(8))
+    t = UnsignedInteger("Package::Type_Name", Number(8))
     assert t.name == "Type_Name"
     assert t.package == ID("Package")
     with pytest.raises(
@@ -318,6 +319,23 @@ def test_integer_invalid_out_of_bounds() -> None:
             Pow(Number(2), Number(256), location=Location((3, 4))),
             Pow(Number(2), Number(256), location=Location((4, 5))),
             Location((1, 2)),
+        )
+
+
+def test_integer_can_be_unsigned() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^<stdin>:10:5: error: unsigned integer syntax preferable\n"
+            r'<stdin>:10:5: help: use "type T is unsigned 6" instead$'
+        ),
+    ):
+        Integer(
+            "P::T",
+            Number(0, location=Location((10, 3))),
+            Number(63, location=Location((10, 4))),
+            Number(6, location=Location((10, 6))),
+            Location((10, 5)),
         )
 
 
@@ -650,10 +668,8 @@ def test_sequence_unsupported_element_type() -> None:
     ):
         Sequence(
             "P::A",
-            Integer(
+            UnsignedInteger(
                 "P::B",
-                Number(0),
-                Sub(Pow(Number(2), Number(4)), Number(1)),
                 Number(4),
                 Location((3, 4)),
             ),

@@ -49,7 +49,7 @@ def test_type_name_equals_package_name(definition: str, tmp_path: Path) -> None:
     spec = """\
        package Test is
 
-          type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+          type T is unsigned 8;
 
           type Test is {};
 
@@ -181,7 +181,7 @@ def test_sequence_with_imported_element_type_scalar(tmp_path: Path) -> None:
     p.parse_string(
         """\
         package Test is
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
         end Test;
         """,
     )
@@ -225,7 +225,8 @@ def test_sequence_with_imported_element_type_message(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     "type_definition",
     [
-        "range 0 .. 2 ** 63 - 1 with Size => 63",
+        "unsigned 63",
+        "range 1 .. 2 ** 63 - 1 with Size => 63",
         "range 2 ** 8 .. 2 ** 48 with Size => 63",
         "(A, B, C) with Size => 63",
         "(A, B, C) with Always_Valid, Size => 63",
@@ -249,7 +250,7 @@ def test_message_fixed_size_sequence(tmp_path: Path) -> None:
         """\
         package Test is
 
-           type E is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type E is unsigned 8;
 
            type S is sequence of E;
 
@@ -291,7 +292,7 @@ def test_message_with_optional_field_based_on_message_size(tmp_path: Path) -> No
         """\
         package Test is
 
-           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type T is unsigned 8;
 
            type M is
               message
@@ -321,7 +322,7 @@ def test_size_attribute(tmp_path: Path, aspects: str) -> None:
         f"""\
         package Test is
 
-           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type T is unsigned 8;
 
            type M is
               message
@@ -341,7 +342,7 @@ def test_message_size_calculation(tmp_path: Path) -> None:
         """\
         package Test is
 
-           type T is range 0 .. 2 ** 16 - 1 with Size => 16;
+           type T is unsigned 16;
 
            type Message is
               message
@@ -364,7 +365,7 @@ def test_transitive_type_use(tmp_path: Path) -> None:
         """\
         package Test is
 
-           type U8 is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type U8 is unsigned 8;
 
            type M1 is
               message
@@ -436,7 +437,7 @@ def test_refinement_with_self(tmp_path: Path) -> None:
 
            type Tag is (T1 => 1, T2 => 2) with Size => 8;
 
-           type Length is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type Length is unsigned 8;
 
            type Message is
               message
@@ -463,7 +464,7 @@ def test_message_expression_value_outside_type_range(tmp_path: Path) -> None:
     spec = """\
         package Test is
 
-           type Length is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type Length is unsigned 8;
 
            type Packet is
               message
@@ -484,7 +485,7 @@ def test_message_field_conditions_on_corresponding_fields(tmp_path: Path) -> Non
     spec = """\
         package Test is
 
-           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type T is unsigned 8;
 
            type M is
               message
@@ -507,7 +508,7 @@ def test_message_field_conditions_on_subsequent_fields(tmp_path: Path) -> None:
     spec = """\
         package Test is
 
-           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type T is unsigned 8;
 
            type M is
               message
@@ -601,7 +602,7 @@ def test_state_machine_type_conversion_in_message_size_calculation(tmp_path: Pat
     spec = """\
         package Test is
 
-           type Length is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type Length is unsigned 8;
            type Elems is range 0 .. 1 with Size => 8;
 
            type Data is
@@ -646,7 +647,7 @@ def test_state_machine_move_content_of_opaque_field(tmp_path: Path) -> None:
     spec = """\
         package Test is
 
-           type Payload_Size is range 0 .. 2 ** 16 - 1 with Size => 16;
+           type Payload_Size is unsigned 16;
 
            type M1 is
               message

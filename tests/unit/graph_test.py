@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from pydotplus import Dot, InvocationException  # type: ignore[attr-defined]
 
-from rflx.expr import FALSE, TRUE, Equal, Greater, Less, Number, Pow, Sub, Variable
+from rflx.expr import FALSE, TRUE, Equal, Greater, Less, Number, Variable
 from rflx.graph import create_message_graph, create_state_machine_graph, write_graph
 from rflx.identifier import ID
 from rflx.model import (
@@ -11,12 +11,12 @@ from rflx.model import (
     FINAL,
     INITIAL,
     Field,
-    Integer,
     Link,
     Message,
     State,
     StateMachine,
     Transition,
+    UnsignedInteger,
     declaration as decl,
     statement as stmt,
 )
@@ -31,7 +31,7 @@ def assert_graph(graph: Dot, expected: str, tmp_path: Path) -> None:
 
 
 def test_graph_object() -> None:
-    f_type = Integer("P::T", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
+    f_type = UnsignedInteger("P::T", Number(32))
     m = Message(
         ID("P::M", Location((1, 1))),
         structure=[
@@ -82,7 +82,7 @@ def test_empty_message_graph(tmp_path: Path) -> None:
 
 
 def test_dot_graph(tmp_path: Path) -> None:
-    f_type = Integer("P::T", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
+    f_type = UnsignedInteger("P::T", Number(32))
     m = Message(
         ID("P::M", Location((1, 1))),
         structure=[
@@ -117,7 +117,7 @@ def test_dot_graph(tmp_path: Path) -> None:
 
 
 def test_dot_graph_with_condition(tmp_path: Path) -> None:
-    f_type = Integer("P::T", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
+    f_type = UnsignedInteger("P::T", Number(32))
     m = Message(
         ID("P::M", Location((1, 1))),
         structure=[
@@ -157,7 +157,7 @@ def test_dot_graph_with_condition(tmp_path: Path) -> None:
 
 
 def test_dot_graph_with_double_edge(tmp_path: Path) -> None:
-    f_type = Integer("P::T", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
+    f_type = UnsignedInteger("P::T", Number(32))
     m = Message(
         ID("P::M", Location((1, 1))),
         structure=[

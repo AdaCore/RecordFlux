@@ -104,13 +104,14 @@ class Scalar(TypeDecl):
 
 
 class Integer(Scalar):
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
         first: expr.Expr,
         last: expr.Expr,
         size: expr.Expr,
         location: Location = NO_LOCATION,
+        allow_full_unsigned: bool = False,
     ) -> None:
         super().__init__(identifier, size, location)
 
@@ -201,6 +202,29 @@ class Integer(Scalar):
                     f'size of "{self.name}" exceeds limit (2**{const.MAX_SCALAR_SIZE})',
                     Severity.ERROR,
                     size_num.location,
+                ),
+            )
+
+        if (
+            not allow_full_unsigned
+            and int(first_num) == 0
+            and int(last_num) == 2 ** int(size_num) - 1
+        ):
+            assert self.location is not None
+            self.error.push(
+                ErrorEntry(
+                    "unsigned integer syntax preferable",
+                    Severity.ERROR,
+                    self.location,
+                    annotations=(
+                        [
+                            Annotation(
+                                f'use "type {self.name} is unsigned {int(size_num)}" instead',
+                                Severity.HELP,
+                                self.location,
+                            ),
+                        ]
+                    ),
                 ),
             )
 
@@ -318,7 +342,8 @@ class UnsignedInteger(Integer):
                 location=size.location,
             ),
             size,
-            location,
+            location=location,
+            allow_full_unsigned=True,
         )
 
     def __str__(self) -> str:
@@ -695,7 +720,14 @@ class UncheckedInteger(UncheckedTypeDecl):
         skip_verification: bool = False,  # noqa: ARG002
         workers: int = 1,  # noqa: ARG002
     ) -> Integer:
-        return Integer(self.identifier, self.first, self.last, self.size, self.location)
+        return Integer(
+            self.identifier,
+            self.first,
+            self.last,
+            self.size,
+            location=self.location,
+            allow_full_unsigned=False,
+        )
 
 
 @dataclass

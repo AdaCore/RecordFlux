@@ -36,7 +36,7 @@ def test_parse_no_subsequent_errors_caused_by_style_errors(tmp_path: Path) -> No
             """\
         package B is
 
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
 
            type M is
               message

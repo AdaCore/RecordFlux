@@ -610,7 +610,7 @@ def test_simplification_of_div_expressions() -> None:
         """\
             package Test is
 
-               type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+               type T is unsigned 8;
 
                type Test is
                   message

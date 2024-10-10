@@ -20,10 +20,10 @@ from rflx.model import (
     OPAQUE,
     Enumeration,
     Field,
-    Integer,
     Link,
     Message,
     State,
+    UnsignedInteger,
     declaration as decl,
     statement as stmt,
 )
@@ -44,7 +44,7 @@ from tests.utils import (
     parse_unsigned_type,
 )
 
-T = Integer("Test::T", expr.Number(0), expr.Number(255), expr.Number(8))
+T = UnsignedInteger("Test::T", expr.Number(8))
 
 # Generated from the Ada 202x LRM source code (http://ada-auth.org/arm-files/ARM_SRC.zip) retrieved
 # on 2022-09-16 using the following command:
@@ -1527,7 +1527,7 @@ def test_parse_type_derivation_spec() -> None:
     assert_ast_string(
         """\
         package Test is
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
            type Foo is
               message
                  N : T;
@@ -1544,14 +1544,8 @@ def test_parse_type_derivation_spec() -> None:
                     {
                         "_kind": "TypeDecl",
                         "definition": {
-                            "_kind": "RangeTypeDef",
-                            "first": {"_kind": "NumericLiteral", "_value": "0"},
-                            "size": {
-                                "_kind": "Aspect",
-                                "identifier": {"_kind": "UnqualifiedID", "_value": "Size"},
-                                "value": {"_kind": "NumericLiteral", "_value": "8"},
-                            },
-                            "last": {"_kind": "NumericLiteral", "_value": "255"},
+                            "_kind": "UnsignedTypeDef",
+                            "size": {"_kind": "NumericLiteral", "_value": "8"},
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
                         "parameters": None,
@@ -2227,7 +2221,7 @@ def test_parse_error_unexpected_exception_in_parser(monkeypatch: pytest.MonkeyPa
         p.parse_string(
             """\
             package Test is
-               type T is range 0 .. 255 with Size => 8;
+               type T is unsigned 8;
             end Test;
             """,
         )
@@ -2295,7 +2289,7 @@ def test_parse_error_message_undefined_message_field() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
            type PDU is
               message
                  Foo : T
@@ -2312,7 +2306,7 @@ def test_parse_error_invalid_location_expression() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
            type PDU is
               message
                  Foo : T
@@ -2353,7 +2347,7 @@ def test_parse_error_refinement_undefined_sdu() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
            type PDU is
               message
                  Foo : T;
@@ -2380,7 +2374,7 @@ def test_parse_error_derivation_unsupported_type() -> None:
     assert_error_string(
         """\
         package Test is
-           type Foo is range 0 .. 255 with Size => 8;
+           type Foo is unsigned 8;
            type Bar is new Foo;
         end Test;
         """,
@@ -2395,7 +2389,7 @@ def test_parse_error_multiple_initial_node_edges() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
            type PDU is
               message
                  null
@@ -2414,7 +2408,7 @@ def test_parse_error_multiple_initial_nodes() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
            type PDU is
               message
                  null
@@ -2435,7 +2429,7 @@ def test_parse_error_reserved_word_in_type_name(keyword: str) -> None:
     assert_error_string(
         f"""\
         package Test is
-           type {keyword.title()} is range 0 .. 255 with Size => 8;
+           type {keyword.title()} is unsigned 8;
         end Test;
         """,
         rf'^<stdin>:2:9: error: reserved word "{keyword.title()}" used as identifier$',
@@ -2447,7 +2441,7 @@ def test_parse_error_reserved_word_in_message_field(keyword: str) -> None:
     assert_error_string(
         f"""\
         package Test is
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
            type PDU is
               message
                  {keyword.title()} : T;
@@ -2501,7 +2495,7 @@ def test_parse_error_illegal_identifier_in_type_name(identifier: str) -> None:
     assert_error_string(
         f"""\
         package Test is
-           type {identifier} is range 0 .. 255 with Size => 8;
+           type {identifier} is unsigned 8;
         end Test;
         """,
         r"^"
@@ -2517,7 +2511,7 @@ def test_parse_error_illegal_identifier_in_message_field(identifier: str) -> Non
     assert_error_string(
         f"""\
         package Test is
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
            type PDU is
               message
                  {identifier} : T;
@@ -2615,13 +2609,8 @@ def test_create_model_message_type_message() -> None:
     ]
 
     simple_types = {
-        model.Field(ID("Bar", location=Location((1, 1)))): model.Integer(
+        model.Field(ID("Bar", location=Location((1, 1)))): model.UnsignedInteger(
             "Message_Type::T",
-            expr.Number(0),
-            expr.Sub(
-                expr.Pow(expr.Number(2), expr.Number(8)),
-                expr.Number(1),
-            ),
             expr.Number(8),
         ),
         model.Field(ID("Baz", location=Location((1, 1)))): model.Opaque(),
@@ -2664,13 +2653,8 @@ def test_create_model_message_type_message() -> None:
 
     types = {
         **simple_types,
-        model.Field(ID("Foo", location=Location((1, 1)))): model.Integer(
+        model.Field(ID("Foo", location=Location((1, 1)))): model.UnsignedInteger(
             "Message_Type::T",
-            expr.Number(0),
-            expr.Sub(
-                expr.Pow(expr.Number(2), expr.Number(8)),
-                expr.Number(1),
-            ),
             expr.Number(8),
         ),
     }
@@ -2696,10 +2680,8 @@ def test_create_model_message_type_message() -> None:
 
 
 def test_create_model_message_in_message() -> None:
-    length = model.Integer(
+    length = model.UnsignedInteger(
         "Message_In_Message::Length",
-        expr.Number(0),
-        expr.Sub(expr.Pow(expr.Number(2), expr.Number(16)), expr.Number(1)),
         expr.Number(16),
     )
 
@@ -2783,7 +2765,7 @@ def test_create_model_ethernet_frame() -> None:
 
 
 def test_create_model_type_derivation_message() -> None:
-    t = model.Integer("Test::T", expr.Number(0), expr.Number(255), expr.Number(8))
+    t = model.UnsignedInteger("Test::T", expr.Number(8))
 
     structure = [
         model.Link(model.INITIAL, model.Field("Baz"), location=Location((1, 1))),
@@ -2803,7 +2785,7 @@ def test_create_model_type_derivation_message() -> None:
     assert_messages_string(
         """\
         package Test is
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
            type Foo is
               message
                  Baz : T;
@@ -2859,7 +2841,7 @@ def test_create_model_message_locations() -> None:
     p.parse_string(
         """\
         package Test is
-           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type T is unsigned 8;
            type M is
               message
                  F1 : T;
@@ -2911,7 +2893,7 @@ def test_create_model_sequence_with_imported_element_type() -> None:
     p.parse_string(
         """\
            package Test is
-              type T is range 0 .. 255 with Size => 8;
+              type T is unsigned 8;
            end Test;
         """,
     )
@@ -2927,10 +2909,8 @@ def test_create_model_sequence_with_imported_element_type() -> None:
     sequences = [t for t in m.types if isinstance(t, model.Sequence)]
     assert len(sequences) == 1
     assert sequences[0].identifier == ID("Sequence_Test::T")
-    assert sequences[0].element_type == model.Integer(
+    assert sequences[0].element_type == model.UnsignedInteger(
         "Test::T",
-        expr.Number(0),
-        expr.Number(255),
         expr.Number(8),
     )
 
@@ -2940,7 +2920,7 @@ def test_create_model_checksum() -> None:
     p.parse_string(
         """\
         package Test is
-           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type T is unsigned 8;
            type M is
               message
                  F1 : T;
@@ -2976,7 +2956,7 @@ def test_create_model_checksum() -> None:
         (
             """\
             package Test is
-               type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+               type T is unsigned 8;
                type M is
                   message
                      F1 : T;
@@ -2991,7 +2971,7 @@ def test_create_model_checksum() -> None:
         (
             """\
             package Test is
-               type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+               type T is unsigned 8;
                type M is
                   message
                      F1 : T;
@@ -3006,7 +2986,7 @@ def test_create_model_checksum() -> None:
         (
             """\
             package Test is
-               type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+               type T is unsigned 8;
                type M is
                   message
                      F1 : T;
@@ -3020,7 +3000,7 @@ def test_create_model_checksum() -> None:
         (
             """\
             package Test is
-               type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+               type T is unsigned 8;
                type M is
                   message
                      F1 : T;
@@ -3069,7 +3049,7 @@ def test_message_field_condition(spec: str) -> None:
         f"""\
         package Test is
 
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
 {spec}
         end Test;
         """,
@@ -3127,7 +3107,7 @@ def test_message_field_first(spec: str) -> None:
     assert_messages_string(
         f"""\
         package Test is
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
 {spec}
         end Test;
         """,
@@ -3177,7 +3157,7 @@ def test_message_field_size(spec: str) -> None:
         f"""\
         package Test is
 
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
 
 {spec}
         end Test;
@@ -3220,7 +3200,7 @@ def test_message_field_condition_and_aspects(link: str, field_b: str) -> None:
     assert_messages_string(
         f"""\
         package Test is
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
            type M is
               message
                  A : T
@@ -3263,7 +3243,7 @@ def test_parameterized_messages() -> None:
         """\
         package Test is
 
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
 
            type M (P : T) is
               message
@@ -3416,7 +3396,7 @@ def test_parse_error_invalid_arguments_for_parameterized_messages(
         f"""\
         package Test is
 
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
 
            type M_P (P : T) is
               message
@@ -3490,7 +3470,7 @@ def test_parse_error_invalid_parameterized_type(spec: str) -> None:
     assert_error_string(
         f"""\
         package Test is
-           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type T is unsigned 8;
            type M is
               message
                  F : T;
@@ -3506,7 +3486,7 @@ def test_parse_error_undefined_parameter() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type T is unsigned 8;
            type M (P : X) is
               message
                  F : T;
@@ -3521,7 +3501,7 @@ def test_parse_error_name_conflict_between_parameters() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type T is unsigned 8;
            type M (P : T; P : T) is
               message
                  F : T
@@ -3541,7 +3521,7 @@ def test_parse_error_name_conflict_between_field_and_parameter() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type T is unsigned 8;
            type M (P : T) is
               message
                  P : T;
@@ -3574,7 +3554,7 @@ def test_parse_error_duplicate_spec_stdin_file() -> None:
     p.parse_string(
         """\
         package Message_Type is
-           type T is range 0 .. 2 ** 32 - 1 with Size => 32;
+           type T is unsigned 32;
            type M is
               message
                  F : T;
@@ -3636,7 +3616,7 @@ def test_parse_reserved_word_in_link_condition(keyword: str) -> None:
     assert_error_string(
         f"""\
         package Test is
-           type I is range 0 .. 255 with Size => 8;
+           type I is unsigned 8;
            type M (A : Boolean) is
               message
                  X : Boolean
@@ -3656,7 +3636,7 @@ def test_parse_error_duplicate_message_aspect() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type T is unsigned 8;
            type M is
               message
                  A : T;
@@ -3676,7 +3656,7 @@ def test_parse_error_duplicate_channel_decl_aspect() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type T is unsigned 8;
            type Message is
               message
                  A : T;
@@ -3705,7 +3685,7 @@ def test_parse_error_unsupported_binding() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type T is unsigned 8;
            type Message is
               message
                  A : T;
@@ -3772,7 +3752,7 @@ def test_parse_error_duplicate_message_checksum_aspect() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type T is unsigned 8;
            type M is
               message
                  F1 : T;
@@ -3790,7 +3770,7 @@ def test_parse_error_duplicate_message_byte_order_aspect() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type T is unsigned 8;
            type M is
               message
                  F1 : T;
@@ -3809,7 +3789,7 @@ def test_parse_error_duplicate_state_desc() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type T is unsigned 8;
            type Message is
               message
                  A : T;
@@ -3838,7 +3818,7 @@ def test_parse_error_duplicate_transition_desc() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type T is unsigned 8;
            type Message is
               message
                  A : T;
@@ -3994,7 +3974,7 @@ def test_parse_error_math_expression_in_bool_context(expression: str, message: s
     assert_error_string(
         f"""\
         package Test is
-           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type T is unsigned 8;
            type M is
               message
                  A : T
@@ -4035,7 +4015,7 @@ def test_parse_error_short_form_condition() -> None:
     assert_error_string(
         """\
         package Test is
-           type U8 is range 0 .. 255 with Size => 8;
+           type U8 is unsigned 8;
            type M is
               message
                  A : U8
@@ -4182,7 +4162,7 @@ def test_parse_error_duplicate_operator(string: str, regex: str) -> None:
         (
             """\
             package Test is
-               type T is range 0 .. 255 with Size => 8;
+               type T is unsigned 8;
                type M is
                   message
                      F1 : T

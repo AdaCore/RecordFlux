@@ -45,10 +45,8 @@ def test_verified(tmp_path: Path) -> None:
             model.Link(model.Field("A"), model.FINAL, location=Location((2, 2))),
         ],
         {
-            model.Field(ID("A", location=Location((1, 1)))): model.Integer(
+            model.Field(ID("A", location=Location((1, 1)))): model.UnsignedInteger(
                 "P::T",
-                expr.Number(0),
-                expr.Sub(expr.Pow(expr.Number(2), expr.Number(8)), expr.Number(1)),
                 expr.Number(8),
             ),
         },
@@ -62,10 +60,8 @@ def test_verified(tmp_path: Path) -> None:
             model.Link(model.Field("B"), model.FINAL, location=Location((2, 2))),
         ],
         {
-            model.Field(ID("B", location=Location((1, 1)))): model.Integer(
+            model.Field(ID("B", location=Location((1, 1)))): model.UnsignedInteger(
                 "P::T",
-                expr.Number(0),
-                expr.Sub(expr.Pow(expr.Number(2), expr.Number(8)), expr.Number(1)),
                 expr.Number(8),
             ),
         },
@@ -79,10 +75,8 @@ def test_verified(tmp_path: Path) -> None:
             model.Link(model.Field("A"), model.FINAL, location=Location((2, 2))),
         ],
         {
-            model.Field(ID("A", location=Location((1, 1)))): model.Integer(
+            model.Field(ID("A", location=Location((1, 1)))): model.UnsignedInteger(
                 "P::T",
-                expr.Number(0),
-                expr.Sub(expr.Pow(expr.Number(2), expr.Number(16)), expr.Number(1)),
                 expr.Number(16),
             ),
         },

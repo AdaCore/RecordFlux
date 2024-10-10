@@ -49,6 +49,7 @@ from rflx.model import (
     State,
     StateMachine,
     Transition,
+    UnsignedInteger,
 )
 
 
@@ -77,11 +78,9 @@ def tlv_tag() -> Enumeration:
 
 
 @lru_cache
-def tlv_length() -> Integer:
-    return Integer(
+def tlv_length() -> UnsignedInteger:
+    return UnsignedInteger(
         ID("TLV::Length", location=Location((1, 1))),
-        Number(0),
-        Sub(Pow(Number(2), Number(16)), Number(1)),
         Number(16),
         location=Location((1, 1)),
     )
@@ -160,21 +159,17 @@ def tlv_with_checksum_tag() -> Enumeration:
 
 
 @lru_cache
-def tlv_with_checksum_length() -> Integer:
-    return Integer(
+def tlv_with_checksum_length() -> UnsignedInteger:
+    return UnsignedInteger(
         "TLV_With_Checksum::Length",
-        Number(0),
-        Sub(Pow(Number(2), Number(16)), Number(1)),
         Number(16),
     )
 
 
 @lru_cache
-def tlv_with_checksum_checksum() -> Integer:
-    return Integer(
+def tlv_with_checksum_checksum() -> UnsignedInteger:
+    return UnsignedInteger(
         "TLV_With_Checksum::Checksum",
-        Number(0),
-        Sub(Pow(Number(2), Number(16)), Number(1)),
         Number(16),
     )
 
@@ -261,10 +256,8 @@ def null_message_in_tlv_message_model() -> Model:
 
 @lru_cache
 def ethernet_address() -> Integer:
-    return Integer(
+    return UnsignedInteger(
         "Ethernet::Address",
-        Number(0),
-        Sub(Pow(Number(2), Number(48)), Number(1)),
         Number(48),
     )
 
@@ -286,10 +279,8 @@ def ethernet_tpid() -> Integer:
 
 @lru_cache
 def ethernet_tci() -> Integer:
-    return Integer(
+    return UnsignedInteger(
         "Ethernet::TCI",
-        Number(0),
-        Sub(Pow(Number(2), Number(16)), Number(1)),
         Number(16),
     )
 
@@ -446,10 +437,8 @@ def enumeration_model() -> Model:
 
 @lru_cache
 def sequence_length() -> Integer:
-    return Integer(
+    return UnsignedInteger(
         "Sequence::Length",
-        Number(0),
-        Sub(Pow(Number(2), Number(8)), Number(1)),
         Number(8),
     )
 
@@ -752,20 +741,16 @@ def universal_message_type() -> Enumeration:
 
 @lru_cache
 def universal_length() -> Integer:
-    return Integer(
+    return UnsignedInteger(
         "Universal::Length",
-        Number(0),
-        Sub(Pow(Number(2), Number(16)), Number(1)),
         Number(16),
     )
 
 
 @lru_cache
 def universal_value() -> Integer:
-    return Integer(
+    return UnsignedInteger(
         "Universal::Value",
-        Number(0),
-        Sub(Pow(Number(2), Number(8)), Number(1)),
         Number(8),
     )
 

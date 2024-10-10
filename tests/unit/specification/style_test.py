@@ -133,14 +133,14 @@ def test_no_error(spec: str, tmp_path: Path) -> None:
         ),
         (
             "package Test is\n"
-            "   type E is range 0 .. 2 ** 16 - 1 with Size => 16;\n"
+            "   type E is unsigned 16;\n"
             "   type S is sequence of Test ::E;\n"
             "end Test;",
             r'3:31: error: space before "::" \[token-spacing\]',
         ),
         (
             "package Test is\n"
-            "   type E is range 0 .. 2 ** 16 - 1 with Size => 16;\n"
+            "   type E is unsigned 16;\n"
             "   type S is sequence of Test:: E;\n"
             "end Test;",
             r'3:33: error: space after "::" \[token-spacing\]',
@@ -199,28 +199,28 @@ def test_error(tmp_path: Path, spec: str, error: str) -> None:
         ),
         (
             "package Test is\n"
-            "   type E is range 0 .. 2 ** 16 - 1 with Size => 16;\n"
+            "   type E is unsigned 16;\n"
             "   type S is sequence of Test ::E;\n"
             "end Test;",
             "token-spacing",
         ),
         (
             "package Test is\n"
-            "   type E is range 0 .. 2 ** 16 - 1 with Size => 16;\n"
+            "   type E is unsigned 16;\n"
             "   type S is sequence of Test:: E;\n"
             "end Test;",
             "token-spacing",
         ),
         (
             "package Test is \n"
-            "   type E is range 0 .. 2 ** 16 - 1 with Size => 16;\r\n"
+            "   type E is unsigned 16;\r\n"
             "    type S is sequence of Test:: E;\n"
             "end Test;\n\n",
             "all",
         ),
         (
             "package Test is \n"
-            "   type E is range 0 .. 2 ** 16 - 1 with Size => 16;\r\n"
+            "   type E is unsigned 16;\r\n"
             "    type S is sequence of Test:: E;\n"
             "end Test;\n\n",
             "blank-lines, characters, indentation, token-spacing, trailing-spaces",

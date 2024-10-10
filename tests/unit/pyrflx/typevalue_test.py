@@ -18,6 +18,7 @@ from rflx.model import (
     Opaque,
     Sequence,
     TypeDecl,
+    UnsignedInteger,
 )
 from rflx.pyrflx import (
     Bitstring,
@@ -385,7 +386,7 @@ def test_message_value_parse_from_bitstring(
     tlv_message_value: MessageValue,
     enum_value: EnumValue,
 ) -> None:
-    intval = IntegerValue(Integer("Test::Int", expr.Number(0), expr.Number(255), expr.Number(8)))
+    intval = IntegerValue(UnsignedInteger("Test::Int", expr.Number(8)))
     intval.parse(b"\x02")
     assert intval.value == 2
     enum_value.parse(b"\x01")
@@ -653,13 +654,13 @@ def fixture_sequence_type_foo_value(sequence_type_package: Package) -> MessageVa
 
 def test_sequence_scalars(sequence_type_foo_value: MessageValue) -> None:
     a = IntegerValue(
-        Integer("Sequence_Type::Byte_One", expr.Number(0), expr.Number(255), expr.Number(8)),
+        UnsignedInteger("Sequence_Type::Byte_One", expr.Number(8)),
     )
     b = IntegerValue(
-        Integer("Sequence_Type::Byte_Two", expr.Number(0), expr.Number(255), expr.Number(8)),
+        UnsignedInteger("Sequence_Type::Byte_Two", expr.Number(8)),
     )
     c = IntegerValue(
-        Integer("Sequence_Type::Byte_Three", expr.Number(0), expr.Number(255), expr.Number(8)),
+        UnsignedInteger("Sequence_Type::Byte_Three", expr.Number(8)),
     )
     a.assign(5)
     b.assign(6)
@@ -672,20 +673,20 @@ def test_sequence_scalars(sequence_type_foo_value: MessageValue) -> None:
 
 
 def test_sequence_preserve_value(enum_value: EnumValue) -> None:
-    intval = IntegerValue(Integer("Test::Int", expr.Number(0), expr.Number(255), expr.Number(8)))
+    intval = IntegerValue(UnsignedInteger("Test::Int", expr.Number(8)))
     intval.assign(1)
     enum_value.assign("One")
     type_sequence = SequenceValue(
         Sequence(
             "Test::Sequence",
-            Integer("Test::Mod_Int", expr.Number(0), expr.Number(255), expr.Number(8)),
+            UnsignedInteger("Test::Mod_Int", expr.Number(8)),
         ),
     )
     type_sequence.assign([intval])
     assert type_sequence.value == [intval]
     with pytest.raises(
         PyRFLXError,
-        match="^error: cannot assign EnumValue to a sequence of Integer$",
+        match="^error: cannot assign EnumValue to a sequence of UnsignedInteger$",
     ):
         type_sequence.assign([enum_value])
     assert type_sequence.value == [intval]
@@ -713,16 +714,16 @@ def test_sequence_assign_invalid(
     type_sequence = SequenceValue(
         Sequence(
             "Test::Sequence",
-            Integer("Test::Mod_Int", expr.Number(0), expr.Number(255), expr.Number(8)),
+            UnsignedInteger("Test::Mod_Int", expr.Number(8)),
         ),
     )
     msg_sequence = SequenceValue(Sequence("Test::MsgSequence", tlv_message_value._type))
 
-    intval = IntegerValue(Integer("Test::Int", expr.Number(0), expr.Number(255), expr.Number(8)))
+    intval = IntegerValue(UnsignedInteger("Test::Int", expr.Number(8)))
     enum_value.assign("One")
     with pytest.raises(
         PyRFLXError,
-        match="^error: cannot assign EnumValue to a sequence of Integer$",
+        match="^error: cannot assign EnumValue to a sequence of UnsignedInteger$",
     ):
         type_sequence.assign([enum_value])
 
@@ -1402,7 +1403,7 @@ def test_parameterized_message_invalid_type(parameterized_package: Package) -> N
 
 def test_json_serialization() -> None:
     integer_value = IntegerValue(
-        Integer("Test::Int", expr.Number(0), expr.Number(255), expr.Number(8)),
+        UnsignedInteger("Test::Int", expr.Number(8)),
     )
     integer_value.assign(128)
     assert integer_value.as_json() == 128
@@ -1421,7 +1422,7 @@ def test_json_serialization() -> None:
     sequence_value = SequenceValue(
         Sequence(
             "Test::Sequence",
-            Integer("Test::Int", expr.Number(0), expr.Number(255), expr.Number(8)),
+            UnsignedInteger("Test::Int", expr.Number(8)),
         ),
     )
     sequence_value.assign([integer_value, integer_value, integer_value])
