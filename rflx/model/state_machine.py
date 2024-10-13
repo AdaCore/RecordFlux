@@ -728,7 +728,6 @@ class StateMachine(TopLevelDeclaration):
                     d.type_ = ty.Any()
 
                 if isinstance(d, decl.VariableDeclaration) and d.type_ == ty.OPAQUE:
-                    assert d.type_identifier.location is not None
                     self.error.push(
                         ErrorEntry(
                             "invalid variable type",
@@ -794,7 +793,6 @@ class StateMachine(TopLevelDeclaration):
             not isinstance(parameter_type, (type_decl.Scalar, Message))
             and parameter_type.identifier != ty.OPAQUE.identifier
         ):
-            assert type_identifier.location
             self.error.extend(
                 [
                     ErrorEntry(
@@ -832,7 +830,6 @@ class StateMachine(TopLevelDeclaration):
                 ],
             )
         if not isinstance(return_type, (type_decl.Scalar, Message)):
-            assert type_identifier.location
             self.error.extend(
                 [
                     ErrorEntry(
@@ -922,7 +919,6 @@ class StateMachine(TopLevelDeclaration):
                     continue
 
                 if s1.identifier == s2.identifier:
-                    assert s2.identifier.location is not None
                     self.error.push(
                         ErrorEntry(
                             f'channel "{s1.identifier}" may be read or written'

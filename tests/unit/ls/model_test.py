@@ -7,6 +7,7 @@ from rflx.error import Location
 from rflx.identifier import ID
 from rflx.ls.model import LSModel, Symbol, SymbolCategory
 from rflx.model import UncheckedEnumeration, UncheckedInteger, UncheckedSequence
+from rflx.rapidflux import UNKNOWN_LOCATION
 from rflx.specification.parser import Parser
 
 
@@ -142,7 +143,12 @@ def test_sequence_to_symbols() -> None:
 
 def test_to_symbol() -> None:
     symbol = LSModel._to_symbol(ID("Package_Identifier"))  # noqa: SLF001
-    assert symbol == Symbol(ID("Package_Identifier"), SymbolCategory.PACKAGE, None, None)
+    assert symbol == Symbol(
+        ID("Package_Identifier"),
+        SymbolCategory.PACKAGE,
+        UNKNOWN_LOCATION,
+        None,
+    )
 
 
 def test_model_complete(model: LSModel) -> None:

@@ -233,7 +233,9 @@ def tlv_with_checksum_message() -> Message:
             Field(ID("Value", location=Location((3, 3)))): OPAQUE,
             Field(ID("Checksum", location=Location((4, 4)))): tlv_with_checksum_checksum(),
         },
-        checksums={ID("Checksum"): [Variable("Tag"), Size("Value"), Variable("Value")]},
+        checksums={
+            ID("Checksum", Location((10, 10))): [Variable("Tag"), Size("Value"), Variable("Value")],
+        },
         location=Location((1, 1), end=(1, 2)),
     )
 

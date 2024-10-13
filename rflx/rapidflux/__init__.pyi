@@ -1,8 +1,11 @@
 from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
+from typing import Final
 
 from typing_extensions import Self
+
+UNKNOWN_LOCATION: Final[Location]
 
 class ID:
     def __init__(
@@ -17,7 +20,7 @@ class ID:
     def __mul__(self: Self, other: object) -> Self: ...
     def __rmul__(self: Self, other: object) -> Self: ...
     @property
-    def location(self) -> Location | None: ...
+    def location(self) -> Location: ...
     @property
     def parts(self) -> Sequence[str]: ...
     @property

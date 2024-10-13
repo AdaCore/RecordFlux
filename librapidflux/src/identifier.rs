@@ -3,7 +3,7 @@ use std::{fmt, string::ToString};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::diagnostics::Location;
+use crate::diagnostics::{Location, UNKNOWN_LOCATION};
 
 pub const ID_SEP: &str = "::";
 const ALT_ID_SEP: &str = ".";
@@ -89,8 +89,12 @@ impl ID {
         &self.identifier
     }
 
-    pub fn location(&self) -> Option<&Location> {
-        self.location.as_ref()
+    pub fn location(&self) -> &Location {
+        if let Some(location) = &self.location {
+            location
+        } else {
+            &UNKNOWN_LOCATION
+        }
     }
 
     pub fn parts(&self) -> Vec<&str> {
@@ -229,7 +233,7 @@ mod tests {
     use pretty_assertions::assert_eq;
     use rstest::rstest;
 
-    use crate::diagnostics::{FilePosition, Location};
+    use crate::diagnostics::{FilePosition, Location, UNKNOWN_LOCATION};
 
     use super::{IDError, IDRef, ID};
 
@@ -267,10 +271,10 @@ mod tests {
     }
 
     #[rstest]
-    #[case(None)]
-    #[case(Some(location(1)))]
-    fn test_id_location(#[case] location: Option<Location>) {
-        assert_eq!(id("A::B", location.clone()).location(), location.as_ref());
+    #[case(None, &UNKNOWN_LOCATION)]
+    #[case(Some(location(1)), &location(1))]
+    fn test_id_location(#[case] loc: Option<Location>, #[case] expected: &Location) {
+        assert_eq!(id("A::B", loc.clone()).location(), expected);
     }
 
     #[rstest]
@@ -356,23 +360,17 @@ mod tests {
     }
 
     #[rstest]
-    #[case(None)]
-    #[case(Some(location(1)))]
-    fn test_id_prefix_location(#[case] location: Option<Location>) {
-        assert_eq!(
-            id("B", location.clone()).prefix("A").unwrap().location(),
-            location.as_ref()
-        );
+    #[case(None, &UNKNOWN_LOCATION)]
+    #[case(Some(location(1)), &location(1))]
+    fn test_id_prefix_location(#[case] loc: Option<Location>, #[case] expected: &Location) {
+        assert_eq!(id("B", loc).prefix("A").unwrap().location(), expected);
     }
 
     #[rstest]
-    #[case(None)]
-    #[case(Some(location(1)))]
-    fn test_id_suffix_location(#[case] location: Option<Location>) {
-        assert_eq!(
-            id("A", location.clone()).suffix("B").unwrap().location(),
-            location.as_ref()
-        );
+    #[case(None, &UNKNOWN_LOCATION)]
+    #[case(Some(location(1)), &location(1))]
+    fn test_id_suffix_location(#[case] loc: Option<Location>, #[case] expected: &Location) {
+        assert_eq!(id("A", loc).suffix("B").unwrap().location(), expected);
     }
 
     #[rstest]
@@ -388,18 +386,18 @@ mod tests {
     }
 
     #[rstest]
-    #[case(Some(location(1)), Some(location(2)), Some(location(1)))]
-    #[case(Some(location(1)), None, Some(location(1)))]
-    #[case(None, Some(location(2)), Some(location(2)))]
-    #[case(None, None, None)]
+    #[case(Some(location(1)), Some(location(2)), &location(1))]
+    #[case(Some(location(1)), None, &location(1))]
+    #[case(None, Some(location(2)), &location(2))]
+    #[case(None, None, &UNKNOWN_LOCATION)]
     fn test_id_join_location(
         #[case] left: Option<Location>,
         #[case] right: Option<Location>,
-        #[case] expected: Option<Location>,
+        #[case] expected: &Location,
     ) {
         assert_eq!(
             (id("A", left).join(&id("B", right))).unwrap().location(),
-            expected.as_ref(),
+            expected,
         );
     }
 

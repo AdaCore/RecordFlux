@@ -38,7 +38,12 @@ def test_invalid_prefix() -> None:
 def test_unsupported_checksum(tmp_path: Path) -> None:
     with pytest.raises(
         RecordFluxError,
-        match=(r"^error: unsupported checksum \(consider --ignore-unsupported-checksum option\)$"),
+        match=(
+            r"^"
+            r"<stdin>:10:10: error: unsupported checksum"
+            r" \(consider --ignore-unsupported-checksum option\)"
+            r"$"
+        ),
     ):
         Generator().generate(models.tlv_with_checksum_model(), Integration(), tmp_path)
 

@@ -1954,14 +1954,14 @@ def test_invalid_path_2() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): models.integer(),
+        Field(ID("F1", location=Location((2, 2)))): models.integer(),
         Field("F2"): models.integer(),
     }
     assert_message_model_error(
         structure,
         types,
         r"^"
-        r'error: field "F1" has no satisfiable condition at any outgoing link\n'
+        r'<stdin>:2:2: error: field "F1" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:3:5: note: unsatisfied "1 = 2"'
         r"$",
@@ -1990,14 +1990,14 @@ def test_unreachable() -> None:
         Link(Field(ID("F2", location=Location((6, 5)))), FINAL),
     ]
     types = {
-        Field("F1"): integer,
+        Field(ID("F1", location=Location((2, 2)))): integer,
         Field("F2"): integer,
     }
     assert_message_model_error(
         structure,
         types,
         r"^"
-        r'error: field "F1" has no satisfiable condition at any outgoing link\n'
+        r'<stdin>:2:2: error: field "F1" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:2:1: note: on path "F1"\n'
         r'<stdin>:1:2: note: unsatisfied "F1 <= 100"\n'
         r'<stdin>:5:15: note: unsatisfied "F1 > 1000"'
@@ -2020,14 +2020,14 @@ def test_invalid_type_condition_range_low() -> None:
         Link(Field(ID("F2", location=Location((4, 1)))), FINAL),
     ]
     types = {
-        Field("F1"): models.integer(),
+        Field(ID("F1", location=Location((2, 2)))): models.integer(),
         Field("F2"): models.integer(),
     }
     assert_message_model_error(
         structure,
         types,
         r"^"
-        r'error: field "F1" has no satisfiable condition at any outgoing link\n'
+        r'<stdin>:2:2: error: field "F1" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:1:1: note: unsatisfied "F1 >= 1"\n'
         r'<stdin>:4:1: note: unsatisfied "F1 < 1"'
@@ -2057,14 +2057,14 @@ def test_invalid_type_condition_range_high() -> None:
         Link(Field(ID("F2", location=Location((1, 6)))), FINAL),
     ]
     types = {
-        Field("F1"): integer,
+        Field(ID("F1", location=Location((2, 2)))): integer,
         Field("F2"): integer,
     }
     assert_message_model_error(
         structure,
         types,
         r"^"
-        r'error: field "F1" has no satisfiable condition at any outgoing link\n'
+        r'<stdin>:2:2: error: field "F1" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:2: note: on path "F1"\n'
         r'<stdin>:1:1: note: unsatisfied "F1 <= 100"\n'
         r'<stdin>:4:1: note: unsatisfied "F1 > 200"'
@@ -2291,7 +2291,7 @@ def test_invalid_size_forward_reference() -> None:
 
 def test_invalid_negative_field_size_1() -> None:
     structure = [
-        Link(INITIAL, Field("F1"), location=Location((1, 1))),
+        Link(INITIAL, Field(ID("F1", location=Location((1, 2)))), location=Location((1, 1))),
         Link(
             Field("F1"),
             Field("F2"),
@@ -2306,7 +2306,7 @@ def test_invalid_negative_field_size_1() -> None:
     }
     regex = (
         '<stdin>:2:2: error: negative size for field "F2"\n'
-        '<stdin>:1:1: note: on path "F1"\n'
+        '<stdin>:1:2: note: on path "F1"\n'
         '<stdin>:2:2: error: size of opaque field "F2" not multiple of 8 bit\n'
         "<stdin>:2:2: help: sizes are expressed in bits, not bytes\n"
         r'<stdin>:2:2: help: did you mean "(F1 - 2) * 8"?'
@@ -2321,7 +2321,7 @@ def test_invalid_negative_field_size_1() -> None:
 def test_invalid_negative_field_size_2() -> None:
     o = Field(ID("O", location=Location((2, 2))))
     structure = [
-        Link(INITIAL, Field("L"), location=Location((1, 1))),
+        Link(INITIAL, Field(ID("L", location=Location((1, 2)))), location=Location((1, 1))),
         Link(
             Field("L"),
             o,
@@ -2337,13 +2337,13 @@ def test_invalid_negative_field_size_2() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:44:3: error: negative size for field "O"\n<stdin>:1:1: note: on path "L"$',
+        r'^<stdin>:44:3: error: negative size for field "O"\n<stdin>:1:2: note: on path "L"$',
     )
 
 
 def test_invalid_negative_field_size_3() -> None:
     structure = [
-        Link(INITIAL, Field("F1"), location=Location((1, 1))),
+        Link(INITIAL, Field(ID("F1", location=Location((1, 2)))), location=Location((1, 1))),
         Link(
             Field("F1"),
             Field("F2"),
@@ -2364,7 +2364,7 @@ def test_invalid_negative_field_size_3() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:1:2: error: negative size for field "F2"\n<stdin>:1:1: note: on path "F1"$',
+        r'^<stdin>:1:2: error: negative size for field "F2"\n<stdin>:1:2: note: on path "F1"$',
     )
 
 
@@ -2391,7 +2391,7 @@ def test_payload_no_size() -> None:
 
 def test_sequence_no_size() -> None:
     structure = [
-        Link(INITIAL, Field("F1")),
+        Link(INITIAL, Field(ID("F1", location=Location((1, 1))))),
         Link(Field("F1"), Field("F2")),
         Link(Field("F2"), FINAL),
     ]
@@ -2402,14 +2402,14 @@ def test_sequence_no_size() -> None:
     assert_message_model_error(
         structure,
         types,
-        '^error: unconstrained field "F1" without size aspect$',
+        '^<stdin>:1:1: error: unconstrained field "F1" without size aspect$',
     )
 
 
 def test_incongruent_overlay() -> None:
     structure = [
         Link(INITIAL, Field("F1"), location=Location((1, 1))),
-        Link(Field("F1"), Field("F2"), location=Location((2, 2))),
+        Link(Field("F1"), Field(ID("F2", location=Location((2, 2)))), location=Location((2, 2))),
         Link(Field("F2"), Field("F3"), first=First("F2"), location=Location((3, 3))),
         Link(Field("F3"), Field("F4"), location=Location((4, 4))),
         Link(Field("F4"), FINAL, location=Location((5, 5))),
@@ -2437,14 +2437,14 @@ def test_incongruent_overlay() -> None:
 
 def test_field_after_message_start(monkeypatch: pytest.MonkeyPatch) -> None:
     structure = [
-        Link(INITIAL, Field("F1"), location=Location((1, 1))),
+        Link(INITIAL, Field(ID("F1", location=Location((1, 2)))), location=Location((1, 1))),
         Link(
-            Field("F1"),
-            Field("F2"),
+            Field(ID("F1", location=Location((2, 1)))),
+            Field(ID("F2", location=Location((2, 3)))),
             first=Sub(First("Message"), Number(1000)),
             location=Location((2, 2)),
         ),
-        Link(Field("F2"), FINAL, location=Location((3, 3))),
+        Link(Field(ID("F2", location=Location((3, 3)))), FINAL, location=Location((3, 3))),
     ]
 
     types = {
@@ -2456,13 +2456,13 @@ def test_field_after_message_start(monkeypatch: pytest.MonkeyPatch) -> None:
         structure,
         types,
         r'^<stdin>:1:1: error: negative start for field "F2"\n'
-        r'<stdin>:1:1: note: on path "F1"\n'
-        r'<stdin>:1:1: note: unsatisfied "Message\'First - 1000 >= Message\'First"\n'
+        r'<stdin>:1:2: note: on path "F1"\n'
+        r'<stdin>:2:1: note: unsatisfied "Message\'First - 1000 >= Message\'First"\n'
         r"<stdin>:1:1: error: negative start for end of message\n"
-        r'<stdin>:1:1: note: on path "F1"\n'
-        r'<stdin>:1:1: note: on path "F2"\n'
-        r'<stdin>:1:1: note: unsatisfied "F2\'Last = \(Message\'First - 1000 \+ 8\) - 1"\n'
-        r'<stdin>:1:1: note: unsatisfied "F2\'Last \+ 1 >= Message\'First"$',
+        r'<stdin>:1:2: note: on path "F1"\n'
+        r'<stdin>:2:3: note: on path "F2"\n'
+        r'<stdin>:2:3: note: unsatisfied "F2\'Last = \(Message\'First - 1000 \+ 8\) - 1"\n'
+        r'<stdin>:3:3: note: unsatisfied "F2\'Last \+ 1 >= Message\'First"$',
     )
 
 
@@ -2738,7 +2738,11 @@ def test_no_path_to_final() -> None:
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2")),
         Link(Field("F2"), Field("F3"), Greater(Variable("F1"), Number(100))),
-        Link(Field("F2"), Field("F4"), LessEqual(Variable("F1"), Number(100))),
+        Link(
+            Field("F2"),
+            Field(ID("F4", location=Location((1, 1)))),
+            LessEqual(Variable("F1"), Number(100)),
+        ),
         Link(Field("F3"), FINAL),
     ]
 
@@ -2751,7 +2755,7 @@ def test_no_path_to_final() -> None:
     assert_message_model_error(
         structure,
         types,
-        '^error: no path to FINAL for field "F4"$',
+        '^<stdin>:1:1: error: no path to FINAL for field "F4"$',
     )
 
 
@@ -2778,16 +2782,16 @@ def test_no_path_to_final_transitive() -> None:
         structure,
         types,
         r"^"
-        r'error: no path to FINAL for field "F4"\n'
-        r'error: no path to FINAL for field "F5"\n'
-        r'error: no path to FINAL for field "F6"'
+        r'<unknown>:1:1: error: no path to FINAL for field "F4"\n'
+        r'<unknown>:1:1: error: no path to FINAL for field "F5"\n'
+        r'<unknown>:1:1: error: no path to FINAL for field "F6"'
         r"$",
     )
 
 
 def test_unreachable_field_mod_first() -> None:
     structure = [
-        Link(INITIAL, Field(ID("F1", location=Location((1, 2))))),
+        Link(INITIAL, Field(ID("F1", location=Location((1, 2)))), location=Location((1, 1))),
         Link(
             Field(ID("F1", location=Location((1, 3)))),
             Field(ID("F2", location=Location((1, 4)))),
@@ -2796,14 +2800,14 @@ def test_unreachable_field_mod_first() -> None:
         Link(Field(ID("F2", location=Location((1, 6)))), FINAL),
     ]
     types = {
-        Field("F1"): models.integer(),
+        Field(ID("F1", location=Location((3, 3)))): models.integer(),
         Field("F2"): models.integer(),
     }
     assert_message_model_error(
         structure,
         types,
         r"^"
-        r'error: field "F1" has no satisfiable condition at any outgoing link\n'
+        r'<stdin>:3:3: error: field "F1" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:2: note: on path "F1"\n'
         r'<stdin>:1:1: note: unsatisfied "F1\'First = Message\'First"\n'
         r'<stdin>:2:2: note: unsatisfied "F1\'First > Message\'First"'
@@ -2830,13 +2834,13 @@ def test_unreachable_field_mod_last() -> None:
     ]
     types = {
         Field("F1"): models.integer(),
-        Field("F2"): models.integer(),
+        Field(ID("F2", location=Location((2, 2)))): models.integer(),
     }
     assert_message_model_error(
         structure,
         types,
         r"^"
-        r'error: field "F2" has no satisfiable condition at any outgoing link\n'
+        r'<stdin>:2:2: error: field "F2" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:2:3: note: on path "F2"\n'
         r'<stdin>:2:3: note: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
@@ -2848,7 +2852,7 @@ def test_unreachable_field_mod_last() -> None:
 
 def test_unreachable_field_range_first() -> None:
     structure = [
-        Link(INITIAL, Field(ID("F1", location=Location((1, 1))))),
+        Link(INITIAL, Field(ID("F1", location=Location((1, 1)))), location=Location((1, 1))),
         Link(
             Field(ID("F1", location=Location((2, 2)))),
             Field(ID("F2", location=Location((2, 3)))),
@@ -2861,14 +2865,14 @@ def test_unreachable_field_range_first() -> None:
         Link(Field(ID("F2", location=Location((4, 1)))), FINAL),
     ]
     types = {
-        Field("F1"): models.integer(),
+        Field(ID("F1", location=Location((2, 2)))): models.integer(),
         Field("F2"): models.integer(),
     }
     assert_message_model_error(
         structure,
         types,
         r"^"
-        r'error: field "F1" has no satisfiable condition at any outgoing link\n'
+        r'<stdin>:2:2: error: field "F1" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:1:1: note: unsatisfied "F1\'First = Message\'First"\n'
         r'<stdin>:3:3: note: unsatisfied "F1\'First > Message\'First"'
@@ -2891,13 +2895,13 @@ def test_unreachable_field_range_last() -> None:
     ]
     types = {
         Field("F1"): models.integer(),
-        Field("F2"): models.integer(),
+        Field(ID("F2", location=Location((2, 2)))): models.integer(),
     }
     assert_message_model_error(
         structure,
         types,
         r"^"
-        r'error: field "F2" has no satisfiable condition at any outgoing link\n'
+        r'<stdin>:2:2: error: field "F2" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:2:3: note: on path "F2"\n'
         r'<stdin>:2:3: note: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
@@ -2909,7 +2913,7 @@ def test_unreachable_field_range_last() -> None:
 
 def test_unreachable_field_enum_first() -> None:
     structure = [
-        Link(INITIAL, Field(ID("F1", Location((1, 1))))),
+        Link(INITIAL, Field(ID("F1", Location((1, 1)))), location=Location((1, 2))),
         Link(
             Field(ID("F1", Location((2, 2)))),
             Field(ID("F2", location=Location((2, 3)))),
@@ -2922,16 +2926,16 @@ def test_unreachable_field_enum_first() -> None:
         Link(Field(ID("F2", location=Location((4, 4)))), FINAL),
     ]
     types = {
-        Field("F1"): models.enumeration(),
+        Field(ID("F1", location=Location((2, 2)))): models.enumeration(),
         Field("F2"): models.enumeration(),
     }
     assert_message_model_error(
         structure,
         types,
         r"^"
-        r'error: field "F1" has no satisfiable condition at any outgoing link\n'
+        r'<stdin>:2:2: error: field "F1" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "F1"\n'
-        r'<stdin>:1:1: note: unsatisfied "F1\'First = Message\'First"\n'
+        r'<stdin>:1:2: note: unsatisfied "F1\'First = Message\'First"\n'
         r'<stdin>:3:5: note: unsatisfied "F1\'First > Message\'First"'
         r"$",
     )
@@ -2953,13 +2957,13 @@ def test_unreachable_field_enum_last() -> None:
     ]
     types = {
         Field("F1"): models.enumeration(),
-        Field("F2"): models.enumeration(),
+        Field(ID("F2", location=Location((2, 2)))): models.enumeration(),
     }
     assert_message_model_error(
         structure,
         types,
         r"^"
-        r'error: field "F2" has no satisfiable condition at any outgoing link\n'
+        r'<stdin>:2:2: error: field "F2" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:2:2: note: on path "F2"\n'
         r'<stdin>:2:2: note: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
@@ -3002,13 +3006,13 @@ def test_unreachable_field_outgoing() -> None:
     ]
     types = {
         Field("F1"): models.integer(),
-        Field("F2"): models.integer(),
+        Field(ID("F2", location=Location((2, 2)))): models.integer(),
     }
     assert_message_model_error(
         structure,
         types,
         r"^"
-        r'error: field "F2" has no satisfiable condition at any outgoing link\n'
+        r'<stdin>:2:2: error: field "F2" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:2:3: note: on path "F2"\n'
         r'<stdin>:3:4: note: unsatisfied "F1 <= 32"\n'
@@ -3546,7 +3550,7 @@ def test_discontiguous_optional_fields(condition: Expr) -> None:
 def test_discontiguous_optional_fields_error() -> None:
     # TODO(eng/recordflux/RecordFlux#499): Enable disjunctions with references to optional fields
     structure = [
-        Link(INITIAL, Field("Flag"), location=Location((1, 1))),
+        Link(INITIAL, Field(ID("Flag", Location((1, 1)))), location=Location((1, 1))),
         Link(
             Field("Flag"),
             Field("Opt1"),
@@ -3555,7 +3559,7 @@ def test_discontiguous_optional_fields_error() -> None:
         ),
         Link(
             Field("Flag"),
-            Field("Data"),
+            Field(ID("Data", Location((3, 3)))),
             condition=NotEqual(Variable("Flag"), Number(1)),
             location=Location((3, 3)),
         ),
@@ -3564,10 +3568,13 @@ def test_discontiguous_optional_fields_error() -> None:
             Field("Data"),
             Field("Opt2"),
             condition=Or(
-                And(Equal(Variable("Flag"), Number(1)), Greater(Variable("Opt1"), Number(100))),
+                And(
+                    Equal(Variable("Flag"), Number(1)),
+                    Greater(Variable(ID("Opt1", Location((2, 2)))), Number(100)),
+                ),
                 Greater(Variable("Flag"), Number(1)),
             ),
-            size=Mul(Variable("Opt1"), Number(8), location=Location((4, 4))),
+            size=Mul(Variable(ID("Opt1", Location((2, 2)))), Number(8), location=Location((4, 4))),
             location=Location((4, 4)),
         ),
         Link(
@@ -5310,13 +5317,13 @@ def test_merge_message_constrained_empty() -> None:
         ],
         [],
         [
-            (Field("F3"), m1.identifier, []),
+            (Field(ID("F3", Location((8, 8)))), m1.identifier, []),
         ],
         location=Location((1, 1), end=(1, 2)),
     )
     with pytest.raises(
         RecordFluxError,
-        match=r'^error: empty message type when merging field "F3"$',
+        match=r'^<stdin>:8:8: error: empty message type when merging field "F3"$',
     ):
         m2.merged([models.integer(), m1])
 
@@ -6944,13 +6951,13 @@ def test_message_refinement_with_scalar() -> None:
     refinement = UncheckedRefinement(
         ID("P", Location((1, 1))),
         pdu=ID("P::Foo"),
-        sdu=ID("P::Bar"),
+        sdu=ID("P::Bar", Location((2, 2))),
         field=Field("Foo"),
     )
 
     with pytest.raises(
         RecordFluxError,
-        match=r'^error: type "P::Bar" cannot be used in refinement because '
+        match=r'^<stdin>:2:2: error: type "P::Bar" cannot be used in refinement because '
         r"it's not a message type$",
     ):
         refinement.checked(

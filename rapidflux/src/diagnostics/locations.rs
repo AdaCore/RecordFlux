@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use bincode::{deserialize, serialize};
+use lazy_static::lazy_static;
 use librapidflux::diagnostics as lib;
 use pyo3::{
     prelude::*,
@@ -9,6 +10,10 @@ use pyo3::{
 use serde::{Deserialize, Serialize};
 
 use crate::impl_states;
+
+lazy_static! {
+    pub static ref UNKNOWN_LOCATION: Location = Location(lib::UNKNOWN_LOCATION.clone());
+}
 
 #[pyclass(module = "rflx.rapidflux")]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]

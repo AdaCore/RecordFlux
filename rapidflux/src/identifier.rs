@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use librapidflux::identifier as lib;
 
 use crate::{
-    diagnostics::{FatalError, Location},
+    diagnostics::{FatalError, Location, UNKNOWN_LOCATION},
     impl_states,
 };
 
@@ -38,7 +38,7 @@ impl ID {
             Ok(_new(
                 identifier_id.0.identifier(),
                 if location.is_none() {
-                    identifier_id.0.location().cloned().map(Location)
+                    Some(Location(identifier_id.0.location().clone()))
                 } else {
                     location
                 },
@@ -54,7 +54,7 @@ impl ID {
     fn __getnewargs__(&self) -> (&str, Option<Location>) {
         (
             self.0.identifier(),
-            self.0.location().map(|l| Location(l.clone())),
+            Some(Location(self.0.location().clone())),
         )
     }
 
@@ -97,7 +97,7 @@ impl ID {
         format!(
             "ID(\"{}\", {})",
             self.0.identifier(),
-            self.location().map_or("None".to_string(), |l| l.__repr__())
+            self.location().__repr__(),
         )
     }
 
@@ -112,10 +112,10 @@ impl ID {
         }
         if other.is_instance_of::<ID>() {
             let other_id: ID = other.extract()?;
-            return Ok(if self.location().is_some() {
-                self._suffix(other_id.0.identifier())
-            } else {
+            return Ok(if self.location() == *UNKNOWN_LOCATION {
                 other_id._prefix(self.0.identifier())
+            } else {
+                self._suffix(other_id.0.identifier())
             }?);
         }
         Err(PyTypeError::new_err(format!(
@@ -131,10 +131,10 @@ impl ID {
         }
         if other.is_instance_of::<ID>() {
             let other_id: ID = other.extract()?;
-            return Ok(if self.location().is_some() {
-                self._prefix(other_id.0.identifier())
-            } else {
+            return Ok(if self.location() == *UNKNOWN_LOCATION {
                 other_id._suffix(self.0.identifier())
+            } else {
+                self._prefix(other_id.0.identifier())
             }?);
         }
         Err(PyTypeError::new_err(format!(
@@ -179,8 +179,8 @@ impl ID {
     }
 
     #[getter]
-    fn location(&self) -> Option<Location> {
-        self.0.location().map(|l| Location(l.clone()))
+    fn location(&self) -> Location {
+        Location(self.0.location().clone())
     }
 
     #[getter]

@@ -940,13 +940,11 @@ class Message(type_decl.TypeDecl):
 
             if f in parameters:
                 if not isinstance(t, type_decl.Scalar):
-                    assert f.identifier.location is not None
                     additional_annotations = []
                     if not (
                         type_decl.is_builtin_type(t.identifier)
                         or type_decl.is_internal_type(t.identifier)
                     ):
-                        assert t.identifier.location is not None
                         additional_annotations.append(
                             Annotation(
                                 "type declared here",
@@ -1692,7 +1690,6 @@ class Message(type_decl.TypeDecl):
                 assert isinstance(t, type_decl.Scalar)
                 assert t.size_expr.location is not None
                 assert link.size.location is not None
-                assert link.target.identifier.location is not None
                 self.error.extend(
                     [
                         ErrorEntry(
@@ -1851,7 +1848,6 @@ class Message(type_decl.TypeDecl):
                 *self.message_constraints,
                 *self.aggregate_constraints(l.condition),
             ]
-            assert l.source.identifier.location is not None
             assert l.condition.location is not None
 
             unsat_error = RecordFluxError(
@@ -2153,7 +2149,6 @@ class Message(type_decl.TypeDecl):
 
                         path_locations = [p.target.identifier.location for p in path]
                         assert are_all_locations_present(path_locations)
-                        assert f.identifier.location is not None
                         assert self.location is not None
                         error = RecordFluxError(
                             [
@@ -2200,8 +2195,6 @@ class Message(type_decl.TypeDecl):
                         )
 
                         assert field_size.location is not None
-                        path_locations = [p.location for p in path]
-                        assert are_all_locations_present(path_locations)
                         assert self.location is not None
                         error = RecordFluxError(
                             [
@@ -2265,7 +2258,6 @@ class Message(type_decl.TypeDecl):
                 *message_constraints,
                 *field_size_constraints,
             ]
-            assert self.identifier.location is not None, self.identifier
             assert self.location is not None
             error = RecordFluxError(
                 [
@@ -2301,7 +2293,7 @@ class Message(type_decl.TypeDecl):
     @staticmethod
     def _target_first(link: Link) -> expr.Expr:
         if link.source == INITIAL:
-            return expr.First("Message")
+            return expr.First(ID("Message", link.location))
         if link.first != expr.UNDEFINED:
             return link.first
         return expr.Add(expr.Last(link.source.name), expr.Number(1), location=link.location)
@@ -2576,7 +2568,6 @@ class Refinement(type_decl.TypeDecl):
         for f, t in self.pdu.types.items():
             if f == self.field:
                 if not isinstance(t, type_decl.Opaque):
-                    assert f.identifier.location is not None
                     self.error.push(
                         ErrorEntry(
                             f'invalid type of field "{self.field.name}" in refinement of'
@@ -2596,8 +2587,6 @@ class Refinement(type_decl.TypeDecl):
                     )
                 break
         else:
-            assert self.field.identifier.location is not None
-            assert self.pdu.identifier.location is not None
             similar_flds = similar_fields(
                 self.field.identifier,
                 [f.identifier for f in self.pdu.fields],
@@ -2916,7 +2905,6 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
                         ),
                     )
             else:
-                assert param.identifier.location is not None
                 argument_errors.push(
                     ErrorEntry(
                         "missing argument",
@@ -3204,7 +3192,6 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
         if name_conflicts:
             conflicting = name_conflicts.pop(0)
             assert inner_message.location is not None
-            assert field.identifier.location is not None
             error.push(
                 ErrorEntry(
                     f'name conflict for "{conflicting.identifier}"',
@@ -3285,7 +3272,6 @@ class UncheckedDerivedMessage(type_decl.UncheckedTypeDecl):
         base_messages = [t for t in base_types if isinstance(t, Message)]
 
         if not base_messages:
-            assert base_types[0].identifier.location is not None
             RecordFluxError(
                 [
                     ErrorEntry(
@@ -3616,29 +3602,23 @@ def annotate_path(
 ) -> Sequence[Annotation]:
     link_filter = link_filter or (lambda _: True)
     assert message_location.end is not None
-    result = []
-
-    for link in path:
-        assert link.target.identifier.location is not None
-
-        if link_filter(link):
-            result.append(
-                Annotation(
-                    (
-                        f'on path "{link.target.name}"'
-                        if link.target != FINAL
-                        else "on path to end of message"
-                    ),
-                    Severity.NOTE,
-                    (
-                        link.target.identifier.location
-                        if link.target != FINAL
-                        else Location(message_location.end, message_location.source)
-                    ),
-                ),
-            )
-
-    return result
+    return [
+        Annotation(
+            (
+                f'on path "{link.target.name}"'
+                if link.target != FINAL
+                else "on path to end of message"
+            ),
+            Severity.NOTE,
+            (
+                link.target.identifier.location
+                if link.target != FINAL
+                else Location(message_location.end, message_location.source)
+            ),
+        )
+        for link in path
+        if link_filter(link)
+    ]
 
 
 def filter_builtins_and_current_field(link: Link, field: Field) -> bool:

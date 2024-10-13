@@ -48,7 +48,6 @@ def type_location(identifier: ID, node: lang.RFLXNode) -> Location:
 
     The location object covers the area from the start of an identifier to the end of a node.
     """
-    assert identifier.location is not None
     assert identifier.location.source is not None
     return Location(
         identifier.location.start,

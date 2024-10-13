@@ -1,7 +1,16 @@
 use core::fmt;
 use std::{fmt::Display, path::PathBuf};
 
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
+
+lazy_static! {
+    pub static ref UNKNOWN_LOCATION: Location = Location {
+        start: FilePosition(1, 1),
+        end: None,
+        source: Some(PathBuf::from("<unknown>")),
+    };
+}
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default, Debug)]
 pub struct FilePosition(u32, u32);
@@ -90,7 +99,9 @@ impl Location {
     /// This function panics if not all locations refer to the same source file.
     pub fn merge(locations: &[Self]) -> Option<Self> {
         assert!(
-            locations.iter().all(|l| l.source.is_none())
+            locations
+                .iter()
+                .all(|l| l == &*UNKNOWN_LOCATION || l.source.is_none())
                 || locations.iter().all(|l| l.source.is_some()),
             "attempted to merge locations with and without source file"
         );
