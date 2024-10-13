@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use librapidflux::ty as lib;
 
 use crate::{
-    diagnostics::{Annotation, Location, RapidFluxError},
+    diagnostics::{Annotation, Location, RapidFluxError, UNKNOWN_LOCATION},
     identifier::{to_id, ID},
     impl_states, register_submodule_declarations,
 };
@@ -218,7 +218,7 @@ impl Enumeration {
             self.identifier(),
             self.literals(),
             self.always_valid(),
-            self.location(),
+            Some(self.location()),
         )
     }
 
@@ -264,8 +264,12 @@ impl Enumeration {
     }
 
     #[getter]
-    fn location(&self) -> Option<Location> {
-        self.0.location.clone().map(Location)
+    fn location(&self) -> Location {
+        if let Some(location) = &self.0.location {
+            Location(location.clone())
+        } else {
+            UNKNOWN_LOCATION.clone()
+        }
     }
 
     fn is_compatible(&self, other: &Bound<'_, PyAny>) -> bool {
@@ -374,7 +378,7 @@ impl Integer {
     }
 
     fn __getnewargs__(&self) -> (ID, Bounds, Option<Location>) {
-        (self.identifier(), self.bounds(), self.location())
+        (self.identifier(), self.bounds(), Some(self.location()))
     }
 
     fn __eq__(&self, other: &Bound<'_, PyAny>) -> bool {
@@ -400,8 +404,12 @@ impl Integer {
     }
 
     #[getter]
-    fn location(&self) -> Option<Location> {
-        self.0.location.clone().map(Location)
+    fn location(&self) -> Location {
+        if let Some(location) = &self.0.location {
+            Location(location.clone())
+        } else {
+            UNKNOWN_LOCATION.clone()
+        }
     }
 
     fn is_compatible(&self, other: &Bound<'_, PyAny>) -> bool {

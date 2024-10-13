@@ -2608,7 +2608,6 @@ class CaseExpr(Expr):
         type_literals = [l.name for l in self.expr.type_.literals]
         missing = set(type_literals) - set(literals)
         if missing:
-            assert self.expr.type_.location is not None
             error.push(
                 ErrorEntry(
                     "not all enumeration literals covered by case expression",
@@ -2629,7 +2628,6 @@ class CaseExpr(Expr):
 
         invalid = set(literals) - set(type_literals)
         if invalid:
-            assert self.expr.type_.location is not None
             error.push(
                 ErrorEntry(
                     "invalid literals used in case expression",
@@ -2667,7 +2665,6 @@ class CaseExpr(Expr):
                 group = list(map(itemgetter(1), g))
                 missing_ranges.append((group[0], group[-1]))
 
-            assert self.expr.type_.location is not None
             error.push(
                 ErrorEntry(
                     f"case expression does not cover full range of "
@@ -2693,7 +2690,6 @@ class CaseExpr(Expr):
 
         invalid = set(literals) - set(type_literals)
         if invalid:
-            assert self.expr.type_.location is not None
             error.push(
                 ErrorEntry(
                     "invalid literals used in case expression",

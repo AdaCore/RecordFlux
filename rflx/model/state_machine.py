@@ -774,7 +774,6 @@ class StateMachine(TopLevelDeclaration):
     def _validate_function_parameter_type(self, type_identifier: ID) -> None:
         parameter_type = self.types[type_identifier]
         if isinstance(parameter_type, Message) and not parameter_type.is_definite:
-            assert parameter_type.location
             self.error.extend(
                 [
                     ErrorEntry(
@@ -814,7 +813,6 @@ class StateMachine(TopLevelDeclaration):
     def _validate_function_return_type(self, type_identifier: ID) -> None:
         return_type = self.types[type_identifier]
         if isinstance(return_type, Message) and not return_type.is_definite:
-            assert return_type.location
             self.error.extend(
                 [
                     ErrorEntry(
