@@ -36,4 +36,20 @@ is
      Pre =>
        Valid_Tiny_Int (Val);
 
+   type Int is range 0 .. 2**16 - 1 with
+     Size =>
+       16;
+
+   function Valid_Int (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
+     (Val <= 65535);
+
+   function To_Base_Integer (Val : RFLX.Test.Int) return RFLX.RFLX_Types.Base_Integer is
+     (RFLX.RFLX_Types.Base_Integer (Val));
+
+   function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Test.Int is
+     (RFLX.Test.Int (Val))
+    with
+     Pre =>
+       Valid_Int (Val);
+
 end RFLX.Test;

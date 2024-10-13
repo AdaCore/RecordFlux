@@ -2276,6 +2276,31 @@ def _(
             expression.origin,
         )
 
+    elif isinstance(expression, CaseExpr):
+        assert isinstance(target_type, ty.Integer)
+
+        choices = []
+
+        for k, v in expression.choices:
+            assert isinstance(v, IntExpr)
+            choices.append(
+                (
+                    k,
+                    (
+                        v
+                        if target_type.is_compatible_strong(v.type_)
+                        else IntConversion(target_type, v, v.origin)
+                    ),
+                ),
+            )
+
+        result = expression.__class__(
+            expression.expression,
+            choices,
+            target_type,
+            origin=expression.origin,
+        )
+
     else:
         assert False
 

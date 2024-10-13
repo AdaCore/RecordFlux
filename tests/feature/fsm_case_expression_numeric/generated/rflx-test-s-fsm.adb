@@ -38,7 +38,7 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      -- tests/feature/fsm_case_expression_numeric/test.rflx:19:10
+      -- tests/feature/fsm_case_expression_numeric/test.rflx:21:10
       Test.Message.Verify_Message (Ctx.P.Message_Ctx);
       if Test.Message.Well_Formed_Message (Ctx.P.Message_Ctx) then
          Ctx.P.Next_State := S_Prepare;
@@ -55,6 +55,7 @@ is
        Initialized (Ctx)
    is
       Value : Test.Tiny_Int;
+      T : Test.Int;
       T_0 : Test.Tiny_Int;
       function Prepare_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null)
@@ -64,7 +65,9 @@ is
         Ghost;
    begin
       pragma Assert (Prepare_Invariant);
-      -- tests/feature/fsm_case_expression_numeric/test.rflx:31:25
+      -- tests/feature/fsm_case_expression_numeric/test.rflx:34:10
+      T := 1;
+      -- tests/feature/fsm_case_expression_numeric/test.rflx:35:25
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
       pragma Warnings (Off, "this code can never be executed and has been deleted");
@@ -80,17 +83,17 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_case_expression_numeric/test.rflx:31:25
+      -- tests/feature/fsm_case_expression_numeric/test.rflx:35:25
       T_0 := Test.Message.Get_Value (Ctx.P.Message_Ctx);
-      -- tests/feature/fsm_case_expression_numeric/test.rflx:31:10
+      -- tests/feature/fsm_case_expression_numeric/test.rflx:35:10
       Value := (case T_0 is
           when 1 | 2 =>
              4,
           when 3 =>
-             1,
+             Test.Tiny_Int (T),
           when 4 =>
              2);
-      -- tests/feature/fsm_case_expression_numeric/test.rflx:36:10
+      -- tests/feature/fsm_case_expression_numeric/test.rflx:40:10
       Test.Message.Reset (Ctx.P.Message_Ctx);
       if not Test.Message.Sufficient_Space (Ctx.P.Message_Ctx, Test.Message.F_Value) then
          Ctx.P.Next_State := S_Final;
@@ -122,7 +125,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      -- tests/feature/fsm_case_expression_numeric/test.rflx:45:10
+      -- tests/feature/fsm_case_expression_numeric/test.rflx:49:10
       Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_Invariant);
    end Reply;

@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rejection of invalid parameter types and return types in function declarations (eng/recordflux/RecordFlux#977)
 - Consequential errors caused by undefined variables in binary expressions (eng/recordflux/RecordFlux#1672)
 - Rejection of variable declarations with type `Opaque` (eng/recordflux/RecordFlux#633)
+- Fatal error caused by variable in case expression (eng/recordflux/RecordFlux#1800)
 
 ## [0.24.0] - 2024-09-12
 
