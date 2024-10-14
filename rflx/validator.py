@@ -390,7 +390,6 @@ class CoverageInformation:
                     link: False for link in message.model.structure
                 }
 
-                assert message.model.location is not None
                 assert message.model.location.source is not None
                 file_name = message.model.location.source.name
                 self._spec_files[file_name].append(message.identifier)

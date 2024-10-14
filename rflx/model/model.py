@@ -7,7 +7,6 @@ from pathlib import Path
 
 from rflx import const
 from rflx.common import Base, unique, verbose_repr
-from rflx.error import are_all_locations_present
 from rflx.identifier import ID
 from rflx.rapidflux import Annotation, ErrorEntry, RecordFluxError, Severity, logging
 
@@ -161,8 +160,6 @@ def _check_duplicates(
             )
 
         elif d.identifier in seen:
-            location = seen[d.identifier].location
-            assert location is not None
             error.push(
                 ErrorEntry(
                     (
@@ -186,7 +183,7 @@ def _check_duplicates(
                                     else f'previous occurrence of "{d.identifier}"'
                                 ),
                                 Severity.NOTE,
-                                location,
+                                seen[d.identifier].location,
                             ),
                         ]
                     ),
@@ -220,8 +217,6 @@ def _check_conflicts(
 
         if identical_literals:
             literals_message = ", ".join([f"{l}" for l in sorted(identical_literals)])
-            locations = [l.location for l in sorted(identical_literals)]
-            assert are_all_locations_present(locations)
             error.push(
                 ErrorEntry(
                     f"conflicting literals: {literals_message}",
@@ -231,9 +226,9 @@ def _check_conflicts(
                         Annotation(
                             f'previous occurrence of "{link}"',
                             Severity.NOTE,
-                            location,
+                            link.location,
                         )
-                        for link, location in zip(sorted(identical_literals), locations)
+                        for link in sorted(identical_literals)
                     ],
                 ),
             )
@@ -255,7 +250,6 @@ def _check_conflicts(
             for d in declarations
             if {l, l.name} & name_conflicts and l.name == d.identifier.name
         ]:
-            assert conflicting_type.location is not None
             error.push(
                 ErrorEntry(
                     f'literal "{literal.name}" conflicts with type declaration',

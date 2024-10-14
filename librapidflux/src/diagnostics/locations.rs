@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 lazy_static! {
     pub static ref UNKNOWN_LOCATION: Location = Location {
         start: FilePosition(1, 1),
-        end: None,
+        end: Some(FilePosition(1, 1)),
         source: Some(PathBuf::from("<unknown>")),
     };
 }

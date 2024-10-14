@@ -7,7 +7,14 @@ from rflx import expr_conv, ir, ty
 from rflx.common import Base
 from rflx.expr import Expr, Variable
 from rflx.identifier import ID, StrID
-from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
+from rflx.rapidflux import (
+    UNKNOWN_LOCATION,
+    Annotation,
+    ErrorEntry,
+    Location,
+    RecordFluxError,
+    Severity,
+)
 
 
 class Statement(Base):
@@ -15,7 +22,7 @@ class Statement(Base):
         self,
         identifier: StrID,
         type_: ty.Type = ty.UNDEFINED,
-        location: Location | None = None,
+        location: Location = UNKNOWN_LOCATION,
     ):
         self.identifier = ID(identifier)
         self.type_ = type_
@@ -46,7 +53,7 @@ class Assignment(Statement):
         identifier: StrID,
         expression: Expr,
         type_: ty.Type = ty.UNDEFINED,
-        location: Location | None = None,
+        location: Location = UNKNOWN_LOCATION,
     ) -> None:
         super().__init__(identifier, type_, location)
         self.expression = expression
@@ -88,7 +95,7 @@ class MessageFieldAssignment(Assignment):
         field: StrID,
         expression: Expr,
         type_: ty.Type = ty.UNDEFINED,
-        location: Location | None = None,
+        location: Location = UNKNOWN_LOCATION,
     ) -> None:
         super().__init__(message, expression, type_, location)
         self.message = ID(message)
@@ -108,7 +115,6 @@ class MessageFieldAssignment(Assignment):
             if self.field in statement_type.fields:
                 field_type = statement_type.types[self.field]
             elif self.field in statement_type.parameters:
-                assert self.field.location is not None
                 error.push(
                     ErrorEntry(
                         f'message parameter "{self.field}" cannot be set using an assignment',
@@ -163,7 +169,7 @@ class AttributeStatement(Statement):
         attribute: str,
         parameters: list[Expr],
         type_: ty.Type = ty.UNDEFINED,
-        location: Location | None = None,
+        location: Location = UNKNOWN_LOCATION,
     ) -> None:
         super().__init__(identifier, type_, location)
         self.attribute = attribute
@@ -193,7 +199,7 @@ class ListAttributeStatement(AttributeStatement):
         identifier: StrID,
         parameter: Expr,
         type_: ty.Type = ty.UNDEFINED,
-        location: Location | None = None,
+        location: Location = UNKNOWN_LOCATION,
     ) -> None:
         super().__init__(identifier, self.__class__.__name__, [parameter], type_, location)
 
@@ -295,7 +301,7 @@ class Reset(AttributeStatement):
         identifier: StrID,
         associations: Mapping[ID, Expr] | None = None,
         type_: ty.Type = ty.UNDEFINED,
-        location: Location | None = None,
+        location: Location = UNKNOWN_LOCATION,
     ) -> None:
         super().__init__(identifier, self.__class__.__name__, [], type_, location)
         self.associations = associations or {}
@@ -382,7 +388,7 @@ class ChannelAttributeStatement(AttributeStatement):
         identifier: StrID,
         parameter: Expr,
         type_: ty.Type = ty.UNDEFINED,
-        location: Location | None = None,
+        location: Location = UNKNOWN_LOCATION,
     ) -> None:
         super().__init__(identifier, self.__class__.__name__, [parameter], type_, location)
 

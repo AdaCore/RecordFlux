@@ -430,13 +430,14 @@ def test_enumeration_invalid_size_exceeds_limit() -> None:
 def test_enumeration_invalid_always_valid_aspect() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^error: unnecessary always-valid aspect on "T"$',
+        match=r'^<stdin>:1:1: error: unnecessary always-valid aspect on "T"$',
     ):
         Enumeration(
             "P::T",
             [("A", Number(0)), ("B", Number(1))],
             Number(1),
             always_valid=True,
+            location=Location((1, 1)),
         ).error.propagate()
 
 

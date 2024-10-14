@@ -87,14 +87,14 @@ def test_integer_to_symbols() -> None:
         expr.Number(0),
         expr.Number(100),
         expr.Number(8),
-        None,
+        UNKNOWN_LOCATION,
     )
     symbols = LSModel._to_symbols(integer)  # noqa: SLF001
     assert len(symbols) == 1
     assert symbols[0] == Symbol(
         ID("Package::Integer_Identifier"),
         SymbolCategory.NUMERIC,
-        None,
+        UNKNOWN_LOCATION,
         None,
     )
 
@@ -106,20 +106,20 @@ def test_enumeration_to_symbols() -> None:
             [(ID("Literal"), expr.Number(0))],
             expr.Number(1),
             always_valid=True,
-            location=None,
+            location=UNKNOWN_LOCATION,
         ),
     )
     assert len(symbols) == 2
     assert symbols[0] == Symbol(
         ID("Package::Literal"),
         SymbolCategory.ENUMERATION_LITERAL,
-        None,
+        UNKNOWN_LOCATION,
         None,
     )
     assert symbols[1] == Symbol(
         ID("Package::Enumeration_Identifier"),
         SymbolCategory.ENUMERATION,
-        None,
+        UNKNOWN_LOCATION,
         None,
     )
 
@@ -129,14 +129,14 @@ def test_sequence_to_symbols() -> None:
         UncheckedSequence(
             ID("Package::Sequence_Identifier"),
             ID("Package::Integer_Identifier"),
-            None,
+            UNKNOWN_LOCATION,
         ),
     )
     assert len(symbols) == 1
     assert symbols[0] == Symbol(
         ID("Package::Sequence_Identifier"),
         SymbolCategory.SEQUENCE,
-        None,
+        UNKNOWN_LOCATION,
         None,
     )
 

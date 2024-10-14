@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from typing import NoReturn
-
-from typing_extensions import TypeGuard
 
 from rflx.rapidflux import (
     ErrorEntry,
@@ -42,9 +39,3 @@ def info(
     location: Location | None = None,
 ) -> None:
     RecordFluxError([ErrorEntry(message, Severity.INFO, location)]).print_messages()
-
-
-def are_all_locations_present(
-    locations: Sequence[Location | None],
-) -> TypeGuard[Sequence[Location]]:
-    return all(l is not None for l in locations)

@@ -11,7 +11,14 @@ from rflx import const, expr, ty
 from rflx.common import indent_next, verbose_repr
 from rflx.error import fail
 from rflx.identifier import ID, StrID
-from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
+from rflx.rapidflux import (
+    UNKNOWN_LOCATION,
+    Annotation,
+    ErrorEntry,
+    Location,
+    RecordFluxError,
+    Severity,
+)
 
 from . import message
 from .top_level_declaration import TopLevelDeclaration, UncheckedTopLevelDeclaration
@@ -63,7 +70,7 @@ class Scalar(TypeDecl):
         self,
         identifier: StrID,
         size: expr.Expr,
-        location: Location | None = None,
+        location: Location = UNKNOWN_LOCATION,
     ) -> None:
         super().__init__(identifier, location)
 
@@ -103,7 +110,7 @@ class Integer(Scalar):
         first: expr.Expr,
         last: expr.Expr,
         size: expr.Expr,
-        location: Location | None = None,
+        location: Location = UNKNOWN_LOCATION,
     ) -> None:
         super().__init__(identifier, size, location)
 
@@ -325,15 +332,13 @@ class Enumeration(Scalar):
         literals: abc.Sequence[tuple[StrID, expr.Number]],
         size: expr.Expr,
         always_valid: bool,
-        location: Location | None = None,
+        location: Location = UNKNOWN_LOCATION,
     ) -> None:
         super().__init__(identifier, size, location)
 
         for i1, e1 in enumerate(literals):
             for i2, e2 in enumerate(literals):
                 if i2 < i1 and e1[0] == e2[0]:
-                    annotation_location = e2[0].location if isinstance(e2[0], ID) else self.location
-                    assert annotation_location is not None
                     self.error.push(
                         ErrorEntry(
                             f'duplicate literal "{e1[0]}"',
@@ -344,7 +349,7 @@ class Enumeration(Scalar):
                                     Annotation(
                                         "previous occurrence",
                                         Severity.NOTE,
-                                        annotation_location,
+                                        e2[0].location if isinstance(e2[0], ID) else self.location,
                                     ),
                                 ]
                             ),
@@ -526,13 +531,12 @@ class Sequence(Composite):
         self,
         identifier: StrID,
         element_type: TypeDecl,
-        location: Location | None = None,
+        location: Location = UNKNOWN_LOCATION,
     ) -> None:
         super().__init__(identifier, location)
         self.element_type = element_type
 
         if not isinstance(element_type, Scalar) and not isinstance(element_type, message.Message):
-            assert element_type.location is not None
             self.error.push(
                 ErrorEntry(
                     f'invalid element type of sequence "{self.name}"',
@@ -553,7 +557,6 @@ class Sequence(Composite):
         if isinstance(element_type, Scalar):
             element_type_size = element_type.size.simplified()
             if not isinstance(element_type_size, expr.Number) or int(element_type_size) % 8 != 0:
-                assert element_type.location is not None
                 self.error.push(
                     ErrorEntry(
                         f'unsupported element type size of sequence "{self.name}"',
@@ -646,7 +649,7 @@ class Sequence(Composite):
 
 
 class Opaque(Composite):
-    def __init__(self, location: Location | None = None) -> None:
+    def __init__(self, location: Location = UNKNOWN_LOCATION) -> None:
         super().__init__(const.INTERNAL_PACKAGE * "Opaque", location)
 
     def __repr__(self) -> str:
@@ -684,7 +687,7 @@ class UncheckedInteger(UncheckedTypeDecl):
     first: expr.Expr
     last: expr.Expr
     size: expr.Expr
-    location: Location | None
+    location: Location
 
     def checked(
         self,
@@ -716,7 +719,7 @@ class UncheckedEnumeration(UncheckedTypeDecl):
     literals: abc.Sequence[tuple[ID, expr.Number]]
     size: expr.Expr
     always_valid: bool
-    location: Location | None
+    location: Location
 
     def checked(
         self,
@@ -737,7 +740,7 @@ class UncheckedEnumeration(UncheckedTypeDecl):
 class UncheckedSequence(UncheckedTypeDecl):
     identifier: ID
     element_identifier: ID
-    location: Location | None
+    location: Location
 
     def checked(
         self,
@@ -765,7 +768,7 @@ class UncheckedSequence(UncheckedTypeDecl):
 @dataclass
 class UncheckedOpaque(UncheckedTypeDecl):
     identifier: ID
-    location: Location | None
+    location: Location
 
     def checked(
         self,
@@ -888,12 +891,11 @@ def check_identifier_notation(
             and str(expression.identifier) != str(id_map[expression.identifier])
         ):
             declaration_location = id_map[expression.identifier].location
-            assert declaration_location is not None
             error.push(
                 ErrorEntry(
                     f'casing of "{expression.identifier}" differs from casing in the'
                     f' declaration of "{id_map[expression.identifier]}"'
-                    + (f" at {declaration_location.short}" if declaration_location else ""),
+                    f" at {declaration_location.short}",
                     Severity.ERROR,
                     expression.identifier.location,
                     annotations=[

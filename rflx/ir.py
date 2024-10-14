@@ -19,7 +19,7 @@ from rflx.common import Base
 from rflx.const import MAX_SCALAR_SIZE, MP_CONTEXT
 from rflx.error import info
 from rflx.identifier import ID, StrID
-from rflx.rapidflux import Location
+from rflx.rapidflux import UNKNOWN_LOCATION, Location
 
 if TYPE_CHECKING:
     from rflx.model import type_decl
@@ -2079,7 +2079,7 @@ class State:
         return [a for a in self.actions if isinstance(a, VarDecl)]
 
 
-FINAL_STATE = State("Final", [], None, [], None, None)
+FINAL_STATE = State("Final", [], None, [], None, UNKNOWN_LOCATION)
 
 
 @frozen(init=False)

@@ -12,11 +12,18 @@ from functools import cached_property, partial
 from rflx import expr, expr_proof, ty
 from rflx.common import Base, indent, indent_next, unique, verbose_repr
 from rflx.const import MP_CONTEXT
-from rflx.error import are_all_locations_present, fail, fatal_fail
+from rflx.error import fail, fatal_fail
 from rflx.expr import similar_fields
 from rflx.identifier import ID, StrID
 from rflx.model.top_level_declaration import TopLevelDeclaration
-from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
+from rflx.rapidflux import (
+    UNKNOWN_LOCATION,
+    Annotation,
+    ErrorEntry,
+    Location,
+    RecordFluxError,
+    Severity,
+)
 
 from . import type_decl
 
@@ -61,7 +68,7 @@ class Link(Base):
     condition: expr.Expr = expr.TRUE
     size: expr.Expr = expr.UNDEFINED
     first: expr.Expr = expr.UNDEFINED
-    location: Location | None = dataclass_field(default=None, repr=False)
+    location: Location = dataclass_field(default=UNKNOWN_LOCATION, repr=False)
 
     def __str__(self) -> str:
         condition = indent_next(
@@ -104,7 +111,7 @@ class Message(type_decl.TypeDecl):
         types: Mapping[Field, type_decl.TypeDecl],
         checksums: Mapping[ID, Sequence[expr.Expr]] | None = None,
         byte_order: ByteOrder | Mapping[Field, ByteOrder] | None = None,
-        location: Location | None = None,
+        location: Location = UNKNOWN_LOCATION,
         skip_verification: bool = False,
         workers: int = 1,
     ) -> None:
@@ -1005,7 +1012,6 @@ class Message(type_decl.TypeDecl):
 
         if name_conflicts:
             conflicting_field, conflicting_literal = name_conflicts.pop(0)
-            assert conflicting_literal.location is not None
             self.error.push(
                 ErrorEntry(
                     f'name conflict for field "{conflicting_field.name}" in'
@@ -1075,8 +1081,6 @@ class Message(type_decl.TypeDecl):
 
         for links in duplicate_links.values():
             if len(links) > 1:
-                locations = [l.location for l in links]
-                assert are_all_locations_present(locations)
                 self.error.push(
                     ErrorEntry(
                         f'duplicate link from "{links[0].source.identifier}"'
@@ -1087,9 +1091,9 @@ class Message(type_decl.TypeDecl):
                             Annotation(
                                 "duplicate link",
                                 Severity.NOTE,
-                                location,
+                                l.location,
                             )
-                            for location in locations
+                            for l in links
                         ],
                     ),
                 )
@@ -1106,8 +1110,6 @@ class Message(type_decl.TypeDecl):
                 assert isinstance(e, expr.Pow)
                 variables = e.right.findall(lambda x: isinstance(x, expr.Variable))
                 if variables:
-                    locations = [v.location for v in variables]
-                    assert are_all_locations_present(locations)
                     self.error.push(
                         ErrorEntry(
                             "unsupported expression",
@@ -1117,9 +1119,9 @@ class Message(type_decl.TypeDecl):
                                 Annotation(
                                     f'variable "{v}" in exponent',
                                     Severity.NOTE,
-                                    l,
+                                    v.location,
                                 )
-                                for v, l in zip(variables, locations)
+                                for v in variables
                             ],
                         ),
                     )
@@ -1265,8 +1267,6 @@ class Message(type_decl.TypeDecl):
                     fields.append(e.target)
         if not has_unreachable and set(self.structure) - visited:
             for cycle in self._find_cycles():
-                locations = [link.location for link in cycle]
-                assert are_all_locations_present(locations)
                 self.error.push(
                     ErrorEntry(
                         f'structure of "{self.identifier}" contains cycle',
@@ -1276,9 +1276,9 @@ class Message(type_decl.TypeDecl):
                             Annotation(
                                 f'field "{link.source.name}" links to "{link.target.name}"',
                                 Severity.NOTE,
-                                location,
+                                link.location,
                             )
-                            for link, location in zip(cycle, locations)
+                            for link in cycle
                         ],
                     ),
                 )
@@ -1568,7 +1568,6 @@ class Message(type_decl.TypeDecl):
 
         def check_expr_type(expression: expr.Expr, ty: ty.Type, path: Sequence[Link]) -> None:
             entries = expression.check_type(ty).entries
-            assert self.location is not None
 
             for e in entries:
                 e.extend(
@@ -1994,20 +1993,16 @@ class Message(type_decl.TypeDecl):
                 if paths:
                     error = []
                     annotations: list[Annotation] = []
-                    assert self.location is not None
                     for path, errors in sorted(paths):
-                        unsatisfied_locations = [t[1] for t in errors]
-                        assert are_all_locations_present(unsatisfied_locations)
-
                         annotations.extend(annotate_path(path, self.location))
                         annotations.extend(
                             [
                                 Annotation(
-                                    f'unsatisfied "{m}"',
+                                    f'unsatisfied "{expression}"',
                                     Severity.NOTE,
-                                    l,
+                                    location,
                                 )
-                                for (m, _), l in zip(errors, unsatisfied_locations)
+                                for expression, location in errors
                             ],
                         )
 
@@ -2076,7 +2071,6 @@ class Message(type_decl.TypeDecl):
                     *self.aggregate_constraints(start),
                 ]
 
-                assert self.location is not None
                 error = RecordFluxError(
                     [
                         ErrorEntry(
@@ -2140,9 +2134,6 @@ class Message(type_decl.TypeDecl):
                             last.location,
                         )
 
-                        path_locations = [p.target.identifier.location for p in path]
-                        assert are_all_locations_present(path_locations)
-                        assert self.location is not None
                         error = RecordFluxError(
                             [
                                 ErrorEntry(
@@ -2187,8 +2178,6 @@ class Message(type_decl.TypeDecl):
                             location=last.location,
                         )
 
-                        assert field_size.location is not None
-                        assert self.location is not None
                         error = RecordFluxError(
                             [
                                 ErrorEntry(
@@ -2251,7 +2240,6 @@ class Message(type_decl.TypeDecl):
                 *message_constraints,
                 *field_size_constraints,
             ]
-            assert self.location is not None
             error = RecordFluxError(
                 [
                     ErrorEntry(
@@ -2417,7 +2405,7 @@ class DerivedMessage(Message):
         types: Mapping[Field, type_decl.TypeDecl] | None = None,
         checksums: Mapping[ID, Sequence[expr.Expr]] | None = None,
         byte_order: ByteOrder | Mapping[Field, ByteOrder] | None = None,
-        location: Location | None = None,
+        location: Location = UNKNOWN_LOCATION,
         skip_verification: bool = False,
         workers: int = 1,
     ) -> None:
@@ -2434,7 +2422,6 @@ class DerivedMessage(Message):
         self.base = base
 
         if isinstance(base, DerivedMessage):
-            assert base.location is not None
             RecordFluxError(
                 [
                     ErrorEntry(
@@ -2484,7 +2471,7 @@ class Refinement(type_decl.TypeDecl):
         field: Field,
         sdu: Message,
         condition: expr.Expr = expr.TRUE,
-        location: Location | None = None,
+        location: Location = UNKNOWN_LOCATION,
         skip_verification: bool = False,
     ) -> None:
         super().__init__(
@@ -2584,8 +2571,6 @@ class Refinement(type_decl.TypeDecl):
                 self.field.identifier,
                 [f.identifier for f in self.pdu.fields],
             )
-            similar_fields_location = [f.location for f in similar_flds]
-            assert are_all_locations_present(similar_fields_location)
             self.error.push(
                 ErrorEntry(
                     f'field "{self.field.name}" does not exist in "{self.pdu.identifier}"',
@@ -2598,8 +2583,8 @@ class Refinement(type_decl.TypeDecl):
                             self.pdu.identifier.location,
                         ),
                         *[
-                            Annotation("field with similar name", Severity.HELP, l)
-                            for f, l in zip(similar_flds, similar_fields_location)
+                            Annotation("field with similar name", Severity.HELP, f.location)
+                            for f in similar_flds
                         ],
                     ],
                 ),
@@ -2691,7 +2676,7 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
     byte_order: Mapping[Field, ByteOrder] | ByteOrder = dataclass_field(
         default_factory=dict[Field, ByteOrder],
     )
-    location: Location | None = dataclass_field(default=None)
+    location: Location = dataclass_field(default=UNKNOWN_LOCATION)
 
     @property
     def fields(self) -> list[Field]:
@@ -2754,8 +2739,6 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
             previous for previous in declarations if previous.identifier == self.identifier
         ]
         if previous_declarations:
-            previous_location = previous_declarations[0].location
-            assert previous_location is not None
             error.push(
                 ErrorEntry(
                     f'duplicate declaration of "{self.identifier}"',
@@ -2765,7 +2748,7 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
                         Annotation(
                             f'previous occurrence of "{self.identifier}"',
                             Severity.NOTE,
-                            previous_location,
+                            previous_declarations[0].location,
                         ),
                     ],
                 ),
@@ -2791,10 +2774,6 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
                     )
                     arguments[type_identifier] = dict(type_arguments)
                 if field in fields:
-                    previous_location = next(
-                        f.identifier for f in fields if f == field
-                    ).location  # pragma: no branch
-                    assert previous_location is not None
                     error.push(
                         ErrorEntry(
                             f'name conflict for "{field.identifier}"',
@@ -2805,7 +2784,9 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
                                     Annotation(
                                         "conflicting name",
                                         Severity.NOTE,
-                                        previous_location,
+                                        next(
+                                            f.identifier for f in fields if f == field
+                                        ).location,  # pragma: no branch
                                     ),
                                 ]
                             ),
@@ -2869,13 +2850,12 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
         argument_errors: RecordFluxError,
         message: Message,
         type_arguments: Sequence[tuple[ID, expr.Expr]],
-        field_type_location: Location | None,
+        field_type_location: Location,
     ) -> None:
         for param, arg in itertools.zip_longest(message.parameter_types, type_arguments):
             if arg:
                 arg_id, arg_expression = arg
                 if not param or (arg_id != param.identifier):
-                    assert arg_id.location is not None
                     argument_errors.push(
                         ErrorEntry(
                             f'unexpected argument "{arg_id}"',
@@ -3151,7 +3131,6 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
                     )
                 ]
                 if locations:
-                    assert are_all_locations_present(locations)
                     error.push(
                         ErrorEntry(
                             f"messages with {issue} may only be used for last fields",
@@ -3184,7 +3163,6 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
 
         if name_conflicts:
             conflicting = name_conflicts.pop(0)
-            assert inner_message.location is not None
             error.push(
                 ErrorEntry(
                     f'name conflict for "{conflicting.identifier}"',
@@ -3241,7 +3219,7 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
 class UncheckedDerivedMessage(type_decl.UncheckedTypeDecl):
     identifier: ID
     base_identifier: ID
-    location: Location | None = dataclass_field(default=None)
+    location: Location = dataclass_field(default=UNKNOWN_LOCATION)
 
     def checked(
         self,
@@ -3298,7 +3276,7 @@ class UncheckedRefinement(type_decl.UncheckedTypeDecl):
     field: Field
     sdu: ID
     condition: expr.Expr
-    location: Location | None = dataclass_field(default=None)
+    location: Location = dataclass_field(default=UNKNOWN_LOCATION)
 
     def __init__(  # noqa: PLR0913
         self,
@@ -3307,7 +3285,7 @@ class UncheckedRefinement(type_decl.UncheckedTypeDecl):
         field: Field,
         sdu: ID,
         condition: expr.Expr = expr.TRUE,
-        location: Location | None = None,
+        location: Location = UNKNOWN_LOCATION,
     ) -> None:
         super().__init__(
             ID(package) * f"__REFINEMENT__{sdu.flat}__{pdu.flat}__{field.name}__",
@@ -3423,7 +3401,7 @@ def aggregate_constraints(
     def get_constraints(
         aggregate: expr.Aggregate,
         field: expr.Variable,
-        location: Location | None,
+        location: Location,
     ) -> Sequence[expr.Expr]:
         comp = types[Field(field.name)]
 

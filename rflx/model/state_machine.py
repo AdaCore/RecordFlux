@@ -12,7 +12,14 @@ from typing import Final
 from rflx import expr, expr_conv, ir, ty
 from rflx.common import Base, indent, indent_next, verbose_repr
 from rflx.identifier import ID, StrID, id_generator
-from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
+from rflx.rapidflux import (
+    UNKNOWN_LOCATION,
+    Annotation,
+    ErrorEntry,
+    Location,
+    RecordFluxError,
+    Severity,
+)
 
 from . import (
     declaration as decl,
@@ -29,7 +36,7 @@ class Transition(Base):
         target: StrID,
         condition: expr.Expr = expr.TRUE,
         description: str | None = None,
-        location: Location | None = None,
+        location: Location = UNKNOWN_LOCATION,
     ):
         self.target = ID(target)
         self.condition = condition
@@ -69,7 +76,7 @@ class State(Base):
         actions: Sequence[stmt.Statement] | None = None,
         declarations: Sequence[decl.BasicDeclaration] | None = None,
         description: str | None = None,
-        location: Location | None = None,
+        location: Location = UNKNOWN_LOCATION,
     ):
         if transitions:
             assert transitions[-1].condition == expr.TRUE, "missing default transition"
@@ -352,7 +359,7 @@ class StateMachine(TopLevelDeclaration):
         declarations: Sequence[decl.BasicDeclaration],
         parameters: Sequence[decl.FormalDeclaration],
         types: Sequence[type_decl.TypeDecl],
-        location: Location | None = None,
+        location: Location = UNKNOWN_LOCATION,
         workers: int = 1,
     ):
         super().__init__(identifier, location)
@@ -624,7 +631,6 @@ class StateMachine(TopLevelDeclaration):
         for identifier, states in identifier_states.items():
             if len(states) >= 2:
                 for s in states[1:]:
-                    assert states[0].location is not None
                     self.error.push(
                         ErrorEntry(
                             f'duplicate state "{identifier}"',
@@ -679,7 +685,7 @@ class StateMachine(TopLevelDeclaration):
     ) -> None:
         visible_declarations = dict(visible_declarations)
 
-        def undefined_type(type_identifier: StrID, location: Location | None) -> None:
+        def undefined_type(type_identifier: StrID, location: Location) -> None:
             self.error.push(
                 ErrorEntry(
                     f'undefined type "{type_identifier}"',
@@ -690,8 +696,6 @@ class StateMachine(TopLevelDeclaration):
 
         for k, d in declarations.items():
             if k in visible_declarations:
-                location = visible_declarations[k].location
-                assert location is not None
                 self.error.push(
                     ErrorEntry(
                         f'local variable "{k}" shadows previous declaration',
@@ -702,7 +706,7 @@ class StateMachine(TopLevelDeclaration):
                                 Annotation(
                                     f'previous declaration of variable "{k}"',
                                     Severity.NOTE,
-                                    location,
+                                    visible_declarations[k].location,
                                 ),
                             ]
                         ),
@@ -1137,7 +1141,7 @@ class UncheckedStateMachine(UncheckedTopLevelDeclaration):
     states: Sequence[State]
     declarations: Sequence[decl.BasicDeclaration]
     parameters: Sequence[decl.FormalDeclaration]
-    location: Location | None
+    location: Location
 
     def checked(
         self,

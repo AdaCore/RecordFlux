@@ -15,7 +15,6 @@ from typing import TYPE_CHECKING, Final
 
 from rflx import const, ty
 from rflx.common import Base, indent, indent_next, unique
-from rflx.error import are_all_locations_present
 from rflx.identifier import ID, StrID
 from rflx.rapidflux import (
     UNKNOWN_LOCATION,
@@ -2747,9 +2746,6 @@ class CaseExpr(Expr):
             if i1 > i2 and e1 == e2
         ]
         if duplicates:
-            assert all(l.location is not None for l in duplicates)
-            locations = [l.location for l in duplicates]
-            assert are_all_locations_present(locations)
             error.push(
                 ErrorEntry(
                     "duplicate literals used in case expression",
@@ -2759,9 +2755,9 @@ class CaseExpr(Expr):
                         Annotation(
                             f'duplicate literal "{link}"',
                             Severity.NOTE,
-                            location,
+                            link.location,
                         )
-                        for link, location in zip(duplicates, locations)
+                        for link in duplicates
                     ],
                 ),
             )
