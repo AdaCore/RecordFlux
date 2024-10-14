@@ -3,7 +3,9 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections.abc import Sequence
 from dataclasses import dataclass
+from pathlib import Path
 
+from rflx import const
 from rflx.common import Base
 from rflx.identifier import ID, StrID
 from rflx.rapidflux import NO_LOCATION, ErrorEntry, Location, RecordFluxError, Severity
@@ -31,6 +33,13 @@ class TopLevelDeclaration(Base):
     @property
     def package(self) -> ID:
         return self.identifier.parent
+
+    def check_style(
+        self,
+        error: RecordFluxError,
+        style_checks: dict[Path, frozenset[const.StyleCheck]],
+    ) -> None:
+        pass
 
     def _check_identifier(self) -> None:
         if len(self.identifier.parts) != 2:

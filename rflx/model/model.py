@@ -19,6 +19,7 @@ from .type_decl import BUILTIN_TYPES
 @dataclass
 class UncheckedModel(Base):
     declarations: Sequence[top_level_declaration.UncheckedTopLevelDeclaration]
+    style_checks: dict[Path, frozenset[const.StyleCheck]]
     error: RecordFluxError
 
     def checked(
@@ -43,6 +44,7 @@ class UncheckedModel(Base):
                 else:
                     logging.info("Verifying {identifier}", identifier=d.identifier)
                     checked = d.checked(declarations, workers=workers)
+                    checked.check_style(error, self.style_checks)
                 declarations.append(checked)
                 cache.add_verified(digest)
             except RecordFluxError as e:  # noqa: PERF203

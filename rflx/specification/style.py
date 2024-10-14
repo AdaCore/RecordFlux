@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import re
-from enum import Enum
 from pathlib import Path
 
+from rflx.const import BASIC_STYLE_CHECKS, MODEL_STYLE_CHECKS, StyleCheck
 from rflx.rapidflux import ErrorEntry, Location, RecordFluxError, Severity
 
 INCORRECT_LINE_TERMINATORS = "\r"
@@ -27,50 +27,98 @@ KEYWORD_INDENTATION = [
 ]
 
 
-class Check(Enum):
-    ALL = "all"
-    BLANK_LINES = "blank-lines"
-    CHARACTERS = "characters"
-    INDENTATION = "indentation"
-    LINE_LENGTH = "line-length"
-    TOKEN_SPACING = "token-spacing"
-    TRAILING_SPACES = "trailing-spaces"
+def check(spec_file: Path, enabled_checks: frozenset[StyleCheck]) -> RecordFluxError:
+    """
+    Perform basic style checks on the given specification file.
 
-
-def check(spec_file: Path) -> RecordFluxError:
-    with spec_file.open(encoding="utf-8", newline="") as f:
-        return check_string(f.read(), spec_file)
-
-
-def check_string(specification: str, spec_file: Path = Path("<stdin>")) -> RecordFluxError:
+    The function reads the specification file and performs style checks that can
+    be made directly on its string representation (basic checks). The exact
+    subset of checks to be performed must be passed via the `enabled_checks`
+    parameter.
+    """
     error = RecordFluxError()
+    # Read the file without any newline normalizations so that their conformance
+    # to the style rules can be checked.
+    with spec_file.open(newline="") as f:
+        source_code_str = f.read()
+        check_string(error, source_code_str, enabled_checks, spec_file)
+    return error
 
+
+def check_string(
+    error: RecordFluxError,
+    specification: str,
+    enabled_checks: frozenset[StyleCheck],
+    spec_file: Path = Path("<stdin>"),
+) -> None:
+    """
+    Perform basic style checks on the given specification string.
+
+    The function performs style checks that can be made directly on the string
+    representation of the specification (basic checks). The exact subset of
+    checks to be performed must be passed via the `enabled_checks` parameter.
+    """
     if specification in ("", "\n"):
-        return error
-
-    lines = specification.split("\n")
-    enabled_checks = _determine_enabled_checks(error, lines[0], spec_file)
+        return
 
     if not enabled_checks:
-        return error
+        return
+
+    lines = specification.split("\n")
 
     blank_lines = 0
-
     for i, l in enumerate(lines, start=1):
-        if Check.BLANK_LINES in enabled_checks:
+        if StyleCheck.BLANK_LINES in enabled_checks:
             blank_lines = _check_blank_lines(error, l, i, spec_file, blank_lines, len(lines))
-        if Check.CHARACTERS in enabled_checks:
+        if StyleCheck.CHARACTERS in enabled_checks:
             _check_characters(error, l, i, spec_file)
-        if Check.INDENTATION in enabled_checks:
+        if StyleCheck.INDENTATION in enabled_checks:
             _check_indentation(error, l, i, spec_file)
-        if Check.LINE_LENGTH in enabled_checks:
+        if StyleCheck.LINE_LENGTH in enabled_checks:
             _check_line_length(error, l, i, spec_file)
-        if Check.TOKEN_SPACING in enabled_checks:
+        if StyleCheck.TOKEN_SPACING in enabled_checks:
             _check_token_spacing(error, l, i, spec_file)
-        if Check.TRAILING_SPACES in enabled_checks:
+        if StyleCheck.TRAILING_SPACES in enabled_checks:
             _check_trailing_spaces(error, l, i, spec_file)
 
-    return error
+
+def determine_enabled_checks(
+    error: RecordFluxError,
+    specification: str,
+    spec_file: Path,
+) -> tuple[frozenset[StyleCheck], frozenset[StyleCheck]]:
+    """
+    Determine the enabled checks in a specification header.
+
+    If the given specification contains a valid style check configuration, then
+    determine the enabled style checks. Otherwise, it is assumed that all checks
+    are enabled.
+
+    The enabled checks are returned as a tuple where the first set of checks
+    (basic checks) can be performed directly on the input string and the second
+    set (model checks) must be performed at a model level.
+    """
+
+    header = specification.split("\n", 1)[0]
+
+    all_checks = {c.value for c in StyleCheck.__members__.values()}
+    disabled_checks = set()
+
+    m = re.match(r"^\s*--\s*style\s*:\s*disable\s*=\s*([^.]*)$", header)
+    if m:
+        disabled_checks = {c.strip() for c in m.group(1).split(",")}
+        for c in disabled_checks - all_checks:
+            _append(error, f'invalid check "{c}"', 1, 1, spec_file)
+        if StyleCheck.ALL.value in disabled_checks:
+            return frozenset(), frozenset()
+    else:
+        disabled_checks = set()
+
+    enabled_checks = {StyleCheck(c) for c in all_checks - disabled_checks}
+
+    return frozenset(enabled_checks - MODEL_STYLE_CHECKS), frozenset(
+        enabled_checks - BASIC_STYLE_CHECKS,
+    )
 
 
 def _append(
@@ -79,33 +127,15 @@ def _append(
     row: int,
     col: int,
     spec_file: Path,
-    check_type: Check | None = None,
+    check_type: StyleCheck | None = None,
 ) -> None:
     error.push(
         ErrorEntry(
-            message + (f" [{check_type.value}]" if check_type else ""),
+            message + (f" [style:{check_type.value}]" if check_type else ""),
             Severity.ERROR,
             Location((row, col), spec_file),
         ),
     )
-
-
-def _determine_enabled_checks(error: RecordFluxError, line: str, spec_file: Path) -> set[Check]:
-    checks = {c.value for c in Check.__members__.values()}
-    disabled_checks = set()
-
-    m = re.match(r"^\s*--\s*style\s*:\s*disable\s*=\s*([^.]*)$", line)
-    if m:
-        disabled_checks = {c.strip() for c in m.group(1).split(",")}
-        for c in disabled_checks - checks:
-            _append(error, f'invalid check "{c}"', 1, 1, spec_file)
-    else:
-        return set(Check.__members__.values())
-
-    if Check.ALL.value in disabled_checks:
-        return set()
-
-    return {Check(c) for c in checks - disabled_checks}
 
 
 def _check_blank_lines(
@@ -118,13 +148,13 @@ def _check_blank_lines(
 ) -> int:
     if not line:
         if row == 1:
-            _append(error, "leading blank line", row, 1, spec_file, Check.BLANK_LINES)
+            _append(error, "leading blank line", row, 1, spec_file, StyleCheck.BLANK_LINES)
         if blank_lines > 0 and row == row_count:
-            _append(error, "trailing blank line", row - 1, 1, spec_file, Check.BLANK_LINES)
+            _append(error, "trailing blank line", row - 1, 1, spec_file, StyleCheck.BLANK_LINES)
         blank_lines += 1
     else:
         if blank_lines > 1:
-            _append(error, "multiple blank lines", row - 1, 1, spec_file, Check.BLANK_LINES)
+            _append(error, "multiple blank lines", row - 1, 1, spec_file, StyleCheck.BLANK_LINES)
         blank_lines = 0
 
     return blank_lines
@@ -134,10 +164,24 @@ def _check_characters(error: RecordFluxError, line: str, row: int, spec_file: Pa
     for j, c in enumerate(line, start=1):
         if c == INCORRECT_LINE_TERMINATORS:
             s = repr(c).replace("'", '"')
-            _append(error, f"incorrect line terminator {s}", row, j, spec_file, Check.CHARACTERS)
+            _append(
+                error,
+                f"incorrect line terminator {s}",
+                row,
+                j,
+                spec_file,
+                StyleCheck.CHARACTERS,
+            )
         if c in ILLEGAL_WHITESPACE_CHARACTERS:
             s = repr(c).replace("'", '"')
-            _append(error, f"illegal whitespace character {s}", row, j, spec_file, Check.CHARACTERS)
+            _append(
+                error,
+                f"illegal whitespace character {s}",
+                row,
+                j,
+                spec_file,
+                StyleCheck.CHARACTERS,
+            )
 
 
 def _check_indentation(error: RecordFluxError, line: str, row: int, spec_file: Path) -> None:
@@ -158,7 +202,7 @@ def _check_indentation(error: RecordFluxError, line: str, row: int, spec_file: P
                 row,
                 match.end() + 1,
                 spec_file,
-                Check.INDENTATION,
+                StyleCheck.INDENTATION,
             )
 
 
@@ -206,7 +250,7 @@ def _check_token_spacing(  # noqa: PLR0912
                     row,
                     match.start() + 1,
                     spec_file,
-                    Check.TOKEN_SPACING,
+                    StyleCheck.TOKEN_SPACING,
                 )
         else:
             if match.start() > 1 and line[match.start() - 1] == " ":
@@ -216,7 +260,7 @@ def _check_token_spacing(  # noqa: PLR0912
                     row,
                     match.start() + 1,
                     spec_file,
-                    Check.TOKEN_SPACING,
+                    StyleCheck.TOKEN_SPACING,
                 )
         if space_after:
             if match.end() < len(line) and line[match.end()] not in " ;\n":
@@ -226,7 +270,7 @@ def _check_token_spacing(  # noqa: PLR0912
                     row,
                     match.end() + 1,
                     spec_file,
-                    Check.TOKEN_SPACING,
+                    StyleCheck.TOKEN_SPACING,
                 )
         else:
             if match.end() < len(line) and line[match.end()] == " ":
@@ -236,15 +280,22 @@ def _check_token_spacing(  # noqa: PLR0912
                     row,
                     match.end() + 2,
                     spec_file,
-                    Check.TOKEN_SPACING,
+                    StyleCheck.TOKEN_SPACING,
                 )
 
 
 def _check_trailing_spaces(error: RecordFluxError, line: str, row: int, spec_file: Path) -> None:
     if line.endswith(" "):
-        _append(error, "trailing whitespace", row, len(line), spec_file, Check.TRAILING_SPACES)
+        _append(error, "trailing whitespace", row, len(line), spec_file, StyleCheck.TRAILING_SPACES)
 
 
 def _check_line_length(error: RecordFluxError, line: str, row: int, spec_file: Path) -> None:
     if len(line) > 120:
-        _append(error, f"line too long ({len(line)}/120)", row, 121, spec_file, Check.LINE_LENGTH)
+        _append(
+            error,
+            f"line too long ({len(line)}/120)",
+            row,
+            121,
+            spec_file,
+            StyleCheck.LINE_LENGTH,
+        )

@@ -571,7 +571,9 @@ def test_unchecked_model_checked(
 
     declarations = [d() for d in expected]
 
-    assert UncheckedModel(unchecked, RecordFluxError()).checked(cache=cache) == Model(declarations)
+    assert UncheckedModel(unchecked, {}, RecordFluxError()).checked(cache=cache) == Model(
+        declarations,
+    )
 
     messages = [d for d in declarations if isinstance(d, Message)]
     if messages:
@@ -731,6 +733,6 @@ def test_unchecked_model_checked_error(
     cache = Cache(tmp_path / "test.json")
 
     with pytest.raises(RecordFluxError, match=expected):
-        UncheckedModel(unchecked, RecordFluxError()).checked(cache=cache)
+        UncheckedModel(unchecked, {}, RecordFluxError()).checked(cache=cache)
 
     assert list(cache._verified) == expect_cached  # noqa: SLF001

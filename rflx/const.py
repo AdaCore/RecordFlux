@@ -1,4 +1,5 @@
 import multiprocessing
+from enum import Enum
 from pathlib import Path
 from typing import Final
 
@@ -14,6 +15,22 @@ CACHE_PATH: Final = Path.cwd() / ".rflx_cache"
 # The use of "forkserver" or "spawn" as start method for starting processes prevents deadlocks when
 # RecordFlux is executed by another process, e.g., when the language server is started by VS Code.
 MP_CONTEXT = multiprocessing.get_context("forkserver")
+
+
+class StyleCheck(Enum):
+    ALL = "all"
+    BLANK_LINES = "blank-lines"
+    CHARACTERS = "characters"
+    INDENTATION = "indentation"
+    INTEGER_SYNTAX = "integer-syntax"
+    LINE_LENGTH = "line-length"
+    TOKEN_SPACING = "token-spacing"
+    TRAILING_SPACES = "trailing-spaces"
+
+
+MODEL_STYLE_CHECKS: Final = frozenset({StyleCheck.INTEGER_SYNTAX})
+BASIC_STYLE_CHECKS: Final = frozenset(set(StyleCheck) - MODEL_STYLE_CHECKS)
+
 
 RESERVED_WORDS = [
     # Ada

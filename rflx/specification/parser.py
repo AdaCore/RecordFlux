@@ -6,7 +6,7 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-from rflx import expr, lang, model, ty
+from rflx import const, expr, lang, model, ty
 from rflx.common import STDIN, unique
 from rflx.const import RESERVED_WORDS
 from rflx.error import fail
@@ -65,7 +65,7 @@ def diagnostics_to_error(
     error: RecordFluxError,
     filename: Path,
 ) -> bool:
-    """Append langkit diagnostics to RecordFlux error. Return True if error occured."""
+    """Append langkit diagnostics to RecordFlux error. Return True if error occurred."""
 
     if len(diagnostics) == 0:
         return False
@@ -1758,12 +1758,14 @@ class SpecificationFile:
     filename: Path
     spec: lang.Specification
     context_clauses: list[ContextClause]
+    model_style_checks: frozenset[const.StyleCheck]
 
     @staticmethod
     def create(
         error: RecordFluxError,
         spec: lang.Specification,
         filename: Path,
+        model_style_checks: frozenset[const.StyleCheck],
     ) -> SpecificationFile:
         check_naming(error, spec.f_package_declaration, filename)
 
@@ -1777,6 +1779,7 @@ class SpecificationFile:
                 )
                 for context in spec.f_context_clause
             ],
+            model_style_checks,
         )
 
     @property
@@ -1842,7 +1845,13 @@ class Parser:
 
         if not diagnostics_to_error(unit.diagnostics, error, filename):
             assert isinstance(unit.root, lang.Specification)
-            spec = SpecificationFile.create(error, unit.root, filename)
+
+            basic_style_checks, model_style_checks = style.determine_enabled_checks(
+                error,
+                string,
+                filename,
+            )
+            spec = SpecificationFile.create(error, unit.root, filename, model_style_checks)
             _check_for_duplicate_specifications(error, [*self._specifications.values(), spec])
 
             self._specifications[spec.package] = spec
@@ -1851,7 +1860,7 @@ class Parser:
 
             self._specifications = _sort_specs_topologically(self._specifications)
 
-            error.extend(style.check_string(string, filename).entries)
+            style.check_string(error, string, basic_style_checks, filename)
 
         error.propagate()
 
@@ -1862,10 +1871,12 @@ class Parser:
             model.UNCHECKED_OPAQUE,
         ]
 
+        style_checks: dict[Path, frozenset[const.StyleCheck]] = {}
         for spec_node in self._specifications.values():
             self._evaluate_specification(error, declarations, spec_node.spec, spec_node.filename)
+            style_checks[spec_node.filename] = spec_node.model_style_checks
 
-        return model.UncheckedModel(declarations, error)
+        return model.UncheckedModel(declarations, style_checks, error)
 
     def create_model(self) -> model.Model:
         unchecked_model = self.create_unchecked_model()
@@ -1895,7 +1906,12 @@ class Parser:
         source_code.register(filename, source_code_str)
         unit = lang.AnalysisContext().get_from_buffer(str(filename), source_code_str)
 
-        error.extend(style.check(filename).entries)
+        basic_style_checks, model_style_checks = style.determine_enabled_checks(
+            error,
+            source_code_str,
+            filename,
+        )
+        error.extend(style.check(filename, basic_style_checks).entries)
 
         if diagnostics_to_error(unit.diagnostics, error, filename):
             return None
@@ -1904,7 +1920,7 @@ class Parser:
 
         self._integration.load_integration_file(filename, error)
 
-        return SpecificationFile.create(error, unit.root, filename)
+        return SpecificationFile.create(error, unit.root, filename, model_style_checks)
 
     def _parse_withed_files(
         self,

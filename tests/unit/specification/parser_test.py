@@ -326,7 +326,7 @@ def test_parse_string_error() -> None:
                     'a/b.rflx:1:9: help: rename to "B"\n'
                     'a/b.rflx:3:5: help: rename to "B"\n'
                     "a/b.rflx:2:1: error: unexpected keyword indentation (expected 3 or 6) "
-                    "[indentation]",
+                    "[style:indentation]",
                 ),
             )
         ),

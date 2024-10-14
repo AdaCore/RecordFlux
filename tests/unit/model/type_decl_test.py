@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 from collections.abc import Callable
+from pathlib import Path
 
 import pytest
 
-from rflx import ty
+from rflx import const, ty
 from rflx.expr import Add, Aggregate, Equal, Mul, Number, Pow, Size, Sub, Variable
 from rflx.identifier import ID
 from rflx.model import (
@@ -322,21 +325,65 @@ def test_integer_invalid_out_of_bounds() -> None:
         )
 
 
-def test_integer_can_be_unsigned() -> None:
+def test_integer_style_check() -> None:
+    source1 = Path("file1.rflx")
+    source2 = Path("file2.rflx")
+
+    style_checks: dict[Path, frozenset[const.StyleCheck]] = {}
+    style_checks[source1] = frozenset()
+    style_checks[source2] = frozenset([const.StyleCheck.INTEGER_SYNTAX])
+
+    i = Integer(
+        "P::I",
+        Number(0),
+        Number(63),
+        Number(6),
+        Location((10, 9), source1),
+    )
+
+    error = RecordFluxError()
+
+    i.check_style(error, style_checks)  # Should pass
+    error.propagate()
+
+    i.location = Location((10, 9), source2)
+
+    i.check_style(error, style_checks)
     with pytest.raises(
         RecordFluxError,
         match=(
-            r"^<stdin>:10:5: error: unsigned integer syntax preferable\n"
-            r'<stdin>:10:5: help: use "type T is unsigned 6" instead$'
+            r"^"
+            rf'{source2}:10:9: error: "I" covers the entire range of an unsigned integer type'
+            r" \[style:integer-syntax\]\n"
+            rf'{source2}:10:9: help: use "type I is unsigned 6" instead'
+            r"$"
         ),
     ):
-        Integer(
-            "P::T",
-            Number(0, location=Location((10, 3))),
-            Number(63, location=Location((10, 4))),
-            Number(6, location=Location((10, 6))),
-            Location((10, 5)),
-        )
+        error.propagate()
+
+
+def test_unsigned_style_check() -> None:
+    source1 = Path("file1.rflx")
+    source2 = Path("file2.rflx")
+
+    style_checks: dict[Path, frozenset[const.StyleCheck]] = {}
+    style_checks[source1] = frozenset()
+    style_checks[source2] = frozenset([const.StyleCheck.INTEGER_SYNTAX])
+
+    u = UnsignedInteger(
+        "P::U",
+        Number(3, location=Location((5, 24))),
+        Location((5, 9), source1),
+    )
+
+    error = RecordFluxError()
+
+    u.check_style(error, style_checks)  # Should pass
+    error.propagate()
+
+    u.location = Location((5, 9), source2)
+    u.check_style(error, style_checks)  # Should pass
+    error.propagate()
 
 
 def test_enumeration_size() -> None:

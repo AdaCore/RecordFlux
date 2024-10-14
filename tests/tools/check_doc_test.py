@@ -215,7 +215,7 @@ def test_invalid_rflx_rule_style() -> None:
         CheckDocError,
         match=(
             r"^<stdin>:6: error in code block\n"
-            r'<stdin>:1:8: error: missing space after "\*\*" \[token-spacing\]$'
+            r'<stdin>:1:8: error: missing space after "\*\*" \[style:token-spacing\]$'
         ),
     ):
         check_file(
@@ -239,7 +239,7 @@ def test_invalid_rflx_spec_style() -> None:
         match=(
             r"^<stdin>:6: error in code block\n"
             r"<stdin>:3:5: error: unexpected keyword indentation \(expected 3 or 6\) "
-            r"\[indentation\]$"
+            r"\[style:indentation\]$"
         ),
     ):
         check_file(

@@ -51,8 +51,9 @@ Style Checks
 ^^^^^^^^^^^^
 
 By default, the style of specification files is checked.
+Error messages about style violations have a style check identifier appended to the message in the following form "[style:<identifier>]".
+For example: "[style:line-length]".
 Style checks can be disabled for individual files by adding a pragma to the first line of the file.
-Besides the deactivation of specific checks, it is also possible to disable all checks by using ``all``.
 
 **Example**
 
@@ -64,6 +65,20 @@ Besides the deactivation of specific checks, it is also possible to disable all 
     package P is
 
     end P;
+
+It is also possible to disable all style checks by using the identifier ``all``.
+
+**Example**
+
+.. doc-check: rflx
+.. code:: rflx
+
+    -- style: disable = all
+
+    package P is
+
+    end P;
+
 
 Integration Files
 ^^^^^^^^^^^^^^^^^

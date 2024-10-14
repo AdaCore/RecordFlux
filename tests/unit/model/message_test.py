@@ -1192,7 +1192,11 @@ def test_invalid_relation_to_aggregate() -> None:
 
 @pytest.mark.parametrize("lower", [Number(0), Number(1)])
 def test_invalid_element_in_relation_to_aggregate(lower: Number) -> None:
-    integer = Integer("P::Integer", lower, Number(255), Number(8), allow_full_unsigned=True)
+    integer = (
+        UnsignedInteger("P::Integer", Number(8))
+        if lower == Number(0)
+        else Integer("P::Integer", lower, Number(255), Number(8))
+    )
     structure = [
         Link(INITIAL, Field(ID("F1", location=Location((1, 2))))),
         Link(

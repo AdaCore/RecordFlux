@@ -24,6 +24,7 @@ from ruamel.yaml import YAML
 from ruamel.yaml.parser import ParserError
 
 from rflx.common import STDIN
+from rflx.const import BASIC_STYLE_CHECKS
 from rflx.lang import AnalysisContext, GrammarRule
 from rflx.rapidflux import RecordFluxError
 from rflx.specification import Parser, style
@@ -365,7 +366,7 @@ def parse(data: str, rule: str) -> None:
     error = RecordFluxError()
     if diagnostics_to_error(unit.diagnostics, error, STDIN):
         error.propagate()
-    error.extend(style.check_string(data).entries)
+    style.check_string(error, data, BASIC_STYLE_CHECKS)
     error.propagate()
 
 

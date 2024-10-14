@@ -348,3 +348,65 @@ def test_unexpected_exception(
         capfd.readouterr().err,
         re.DOTALL,
     )
+
+
+@pytest.mark.parametrize(
+    ("spec"),
+    [
+        ("package Test is\r\nend Test;"),
+    ],
+)
+def test_style_newlines_error(spec: str, tmp_path: Path) -> None:
+    spec_file = tmp_path / "test.rflx"
+    with spec_file.open("w", newline="") as f:
+        f.write(spec)
+    p = subprocess.run(
+        ["rflx", "--no-caching", "check", spec_file],
+        capture_output=True,
+        check=False,
+    )
+    assert p.returncode == 1
+    assert p.stdout.decode("utf-8") == ""
+    assert p.stderr.decode("utf-8") == textwrap.dedent(
+        f"""\
+        info: Parsing {spec_file}
+        info: Processing Test
+        info: Verifying __BUILTINS__::Boolean
+        info: Verifying __INTERNAL__::Opaque
+        error: incorrect line terminator "\\r" [style:characters]
+         --> {spec_file}:1:16
+          |
+        1 | package Test is
+          |                ^
+          |
+        """,
+    )
+
+
+@pytest.mark.parametrize(
+    ("spec"),
+    [
+        ("package Test is\nend Test;"),
+        ("-- style: disable = characters\npackage Test is\r\nend Test;"),
+    ],
+)
+def test_style_newlines_no_error(spec: str, tmp_path: Path) -> None:
+    spec_file = tmp_path / "test.rflx"
+    with spec_file.open("w", newline="") as f:
+        f.write(spec)
+    spec_file.write_text(spec)
+    p = subprocess.run(
+        ["rflx", "--no-caching", "check", spec_file],
+        capture_output=True,
+        check=False,
+    )
+    assert p.returncode == 0
+    assert p.stdout.decode("utf-8") == ""
+    assert p.stderr.decode("utf-8") == textwrap.dedent(
+        f"""\
+        info: Parsing {spec_file}
+        info: Processing Test
+        info: Verifying __BUILTINS__::Boolean
+        info: Verifying __INTERNAL__::Opaque
+        """,
+    )

@@ -104,14 +104,13 @@ class Scalar(TypeDecl):
 
 
 class Integer(Scalar):
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         identifier: StrID,
         first: expr.Expr,
         last: expr.Expr,
         size: expr.Expr,
         location: Location = NO_LOCATION,
-        allow_full_unsigned: bool = False,
     ) -> None:
         super().__init__(identifier, size, location)
 
@@ -194,7 +193,7 @@ class Integer(Scalar):
             )
 
         # Eng/RecordFlux/RecordFlux#1077
-        # size of integers is limited to 63bits
+        # size of integers is limited to 63 bits
 
         if int(size_num) > const.MAX_SCALAR_SIZE:
             self.error.push(
@@ -202,29 +201,6 @@ class Integer(Scalar):
                     f'size of "{self.name}" exceeds limit (2**{const.MAX_SCALAR_SIZE})',
                     Severity.ERROR,
                     size_num.location,
-                ),
-            )
-
-        if (
-            not allow_full_unsigned
-            and int(first_num) == 0
-            and int(last_num) == 2 ** int(size_num) - 1
-        ):
-            assert self.location is not None
-            self.error.push(
-                ErrorEntry(
-                    "unsigned integer syntax preferable",
-                    Severity.ERROR,
-                    self.location,
-                    annotations=(
-                        [
-                            Annotation(
-                                f'use "type {self.name} is unsigned {int(size_num)}" instead',
-                                Severity.HELP,
-                                self.location,
-                            ),
-                        ]
-                    ),
                 ),
             )
 
@@ -271,6 +247,40 @@ class Integer(Scalar):
     @property
     def last_expr(self) -> expr.Expr:
         return self._last_expr
+
+    def check_style(
+        self,
+        error: RecordFluxError,
+        style_checks: dict[Path, frozenset[const.StyleCheck]],
+    ) -> None:
+        if not self.location or not self.location.source:
+            return
+
+        checks = style_checks.get(self.location.source)
+        if not checks or const.StyleCheck.INTEGER_SYNTAX not in checks:
+            return
+
+        if int(self.first) == 0 and int(self.last) == 2 ** int(self.size) - 1:
+            self.error.push(
+                ErrorEntry(
+                    f'"{self.name}" covers the entire range of an unsigned integer type'
+                    f" [style:{const.StyleCheck.INTEGER_SYNTAX.value}]",
+                    Severity.ERROR,
+                    self.location,
+                    annotations=(
+                        [
+                            Annotation(
+                                f'use "type {self.name} is unsigned {int(self.size)}" instead',
+                                Severity.HELP,
+                                self.location,
+                            ),
+                        ]
+                    ),
+                    generate_default_annotation=False,
+                ),
+            )
+
+        error.extend(self.error.entries)
 
     def constraints(
         self,
@@ -343,11 +353,17 @@ class UnsignedInteger(Integer):
             ),
             size,
             location=location,
-            allow_full_unsigned=True,
         )
 
     def __str__(self) -> str:
         return f"type {self.name} is unsigned {self.size_expr}"
+
+    def check_style(
+        self,
+        error: RecordFluxError,
+        style_checks: dict[Path, frozenset[const.StyleCheck]],
+    ) -> None:
+        pass
 
 
 class Enumeration(Scalar):
@@ -720,14 +736,7 @@ class UncheckedInteger(UncheckedTypeDecl):
         skip_verification: bool = False,  # noqa: ARG002
         workers: int = 1,  # noqa: ARG002
     ) -> Integer:
-        return Integer(
-            self.identifier,
-            self.first,
-            self.last,
-            self.size,
-            location=self.location,
-            allow_full_unsigned=False,
-        )
+        return Integer(self.identifier, self.first, self.last, self.size, self.location)
 
 
 @dataclass
