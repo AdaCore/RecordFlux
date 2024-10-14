@@ -32,11 +32,11 @@ class Origin(Protocol):
     def __str__(self) -> str: ...  # pragma: no cover
 
     @property
-    def location(self) -> Location | None: ...  # pragma: no cover
+    def location(self) -> Location: ...  # pragma: no cover
 
 
 class ConstructedOrigin(Origin):
-    def __init__(self, string_representation: str, location: Location | None) -> None:
+    def __init__(self, string_representation: str, location: Location) -> None:
         self._string_representation = string_representation
         self._location = location
 
@@ -44,7 +44,7 @@ class ConstructedOrigin(Origin):
         return self._string_representation
 
     @property
-    def location(self) -> Location | None:
+    def location(self) -> Location:
         return self._location
 
 
@@ -140,8 +140,8 @@ class Stmt(Base):
         return self._str  # type: ignore[unreachable]
 
     @property
-    def location(self) -> Location | None:
-        return self.origin.location if self.origin else None
+    def location(self) -> Location:
+        return self.origin.location if self.origin else UNKNOWN_LOCATION
 
     @property
     @abstractmethod
@@ -429,7 +429,7 @@ class Check(Stmt):
     origin: Origin | None = None
 
     @property
-    def location(self) -> Location | None:
+    def location(self) -> Location:
         return self.expression.location
 
     @property
@@ -487,8 +487,8 @@ class Expr(Base):
         return str(self)
 
     @property
-    def location(self) -> Location | None:
-        return self.origin.location if self.origin else None
+    def location(self) -> Location:
+        return self.origin.location if self.origin else UNKNOWN_LOCATION
 
     @property
     @abstractmethod
@@ -953,12 +953,12 @@ class BinaryExpr(Expr):
         return f"{self.left.origin_str}{self._symbol}{self.right.origin_str}"
 
     @property
-    def location(self) -> Location | None:
+    def location(self) -> Location:
         if self.origin is not None:
             return self.origin.location
         if self.left.origin is not None:
             return self.left.origin.location
-        return None
+        return UNKNOWN_LOCATION
 
     def _update_str(self) -> None:
         self._str = intern(f"{self.left}{self._symbol}{self.right}")
@@ -1984,7 +1984,7 @@ class HasElement(Attr, BoolExpr):
 @frozen
 class Decl:
     identifier: ID = field(converter=ID)
-    location: Location | None
+    location: Location
 
 
 @frozen
@@ -2005,7 +2005,7 @@ class FuncDecl(FormalDecl):
     arguments: Sequence[Argument]
     return_type: ID = field(converter=ID)
     type_: ty.Type
-    location: Location | None
+    location: Location
 
 
 @frozen
@@ -2013,7 +2013,7 @@ class ChannelDecl(FormalDecl):
     identifier: ID = field(converter=ID)
     readable: bool
     writable: bool
-    location: Location | None
+    location: Location
 
 
 @frozen
@@ -2062,7 +2062,7 @@ class Transition:
     target: ID = field(converter=ID)
     condition: ComplexExpr
     description: str | None
-    location: Location | None
+    location: Location
 
 
 @frozen
@@ -2072,7 +2072,7 @@ class State:
     exception_transition: Transition | None
     actions: Sequence[Stmt]
     description: str | None
-    location: Location | None
+    location: Location
 
     @property
     def declarations(self) -> list[VarDecl]:
@@ -2089,7 +2089,7 @@ class StateMachine:
     declarations: Sequence[VarDecl]
     parameters: Sequence[FormalDecl]
     types: Mapping[ID, type_decl.TypeDecl]
-    location: Location | None
+    location: Location
 
     def __init__(  # noqa: PLR0913
         self,
@@ -2098,7 +2098,7 @@ class StateMachine:
         declarations: Sequence[VarDecl],
         parameters: Sequence[FormalDecl],
         types: Mapping[ID, type_decl.TypeDecl],
-        location: Location | None,
+        location: Location,
         variable_id: Generator[ID, None, None],
     ) -> None:
         states = [

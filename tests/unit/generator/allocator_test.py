@@ -8,7 +8,7 @@ from rflx import ir, ty
 from rflx.generator.allocator import AllocatorGenerator
 from rflx.identifier import ID, id_generator
 from rflx.integration import Integration, IntegrationFile, StateMachineIntegration
-from rflx.rapidflux import Location
+from rflx.rapidflux import UNKNOWN_LOCATION, Location
 from tests.data import models
 from tests.unit.generator.generator_test import create_integration
 from tests.unit.generator.state_machine_test import dummy_state_machine
@@ -34,7 +34,7 @@ from tests.unit.generator.state_machine_test import dummy_state_machine
                                 "Final",
                                 ir.ComplexExpr([], ir.BoolVal(value=True)),
                                 None,
-                                None,
+                                UNKNOWN_LOCATION,
                             ),
                         ],
                         None,
@@ -46,7 +46,7 @@ from tests.unit.generator.state_machine_test import dummy_state_machine
                             ),
                         ],
                         None,
-                        None,
+                        UNKNOWN_LOCATION,
                     ),
                 ],
                 declarations=[
@@ -58,7 +58,7 @@ from tests.unit.generator.state_machine_test import dummy_state_machine
                 ],
                 parameters=[],
                 types={t.identifier: t for t in models.universal_model().types},
-                location=None,
+                location=UNKNOWN_LOCATION,
                 variable_id=id_generator(),
             ),
             True,
@@ -76,13 +76,13 @@ from tests.unit.generator.state_machine_test import dummy_state_machine
                                 "Final",
                                 ir.ComplexExpr([], ir.BoolVal(value=True)),
                                 None,
-                                None,
+                                UNKNOWN_LOCATION,
                             ),
                         ],
                         None,
                         [ir.Read("C", ir.ObjVar("X", ty.Message("T")))],
                         None,
-                        None,
+                        UNKNOWN_LOCATION,
                     ),
                 ],
                 declarations=[
@@ -94,7 +94,7 @@ from tests.unit.generator.state_machine_test import dummy_state_machine
                 ],
                 parameters=[],
                 types={t.identifier: t for t in models.universal_model().types},
-                location=None,
+                location=UNKNOWN_LOCATION,
                 variable_id=id_generator(),
             ),
             True,
@@ -129,13 +129,13 @@ def test_allocator(
                                 "Final",
                                 ir.ComplexExpr([], ir.BoolVal(value=True)),
                                 None,
-                                None,
+                                UNKNOWN_LOCATION,
                             ),
                         ],
                         None,
                         [ir.Read("C", ir.ObjVar("X", ty.Message("T")))],
                         None,
-                        None,
+                        UNKNOWN_LOCATION,
                     ),
                 ],
                 declarations=[
@@ -147,7 +147,7 @@ def test_allocator(
                 ],
                 parameters=[],
                 types={},
-                location=None,
+                location=UNKNOWN_LOCATION,
                 variable_id=id_generator(),
             ),
             False,
@@ -165,13 +165,13 @@ def test_allocator(
                                 "Final",
                                 ir.ComplexExpr([], ir.BoolVal(value=True)),
                                 None,
-                                None,
+                                UNKNOWN_LOCATION,
                             ),
                         ],
                         None,
                         [ir.Read("C", ir.ObjVar("X", ty.Message("T")))],
                         None,
-                        None,
+                        UNKNOWN_LOCATION,
                     ),
                 ],
                 declarations=[
@@ -188,7 +188,7 @@ def test_allocator(
                 ],
                 parameters=[],
                 types={},
-                location=None,
+                location=UNKNOWN_LOCATION,
                 variable_id=id_generator(),
             ),
             True,

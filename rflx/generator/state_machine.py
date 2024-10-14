@@ -97,7 +97,7 @@ from rflx.const import BUILTINS_PACKAGE, INTERNAL_PACKAGE
 from rflx.error import fail, fatal_fail
 from rflx.identifier import ID
 from rflx.integration import Integration
-from rflx.rapidflux import Location
+from rflx.rapidflux import UNKNOWN_LOCATION, Location
 
 from . import common, const
 from .allocator import AllocatorGenerator
@@ -2996,7 +2996,11 @@ class FSMGenerator:
             )
 
         return [
-            *([CommentStatement(str(action.location))] if action.location is not None else []),
+            *(
+                [CommentStatement(str(action.location))]
+                if action.location != UNKNOWN_LOCATION
+                else []
+            ),
             *result,
         ]
 
@@ -3005,7 +3009,7 @@ class FSMGenerator:
         identifier: ID,
         type_: ty.Type,
         is_global: Callable[[ID], bool],
-        alloc_id: Location | None,
+        alloc_id: Location,
         expression: ir.ComplexExpr | None = None,
         state_machine_global: bool = False,
     ) -> EvaluatedDeclaration:
@@ -3132,7 +3136,7 @@ class FSMGenerator:
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
-        alloc_id: Location | None,
+        alloc_id: Location,
     ) -> Sequence[Statement]:
         if isinstance(expression, ir.DeltaMsgAgg):
             return self._assign_to_delta_message_aggregate(
@@ -3395,7 +3399,7 @@ class FSMGenerator:
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
-        alloc_id: Location | None,
+        alloc_id: Location,
     ) -> Sequence[Statement]:
         if not isinstance(head.type_, (ty.Integer, ty.Enumeration, ty.Message)):
             fatal_fail(
@@ -3420,7 +3424,7 @@ class FSMGenerator:
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
-        alloc_id: Location | None,
+        alloc_id: Location,
     ) -> Sequence[Statement]:
         assert isinstance(find.sequence.type_, ty.Sequence)
         sequence_type_id = find.sequence.type_.identifier
@@ -3536,7 +3540,7 @@ class FSMGenerator:
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
-        alloc_id: Location | None,
+        alloc_id: Location,
     ) -> Sequence[Statement]:
         assert isinstance(head.prefix_type, ty.Sequence)
         assert isinstance(head.type_, (ty.Integer, ty.Enumeration, ty.Message))
@@ -3721,7 +3725,7 @@ class FSMGenerator:
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
-        alloc_id: Location | None,
+        alloc_id: Location,
     ) -> Sequence[Statement]:
         assert isinstance(comprehension.type_, (ty.Sequence, ty.Aggregate))
         assert isinstance(comprehension.sequence.type_, ty.Sequence)
@@ -5649,7 +5653,7 @@ class FSMGenerator:
         statements: Callable[[ExceptionHandler], Sequence[Statement]],
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
-        alloc_id: Location | None,
+        alloc_id: Location,
     ) -> list[Statement]:
         # Eng/RecordFlux/RecordFlux#577
         sequence_context = context_id(sequence_identifier, is_global)
@@ -5704,7 +5708,7 @@ class FSMGenerator:
         target_buffer_is_smaller: bool,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
-        alloc_id: Location | None,
+        alloc_id: Location,
     ) -> Declare:
         # Eng/RecordFlux/RecordFlux#577
         take_buffer = self._take_buffer(sequence_identifier, sequence_type, is_global)
@@ -5785,7 +5789,7 @@ class FSMGenerator:
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
-        alloc_id: Location | None,
+        alloc_id: Location,
     ) -> While:
         assert not isinstance(selector, ir.MsgAgg)
 
@@ -6212,7 +6216,7 @@ class FSMGenerator:
         identifier: ID,
         type_: ID,
         is_global: Callable[[ID], bool],
-        alloc_id: Location | None,
+        alloc_id: Location,
     ) -> Sequence[Statement]:
         if self._allocator.is_externally_managed(alloc_id):
             return self._take_buffer(identifier, type_, is_global)
@@ -6222,7 +6226,7 @@ class FSMGenerator:
             *self._free_buffer(identifier, alloc_id),
         ]
 
-    def _free_buffer(self, identifier: ID, alloc_id: Location | None) -> Sequence[Statement]:
+    def _free_buffer(self, identifier: ID, alloc_id: Location) -> Sequence[Statement]:
         slot = Variable("Ctx.P.Slots" * self._allocator.get_slot_ptr(alloc_id))
         return [
             PragmaStatement("Assert", [Equal(slot, Variable("null"))]),
@@ -6312,7 +6316,7 @@ class FSMGenerator:
             ),
         ]
 
-    def _allocate_buffer(self, identifier: ID, alloc_id: Location | None) -> Sequence[Statement]:
+    def _allocate_buffer(self, identifier: ID, alloc_id: Location) -> Sequence[Statement]:
         if self._allocator.is_externally_managed(alloc_id):
             return []
 

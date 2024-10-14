@@ -44,6 +44,7 @@ from rflx.ada import (
 from rflx.error import Location
 from rflx.identifier import ID
 from rflx.integration import Integration
+from rflx.rapidflux import UNKNOWN_LOCATION
 
 from . import common, const
 
@@ -128,16 +129,16 @@ class AllocatorGenerator:
     def get_local_slot_ptrs(self) -> list[ID]:
         return [self._slot_name(s.slot_id) for s in self._numbered_slots if not s.global_]
 
-    def get_slot_ptr(self, location: Location | None) -> ID:
-        assert location is not None
+    def get_slot_ptr(self, location: Location) -> ID:
+        assert location != UNKNOWN_LOCATION
         slot_id: int = self._allocation_slots[location]
         return self._slot_name(slot_id)
 
     def get_size(self, variable: ID | None = None, state: ID | None = None) -> int:
         return self._integration.get_size(self._state_machine.identifier, variable, state)
 
-    def is_externally_managed(self, location: Location | None) -> bool:
-        assert location is not None
+    def is_externally_managed(self, location: Location) -> bool:
+        assert location != UNKNOWN_LOCATION
         return location in self._externally_managed_buffers
 
     @staticmethod
@@ -365,10 +366,8 @@ class AllocatorGenerator:
         for d in self._state_machine.declarations:
             if self._needs_allocation(d.type_):
                 if all(d.identifier != b.identifier for b in external_io_buffers):
-                    assert d.location is not None
                     slots.append(SlotInfo(self.get_size(d.identifier), [d.location]))
                 else:
-                    assert d.location is not None
                     externally_managed_buffers.append(d.location)
 
         return (slots, externally_managed_buffers)
