@@ -106,7 +106,7 @@ impl Location {
     ///
     /// # Panics
     ///
-    /// This function panics if not all locations refer to the same source file.
+    /// This function will panic if attempting to merge locations with and without a source file.
     pub fn merge(locations: &[Self]) -> Option<Self> {
         assert!(
             locations
@@ -402,6 +402,21 @@ Third",
             },
         ],
         None,
+    )]
+    #[case::location_merge_unknown(
+        &[
+            Location {
+                start: FilePosition::new(1, 4),
+                end: FilePosition::new(1, 10),
+                source: Some(PathBuf::from_str("bar.rflx").expect("failed to create path"))
+            },
+            UNKNOWN_LOCATION.clone(),
+        ],
+        Some(Location {
+            start: FilePosition::new(1, 4),
+            end: FilePosition::new(1, 10),
+            source: Some(PathBuf::from_str("bar.rflx").expect("failed to create path"))
+        }),
     )]
     #[case::location_no_elements(&[], None)]
     fn test_location_merge(#[case] locations: &[Location], #[case] expected: Option<Location>) {
