@@ -22,12 +22,16 @@ pub struct Location(pub(crate) lib::Location);
 #[pymethods]
 impl Location {
     #[new]
-    fn py_new(start: (u32, u32), source: Option<PathBuf>, end: Option<(u32, u32)>) -> Self {
-        Location(lib::Location {
+    fn new(start: (u32, u32), source: Option<PathBuf>, end: Option<(u32, u32)>) -> Self {
+        Location(lib::Location::new(
+            start.into(),
+            if let Some(e) = end {
+                e.into()
+            } else {
+                start.into()
+            },
             source,
-            start: start.into(),
-            end: end.map(std::convert::Into::into),
-        })
+        ))
     }
 
     fn __hash__(&self) -> usize {
@@ -36,7 +40,7 @@ impl Location {
 
     pub(crate) fn __repr__(&self) -> String {
         format!(
-            "Location({:?}, {}, {})",
+            "Location({:?}, {}, {:?})",
             std::convert::Into::<(u32, u32)>::into(self.0.start),
             self.0
                 .source
@@ -45,9 +49,7 @@ impl Location {
                     "\"{}\"",
                     s.to_string_lossy()
                 )),
-            self.0.end.as_ref().map_or("None".to_string(), |e| {
-                format!("{:?}", std::convert::Into::<(u32, u32)>::into(*e))
-            })
+            std::convert::Into::<(u32, u32)>::into(self.0.end)
         )
     }
 
@@ -81,7 +83,7 @@ impl Location {
         (
             self.0.start.into(),
             self.0.source.clone(),
-            self.0.end.map(std::convert::Into::into),
+            Some(self.0.end.into()),
         )
     }
 
@@ -105,22 +107,19 @@ impl Location {
     }
 
     #[getter]
-    fn get_end(&self) -> Option<(u32, u32)> {
-        self.0
-            .end
-            .as_ref()
-            .map(|e| std::convert::Into::<(u32, u32)>::into(*e))
+    fn get_end(&self) -> (u32, u32) {
+        self.0.start.into()
     }
 
     #[getter]
     fn short(&self) -> Location {
-        Location::py_new(
+        Location::new(
             self.0.start.into(),
             self.0
                 .source
                 .clone()
                 .map(|source| PathBuf::from(source.file_name().unwrap_or_default())),
-            self.0.end.map(std::convert::Into::into),
+            Some(self.0.end.into()),
         )
     }
 

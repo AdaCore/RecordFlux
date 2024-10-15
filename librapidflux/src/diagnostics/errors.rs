@@ -498,7 +498,7 @@ mod tests {
                 source: Some(PathBuf::from_str("foo.rflx")
                     .expect("failed to create source path")),
                 start: FilePosition::new(1, 1),
-                end: None,
+                end: FilePosition::new(1, 1),
             },
         ),
         "foo.rflx:1:1: error: "
@@ -511,7 +511,7 @@ mod tests {
                 source: Some(PathBuf::from_str("foo.rflx")
                     .expect("failed to create source path")),
                 start: FilePosition::new(1, 1),
-                end: None,
+                end: FilePosition::new(1, 1),
             },
         ),
         "foo.rflx:1:1: error: some. terrible. error"
@@ -523,7 +523,7 @@ mod tests {
             Location {
                 source: None,
                 start: FilePosition::new(1, 1),
-                end: None,
+                end: FilePosition::new(1, 1),
             },
         ),
         "<stdin>:1:1: error: some. terrible. error"
@@ -554,7 +554,7 @@ mod tests {
             Location {
                 source: Some(PathBuf::from_str("foo.rflx").expect("failed to create source path")),
                 start: FilePosition::new(1, 1),
-                end: Some(FilePosition::new(1, 5)),
+                end: FilePosition::new(1, 5),
             },
         );
         let as_annotation = annotation.to_annotation("some amazing source code");
@@ -578,7 +578,7 @@ mod tests {
             Location {
                 source: None,
                 start: FilePosition::new(1, 1),
-                end: None,
+                end: FilePosition::new(1, 1),
             },
         );
 
@@ -587,7 +587,7 @@ mod tests {
             &Location {
                 source: None,
                 start: FilePosition::new(1, 1),
-                end: None,
+                end: FilePosition::new(1, 1),
             }
         );
 
@@ -607,7 +607,7 @@ mod tests {
                 Location {
                     source: None,
                     start: FilePosition::new(1, 2),
-                    end: Some(FilePosition::new(3, 4)),
+                    end: FilePosition::new(3, 4),
                 },
             )],
             true,
@@ -624,7 +624,7 @@ mod tests {
                 Location {
                     source: None,
                     start: FilePosition::new(1, 2),
-                    end: Some(FilePosition::new(3, 4)),
+                    end: FilePosition::new(3, 4),
                 },
             )]
         );
@@ -751,7 +751,7 @@ mod tests {
             Some(Location {
                 source: None,
                 start: FilePosition::new(1, 1),
-                end: Some(FilePosition::new(1, 8)),
+                end: FilePosition::new(1, 8),
             }),
             Vec::new(),
             true,
@@ -772,7 +772,7 @@ mod tests {
             Some(Location {
                 source: Some("<stdin>".into()),
                 start: FilePosition::new(1, 1),
-                end: Some(FilePosition::new(1, 8)),
+                end: FilePosition::new(1, 8),
             }),
             Vec::new(),
             true,
@@ -787,7 +787,7 @@ mod tests {
             Some(Location {
                 source: Some(PathBuf::from_str("test.rflx").expect("failed to create path")),
                 start: FilePosition::new(1, 1),
-                end: Some(FilePosition::new(1, 8)),
+                end: FilePosition::new(1, 8),
             }),
             Vec::new(),
             true,
@@ -809,7 +809,7 @@ mod tests {
             Some(Location {
                 source: Some(PathBuf::from_str("test.rflx").expect("failed to create path")),
                 start: FilePosition::new(1, 1),
-                end: Some(FilePosition::new(1, 8)),
+                end: FilePosition::new(1, 8),
             }),
             vec![
                 Annotation::new(
@@ -818,7 +818,7 @@ mod tests {
                     Location {
                         source: None,
                         start: FilePosition::new(2, 1),
-                        end: Some(FilePosition::new(2, 4)),
+                        end: FilePosition::new(2, 4),
                     },
                 )
             ],
@@ -863,7 +863,7 @@ mod tests {
             Some(Location {
                 source: None,
                 start: FilePosition::new(1, 1),
-                end: Some(FilePosition::new(1, 8)),
+                end: FilePosition::new(1, 8),
             }),
             Vec::new(),
             true,
@@ -877,7 +877,7 @@ mod tests {
             Some(Location {
                 source: Some(PathBuf::from_str("foo.rflx").expect("failed to create path")),
                 start: FilePosition::new(1, 1),
-                end: Some(FilePosition::new(1, 8)),
+                end: FilePosition::new(1, 8),
             }),
             Vec::new(),
             true,
@@ -891,7 +891,7 @@ mod tests {
             Some(Location {
                 source: Some(PathBuf::from_str("foo.rflx").expect("failed to create path")),
                 start: FilePosition::new(1, 1),
-                end: Some(FilePosition::new(1, 8)),
+                end: FilePosition::new(1, 8),
             }),
             vec![
                 Annotation {
@@ -899,7 +899,7 @@ mod tests {
                     location: Location {
                         source: Some(PathBuf::from_str("foo.rflx").expect("failed to create path")),
                         start: FilePosition::new(1, 1),
-                        end: Some(FilePosition::new(1, 8)),
+                        end: FilePosition::new(1, 8),
                     },
                     label: Some("some label".to_string())
                 }
@@ -1003,7 +1003,7 @@ mod tests {
             format!("{error:?}").as_str(),
             "[ErrorEntry { message: \"first\", severity: Error, location: None, annotations: \
             [Annotation { label: None, severity: Error, location: Location { start: \
-            FilePosition(0, 0), end: None, source: None } }], generate_default: true }, \
+            FilePosition(0, 0), end: FilePosition(0, 0), source: None } }], generate_default: true }, \
             ErrorEntry { message: \"second\", severity: Warning, location: None, \
             annotations: [], generate_default: true }]"
         );
@@ -1163,7 +1163,7 @@ mod tests {
                 Some(Location {
                     start: FilePosition::new(1, 1),
                     source: Some(PathBuf::from_str("<stdin>").unwrap()),
-                    end: Some(FilePosition::new(1, 8)),
+                    end: FilePosition::new(1, 8),
                 }),
                 Vec::new(),
                 true,
@@ -1204,7 +1204,7 @@ mod tests {
             Some(Location {
                 start: FilePosition::new(1, 1),
                 source: Some(file_path.clone()),
-                end: Some(FilePosition::new(1, 8)),
+                end: FilePosition::new(1, 8),
             }),
             Vec::new(),
             true,

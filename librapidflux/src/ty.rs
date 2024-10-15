@@ -640,7 +640,7 @@ pub const UNIVERSAL_INTEGER: Ty = Ty::UniversalInteger(UniversalInteger {
 lazy_static! {
     static ref BUILTINS_LOCATION: Location = Location {
         start: FilePosition::new(1, 1),
-        end: Some(FilePosition::new(1, 1)),
+        end: FilePosition::new(1, 1),
         source: Some(PathBuf::from_str(consts::BUILTINS_PACKAGE).expect("failed to create path")),
     };
     pub static ref BOOLEAN: Ty = Ty::Enumeration(Enumeration {
@@ -1028,7 +1028,7 @@ mod tests {
                 &types.iter().copied().cloned().collect::<Vec<Ty>>(),
                 Some(&Location {
                     start: FilePosition::new(1, 1),
-                    end: None,
+                    end: FilePosition::new(1, 1),
                     source: None,
                 }),
                 "foo"
@@ -1066,7 +1066,7 @@ mod tests {
                 types,
                 Some(&Location {
                     start: FilePosition::new(1, 1),
-                    end: None,
+                    end: FilePosition::new(1, 1),
                     source: None,
                 }),
                 "",

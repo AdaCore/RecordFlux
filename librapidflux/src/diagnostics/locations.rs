@@ -5,11 +5,11 @@ use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
 lazy_static! {
-    pub static ref UNKNOWN_LOCATION: Location = Location {
-        start: FilePosition(1, 1),
-        end: Some(FilePosition(1, 1)),
-        source: Some(PathBuf::from("<unknown>")),
-    };
+    pub static ref UNKNOWN_LOCATION: Location = Location::new(
+        FilePosition(1, 1),
+        FilePosition(1, 1),
+        Some(PathBuf::from("<unknown>"))
+    );
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default, Debug)]
@@ -80,11 +80,21 @@ impl Display for FilePosition {
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default)]
 pub struct Location {
     pub start: FilePosition,
-    pub end: Option<FilePosition>,
+    pub end: FilePosition,
     pub source: Option<PathBuf>,
 }
 
 impl Location {
+    /// Creates a new location.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if the end is before the start.
+    pub fn new(start: FilePosition, end: FilePosition, source: Option<PathBuf>) -> Self {
+        assert!(start <= end);
+        Location { start, end, source }
+    }
+
     /// Merges a list of locations into a single location.
     ///
     /// This function takes a slice of locations and calculates the smallest starting location
@@ -112,30 +122,20 @@ impl Location {
             .iter()
             .filter(filter_first_path)
             .map(|l| l.start)
-            .chain(
-                locations
-                    .iter()
-                    .filter(filter_first_path)
-                    .filter_map(|l| l.end),
-            )
+            .chain(locations.iter().filter(filter_first_path).map(|l| l.end))
             .min()?;
 
         let max_loc = locations
             .iter()
             .filter(filter_first_path)
             .map(|l| l.start)
-            .chain(
-                locations
-                    .iter()
-                    .filter(filter_first_path)
-                    .filter_map(|l| l.end),
-            )
+            .chain(locations.iter().filter(filter_first_path).map(|l| l.end))
             .max()
             .expect("unreachable");
 
         Some(Self {
             start: min_loc,
-            end: Some(max_loc),
+            end: max_loc,
             source: locations.first()?.source.clone(),
         })
     }
@@ -146,7 +146,7 @@ impl Location {
     /// This function is called for a location that references no source file.
     pub fn to_file_offset(&self, source: &str) -> std::ops::Range<usize> {
         let start_offset = self.start.get_offset(source);
-        let end_offset = self.end.as_ref().unwrap_or(&self.start).get_offset(source);
+        let end_offset = self.end.get_offset(source);
 
         std::ops::Range {
             start: start_offset - 1,
@@ -179,7 +179,7 @@ mod tests {
     use bincode::{deserialize, serialize};
     use rstest::rstest;
 
-    use crate::diagnostics::{FilePosition, Location};
+    use crate::diagnostics::{FilePosition, Location, UNKNOWN_LOCATION};
 
     #[test]
     #[should_panic(
@@ -217,7 +217,7 @@ Third",
         Location {
             source: None,
             start: FilePosition::new(1, 1),
-            end: Some(FilePosition::new(1, 3))
+            end: FilePosition::new(1, 3)
         },
         "foo code",
         0usize..2usize
@@ -231,40 +231,41 @@ Third",
     }
 
     #[rstest]
-    #[case::location_start(Location {
-                start: FilePosition::new(1, 2),
-                source: None,
-                end: None,
-            }, "<stdin>:1:2")]
-    #[case::location_start_source(Location {
-                start: FilePosition::new(1, 2),
-                source: Some(PathBuf::from("foo")),
-                end: None,
-            }, "foo:1:2")]
-    #[case::location_start_source_end(Location {
-                start: FilePosition::new(1, 2),
-                source: Some(PathBuf::from("foo")),
-                end: Some(FilePosition::new(3, 4)),
-            }, "foo:1:2")]
+    #[case::location_start(
+        Location::new(FilePosition::new(1, 2), FilePosition::new(1, 2), None),
+        "<stdin>:1:2"
+    )]
+    #[case::location_start_source(
+        Location::new(
+            FilePosition::new(1, 2),
+            FilePosition::new(1, 2),
+            Some(PathBuf::from("foo")),
+        ),
+        "foo:1:2"
+    )]
+    #[case::location_start_source_end(
+        Location::new(
+            FilePosition::new(1, 2),
+            FilePosition::new(3, 4),
+            Some(PathBuf::from("foo")),
+        ),
+        "foo:1:2"
+    )]
     fn test_location_display(#[case] location: Location, #[case] expected: &str) {
         assert_eq!(location.to_string(), expected);
     }
 
     #[rstest]
     #[case::location_with_source(
-        Location {
-            source: Some(PathBuf::from_str("foo.rflx").expect("failed to create path")),
-            start: FilePosition::new(1, 1),
-            end: None
-        },
+        Location::new(
+            FilePosition::new(1, 1),
+            FilePosition::new(1, 1),
+            Some(PathBuf::from_str("foo.rflx").expect("failed to create path")),
+        ),
         true
     )]
     #[case::location_without_source(
-        Location {
-            source: None,
-            start: FilePosition::new(1, 1),
-            end: None
-        },
+        Location::new(FilePosition::new(1, 1), FilePosition::new(1, 1), None),
         false
     )]
     fn test_location_has_source(#[case] location: Location, #[case] has_source: bool) {
@@ -272,56 +273,22 @@ Third",
     }
 
     #[rstest]
-    #[case::location_different_line_no_end(
-        &[
-            Location {
-                start: FilePosition::new(1, 1),
-                ..Location::default()
-            },
-            Location {
-                start: FilePosition::new(3, 1),
-                ..Default::default()
-            }
-        ],
-        Some(Location {
-            start: FilePosition::new(1, 1),
-            end: Some(FilePosition::new(3, 1)),
-            ..Default::default()
-        }),
-    )]
     #[case::location_different_line_with_end(
         &[
             Location {
                 start: FilePosition::new(1, 1),
-                end: Some(FilePosition::new(1, 10)),
+                end: FilePosition::new(1, 10),
                 ..Location::default()
             },
             Location {
                 start: FilePosition::new(3, 1),
-                end: Some(FilePosition::new(3, 10)),
+                end: FilePosition::new(3, 10),
                 ..Default::default()
             }
         ],
         Some(Location {
             start: FilePosition::new(1, 1),
-            end: Some(FilePosition::new(3, 10)),
-            ..Default::default()
-        }),
-    )]
-    #[case::location_same_line_no_end(
-        &[
-            Location {
-                start: FilePosition::new(1, 1),
-                ..Location::default()
-            },
-            Location {
-                start: FilePosition::new(1, 10),
-                ..Default::default()
-            }
-        ],
-        Some(Location {
-            start: FilePosition::new(1, 1),
-            end: Some(FilePosition::new(1, 10)),
+            end: FilePosition::new(3, 10),
             ..Default::default()
         }),
     )]
@@ -329,18 +296,18 @@ Third",
         &[
             Location {
                 start: FilePosition::new(1, 1),
-                end: Some(FilePosition::new(1, 10)),
+                end: FilePosition::new(1, 10),
                 ..Location::default()
             },
             Location {
                 start: FilePosition::new(1, 4),
-                end: Some(FilePosition::new(1, 27)),
+                end: FilePosition::new(1, 27),
                 ..Default::default()
             }
         ],
         Some(Location {
             start: FilePosition::new(1, 1),
-            end: Some(FilePosition::new(1, 27)),
+            end: FilePosition::new(1, 27),
             ..Default::default()
         }),
     )]
@@ -348,23 +315,23 @@ Third",
         &[
             Location {
                 start: FilePosition::new(1, 1),
-                end: Some(FilePosition::new(1, 10)),
+                end: FilePosition::new(1, 10),
                 ..Location::default()
             },
             Location {
                 start: FilePosition::new(1, 1),
-                end: Some(FilePosition::new(28, 4)),
+                end: FilePosition::new(28, 4),
                 ..Location::default()
             },
             Location {
                 start: FilePosition::new(1, 4),
-                end: Some(FilePosition::new(1, 27)),
+                end: FilePosition::new(1, 27),
                 ..Default::default()
             }
         ],
         Some(Location {
             start: FilePosition::new(1, 1),
-            end: Some(FilePosition::new(28, 4)),
+            end: FilePosition::new(28, 4),
             ..Default::default()
         }),
     )]
@@ -372,13 +339,13 @@ Third",
         &[
             Location {
                 start: FilePosition::new(1, 1),
-                end: Some(FilePosition::new(1, 10)),
+                end: FilePosition::new(1, 10),
                 ..Location::default()
             },
         ],
         Some(Location {
             start: FilePosition::new(1, 1),
-            end: Some(FilePosition::new(1, 10)),
+            end: FilePosition::new(1, 10),
             ..Default::default()
         }),
     )]
@@ -386,18 +353,18 @@ Third",
         &[
             Location {
                 start: FilePosition::new(1, 1),
-                end: Some(FilePosition::new(1, 10)),
+                end: FilePosition::new(1, 10),
                 source: Some(PathBuf::from_str("foo.rflx").expect("failed to create path"))
             },
             Location {
                 start: FilePosition::new(1, 1),
-                end: Some(FilePosition::new(1, 10)),
+                end: FilePosition::new(1, 10),
                 source: Some(PathBuf::from_str("foo.rflx").expect("failed to create path"))
             },
         ],
         Some(Location {
             start: FilePosition::new(1, 1),
-            end: Some(FilePosition::new(1, 10)),
+            end: FilePosition::new(1, 10),
             source: Some(PathBuf::from_str("foo.rflx").expect("failed to create path"))
         }),
     )]
@@ -405,18 +372,18 @@ Third",
         &[
             Location {
                 start: FilePosition::new(1, 1),
-                end: Some(FilePosition::new(1, 17)),
+                end: FilePosition::new(1, 17),
                 source: Some(PathBuf::from_str("foo.rflx").expect("failed to create path"))
             },
             Location {
                 start: FilePosition::new(1, 1),
-                end: Some(FilePosition::new(1, 10)),
+                end: FilePosition::new(1, 10),
                 source: Some(PathBuf::from_str("bar.rflx").expect("failed to create path"))
             },
         ],
         Some(Location {
             start: FilePosition::new(1, 1),
-            end: Some(FilePosition::new(1, 17)),
+            end: FilePosition::new(1, 17),
             source: Some(PathBuf::from_str("foo.rflx").expect("failed to create path"))
         }),
     )]
@@ -425,12 +392,12 @@ Third",
         &[
             Location {
                 start: FilePosition::new(1, 1),
-                end: Some(FilePosition::new(1, 17)),
+                end: FilePosition::new(1, 17),
                 source: None,
             },
             Location {
                 start: FilePosition::new(1, 1),
-                end: Some(FilePosition::new(1, 10)),
+                end: FilePosition::new(1, 10),
                 source: Some(PathBuf::from_str("bar.rflx").expect("failed to create path"))
             },
         ],

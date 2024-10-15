@@ -433,7 +433,7 @@ mod tests {
                     Some(Location {
                         source: None,
                         start: FilePosition::new(1, 1),
-                        end: None
+                        end: FilePosition::new(1, 1)
                     })
                 ),
             expected
@@ -482,7 +482,7 @@ mod tests {
         Location {
             source: None,
             start: FilePosition::new(value, value),
-            end: None,
+            end: FilePosition::new(value, value),
         }
     }
 }
