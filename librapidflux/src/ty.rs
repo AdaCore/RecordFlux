@@ -44,7 +44,11 @@ pub enum Ty {
 }
 
 impl Ty {
-    /// Check compatibility to another type.
+    /// Check if all values of `other` are compatible with `self`.
+    ///
+    /// A type is compatible if all values of `other` can be implicitly converted to a value of
+    /// `self`. All integer types are considered to be compatible with each other. This semantics is
+    /// used during model verification.
     ///
     /// # Panics
     ///
@@ -93,6 +97,11 @@ impl Ty {
         }
     }
 
+    /// Check if all values of `other` are strongly compatible with `self`.
+    ///
+    /// Different integer types are not considered to be compatible with each other. This semantics
+    /// is the same as in Ada/SPARK and is used to determine the need for explicit type conversions
+    /// during code generation.
     pub fn is_compatible_strong(&self, other: &Ty) -> bool {
         match (self, other) {
             (Ty::Integer(integer), Ty::UniversalInteger(universal_integer))
