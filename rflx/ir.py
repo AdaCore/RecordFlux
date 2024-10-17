@@ -2200,11 +2200,87 @@ def add_conversions(statements: Sequence[Stmt]) -> list[Stmt]:
 
 
 @singledispatch
-def _convert_expression(
-    expression: Expr,  # noqa: ARG001
-    target_type: ty.Type,  # noqa: ARG001
-) -> Expr:
-    raise NotImplementedError
+def _convert_expression(expression: Expr, target_type: ty.Type) -> Expr:
+    if target_type.is_compatible_strong(expression.type_) or not isinstance(
+        target_type,
+        (ty.Integer, ty.Enumeration),
+    ):
+        return expression
+
+    assert False
+
+
+@_convert_expression.register(BinaryIntExpr)
+def _(expression: BinaryIntExpr, target_type: ty.Type) -> Expr:
+    assert isinstance(target_type, ty.Integer)
+
+    return expression.__class__(
+        (
+            expression.left
+            if target_type.is_compatible_strong(expression.left.type_)
+            else IntConversion(
+                target_type,
+                expression.left,
+                expression.left.origin,
+            )
+        ),
+        (
+            expression.right
+            if target_type.is_compatible_strong(expression.right.type_)
+            else IntConversion(
+                target_type,
+                expression.right,
+                expression.right.origin,
+            )
+        ),
+        origin=expression.origin,
+    )
+
+
+@_convert_expression.register(IntExpr)
+def _(expression: IntExpr, target_type: ty.Type) -> Expr:
+    if target_type.is_compatible_strong(expression.type_) or not isinstance(
+        target_type,
+        ty.Integer,
+    ):
+        return expression
+
+    return IntConversion(
+        target_type,
+        expression,
+        expression.origin,
+    )
+
+
+@_convert_expression.register(CaseExpr)
+def _(expression: CaseExpr, target_type: ty.Type) -> Expr:
+    if target_type.is_compatible_strong(expression.type_) or not isinstance(
+        target_type,
+        ty.Integer,
+    ):
+        return expression
+
+    choices = []
+
+    for k, v in expression.choices:
+        assert isinstance(v, IntExpr)
+        choices.append(
+            (
+                k,
+                (
+                    v
+                    if target_type.is_compatible_strong(v.type_)
+                    else IntConversion(target_type, v, v.origin)
+                ),
+            ),
+        )
+
+    return expression.__class__(
+        expression.expression,
+        choices,
+        target_type,
+        origin=expression.origin,
+    )
 
 
 @_convert_expression.register(MsgAgg)
@@ -2224,87 +2300,6 @@ def _(
         expression.type_,
         expression.origin,
     )
-
-
-@_convert_expression.register(BinaryIntExpr)
-@_convert_expression.register(IntExpr)
-@_convert_expression.register(Expr)
-def _(
-    expression: BinaryIntExpr | IntExpr | Expr,
-    target_type: ty.Type,
-) -> Expr:
-    result: Expr
-
-    if (
-        target_type.is_compatible_strong(expression.type_)
-        and not isinstance(expression, BinaryIntExpr)
-        or not isinstance(target_type, (ty.Integer, ty.Enumeration))
-    ):
-        return expression
-
-    if isinstance(expression, BinaryIntExpr):
-        assert isinstance(target_type, ty.Integer)
-        left = (
-            expression.left
-            if target_type.is_compatible_strong(expression.left.type_)
-            else IntConversion(
-                target_type,
-                expression.left,
-                expression.left.origin,
-            )
-        )
-        right = (
-            expression.right
-            if target_type.is_compatible_strong(expression.right.type_)
-            else IntConversion(
-                target_type,
-                expression.right,
-                expression.right.origin,
-            )
-        )
-        result = expression.__class__(
-            left,
-            right,
-            origin=expression.origin,
-        )
-
-    elif isinstance(expression, IntExpr):
-        assert isinstance(target_type, ty.Integer)
-        result = IntConversion(
-            target_type,
-            expression,
-            expression.origin,
-        )
-
-    elif isinstance(expression, CaseExpr):
-        assert isinstance(target_type, ty.Integer)
-
-        choices = []
-
-        for k, v in expression.choices:
-            assert isinstance(v, IntExpr)
-            choices.append(
-                (
-                    k,
-                    (
-                        v
-                        if target_type.is_compatible_strong(v.type_)
-                        else IntConversion(target_type, v, v.origin)
-                    ),
-                ),
-            )
-
-        result = expression.__class__(
-            expression.expression,
-            choices,
-            target_type,
-            origin=expression.origin,
-        )
-
-    else:
-        assert False
-
-    return result
 
 
 def add_checks(statements: Sequence[Stmt], variable_id: Generator[ID, None, None]) -> list[Stmt]:
