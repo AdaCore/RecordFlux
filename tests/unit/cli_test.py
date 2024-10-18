@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.resources
 import os
 import re
 import subprocess
@@ -11,7 +12,6 @@ from io import TextIOWrapper
 from pathlib import Path
 from typing import ClassVar, NoReturn
 
-import importlib_resources
 import pytest
 
 import rflx.specification
@@ -818,7 +818,7 @@ def test_install_vim_no_home(
 
 def test_vim_syntax_file_ressource(monkeypatch: pytest.MonkeyPatch) -> None:
     expected_location = Path("rflx") / "ide" / "vim" / "recordflux.vim"
-    monkeypatch.setattr(importlib_resources, "files", lambda _: Path("rflx"))
+    monkeypatch.setattr(importlib.resources, "files", lambda _: Path("rflx"))
     assert cli.vim_syntax_file() == expected_location
 
 

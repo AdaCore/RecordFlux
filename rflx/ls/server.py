@@ -5,8 +5,9 @@ import inspect
 import threading
 import uuid
 from collections import defaultdict
+from collections.abc import Iterable, Mapping
 from pathlib import Path
-from typing import Callable, Final, Iterable, Mapping
+from typing import Callable, Final
 from urllib.parse import unquote, urlparse
 
 from lsprotocol.types import (

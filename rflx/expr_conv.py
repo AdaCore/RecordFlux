@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Generator
 from functools import singledispatch
-from typing import Generator
 
 from rflx import ada, expr, ir, ty
 from rflx.error import fail

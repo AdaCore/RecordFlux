@@ -60,7 +60,7 @@ class ChecksumFunction(Protocol):
 ValueType = Union[
     "MessageValue",
     ty.Sequence["TypeValue"],
-    ty.Tuple[str, Number],
+    tuple[str, Number],
     int,
     str,
     bytes,

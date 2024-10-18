@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import NoReturn, Sequence
+from collections.abc import Sequence
+from typing import NoReturn
 
 from typing_extensions import TypeGuard
 

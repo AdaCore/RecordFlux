@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import typing
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field as dataclass_field
 from functools import partial, singledispatchmethod
@@ -4487,16 +4486,15 @@ class FSMGenerator:
         raise NotImplementedError(f"{type(expression).__name__} is not yet supported")
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Var, is_global: typing.Callable[[ID], bool]) -> Expr:
-        # TODO(eng/recordflux/RecordFlux#1359): Replace typing.Callable by collections.abc.Callable
+    def _(self, expression: ir.Var, is_global: Callable[[ID], bool]) -> Expr:
         return Variable(variable_id(expression.identifier, is_global))
 
     @_to_ada_expr.register
-    def _(self, expression: ir.IntVar, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.IntVar, is_global: Callable[[ID], bool]) -> Expr:
         return Variable(variable_id(expression.identifier, is_global))
 
     @_to_ada_expr.register
-    def _(self, expression: ir.EnumLit, _is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.EnumLit, _is_global: Callable[[ID], bool]) -> Expr:
         literal = Literal(expression.identifier)
 
         if expression.type_.always_valid:
@@ -4505,25 +4503,25 @@ class FSMGenerator:
         return literal
 
     @_to_ada_expr.register
-    def _(self, expression: ir.IntVal, _is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.IntVal, _is_global: Callable[[ID], bool]) -> Expr:
         return Number(expression.value)
 
     @_to_ada_expr.register
-    def _(self, expression: ir.BoolVal, _is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.BoolVal, _is_global: Callable[[ID], bool]) -> Expr:
         return Literal(str(expression.value))
 
     @_to_ada_expr.register
-    def _(self, expression: ir.First, _is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.First, _is_global: Callable[[ID], bool]) -> Expr:
         assert isinstance(expression.type_, (ty.AnyInteger, ty.Enumeration))
         return First(self._ada_type(expression.prefix))
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Last, _is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Last, _is_global: Callable[[ID], bool]) -> Expr:
         assert isinstance(expression.type_, (ty.AnyInteger, ty.Enumeration))
         return Last(self._ada_type(expression.prefix))
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Valid, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Valid, is_global: Callable[[ID], bool]) -> Expr:
         if isinstance(expression.prefix_type, ty.Message):
             return Call(
                 expression.prefix_type.identifier * "Well_Formed_Message",
@@ -4580,7 +4578,7 @@ class FSMGenerator:
     def _relation_to_ada_expr(
         self,
         expression: ir.Relation,
-        is_global: typing.Callable[[ID], bool],
+        is_global: Callable[[ID], bool],
     ) -> Expr:
         assert isinstance(expression, (ir.Equal, ir.NotEqual))
         if isinstance(expression.left.type_, ty.Enumeration) and expression.left.type_.always_valid:
@@ -4600,7 +4598,7 @@ class FSMGenerator:
         return result
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Size, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Size, is_global: Callable[[ID], bool]) -> Expr:
         if (
             isinstance(expression.prefix_type, ty.AnyInteger)
             or (
@@ -4625,22 +4623,22 @@ class FSMGenerator:
         assert False
 
     @_to_ada_expr.register
-    def _(self, expression: ir.HasData, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.HasData, is_global: Callable[[ID], bool]) -> Expr:
         assert isinstance(expression.prefix_type, ty.Message)
         type_ = expression.prefix_type.identifier
         context = context_id(expression.prefix, is_global)
         return Greater(Call(type_ * "Byte_Size", [Variable(context)]), Number(0))
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Opaque, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Opaque, is_global: Callable[[ID], bool]) -> Expr:
         raise NotImplementedError
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Head, _is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Head, _is_global: Callable[[ID], bool]) -> Expr:
         _unsupported_expression(expression, "in expression")
 
     @_to_ada_expr.register
-    def _(self, expression: ir.FieldValidNext, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.FieldValidNext, is_global: Callable[[ID], bool]) -> Expr:
         assert isinstance(expression.message_type, ty.Message)
         type_name = expression.message_type.identifier
         return Call(
@@ -4652,7 +4650,7 @@ class FSMGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: ir.FieldValid, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.FieldValid, is_global: Callable[[ID], bool]) -> Expr:
         assert isinstance(expression.message_type, ty.Message)
         type_name = expression.message_type.identifier
         return Call(
@@ -4669,7 +4667,7 @@ class FSMGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: ir.FieldPresent, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.FieldPresent, is_global: Callable[[ID], bool]) -> Expr:
         assert isinstance(expression.message_type, ty.Message)
         type_name = expression.message_type.identifier
         return Call(
@@ -4686,7 +4684,7 @@ class FSMGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: ir.FieldSize, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.FieldSize, is_global: Callable[[ID], bool]) -> Expr:
         type_ = expression.message_type.identifier
         if isinstance(expression.message_type, ty.Message):
             context = context_id(expression.message, is_global)
@@ -4699,7 +4697,7 @@ class FSMGenerator:
         return Call(type_ * f"Field_Size_{expression.field}", [Variable(expression.message)])
 
     @_to_ada_expr.register
-    def _(self, expression: ir.UnaryExpr, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.UnaryExpr, is_global: Callable[[ID], bool]) -> Expr:
         result = getattr(ada, expression.__class__.__name__)(
             self._to_ada_expr(expression.expression, is_global),
         )
@@ -4707,7 +4705,7 @@ class FSMGenerator:
         return result
 
     @_to_ada_expr.register
-    def _(self, expression: ir.BinaryExpr, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.BinaryExpr, is_global: Callable[[ID], bool]) -> Expr:
         self._record_used_types(expression)
         name = expression.__class__.__name__
         if name == "And":
@@ -4722,7 +4720,7 @@ class FSMGenerator:
         return result
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Relation, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Relation, is_global: Callable[[ID], bool]) -> Expr:
         relation = self._convert_types_of_int_relation(expression)
         result = getattr(ada, relation.__class__.__name__)(
             self._to_ada_expr(relation.left, is_global),
@@ -4732,7 +4730,7 @@ class FSMGenerator:
         return result
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Equal, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Equal, is_global: Callable[[ID], bool]) -> Expr:
         if expression.left == ir.BoolVal(value=True) and isinstance(expression.right, ir.Var):
             return Variable(variable_id(expression.right.identifier, is_global))
         if isinstance(expression.left, ir.Var) and expression.right == ir.BoolVal(value=True):
@@ -4747,7 +4745,7 @@ class FSMGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: ir.NotEqual, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.NotEqual, is_global: Callable[[ID], bool]) -> Expr:
         if expression.left == ir.BoolVal(value=True) and isinstance(expression.right, ir.Var):
             return Not(Variable(variable_id(expression.right.identifier, is_global)))
         if isinstance(expression.left, ir.Var) and expression.right == ir.BoolVal(value=True):
@@ -4762,11 +4760,11 @@ class FSMGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Call, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Call, is_global: Callable[[ID], bool]) -> Expr:
         raise NotImplementedError
 
     @_to_ada_expr.register
-    def _(self, expression: ir.FieldAccess, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.FieldAccess, is_global: Callable[[ID], bool]) -> Expr:
         if expression.field in expression.message_type.parameter_types:
             return Selected(Variable(context_id(expression.message, is_global)), expression.field)
         if isinstance(expression.message_type, ty.Structure):
@@ -4777,7 +4775,7 @@ class FSMGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: ir.IntFieldAccess, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.IntFieldAccess, is_global: Callable[[ID], bool]) -> Expr:
         if expression.field in expression.message_type.parameter_types:
             return Selected(
                 Variable(context_id(expression.message, is_global)),
@@ -4791,7 +4789,7 @@ class FSMGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: ir.IfExpr, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.IfExpr, is_global: Callable[[ID], bool]) -> Expr:
         assert expression.then_expr.is_expr()
         assert expression.else_expr.is_expr()
         return ada.IfThenElse(
@@ -4801,14 +4799,14 @@ class FSMGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Conversion, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Conversion, is_global: Callable[[ID], bool]) -> Expr:
         return Conversion(
             self._ada_type(expression.target_type.identifier),
             self._to_ada_expr(expression.argument, is_global),
         )
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Agg, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Agg, is_global: Callable[[ID], bool]) -> Expr:
         assert len(expression.elements) > 0
         if len(expression.elements) == 1:
             return NamedAggregate(
@@ -4822,7 +4820,7 @@ class FSMGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: ir.NamedAgg, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.NamedAgg, is_global: Callable[[ID], bool]) -> Expr:
         elements: list[tuple[ID | ada.Expr, ada.Expr]] = [
             (
                 n if isinstance(n, ID) else self._to_ada_expr(n, is_global),
@@ -4833,11 +4831,11 @@ class FSMGenerator:
         return NamedAggregate(*elements)
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Str, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Str, is_global: Callable[[ID], bool]) -> Expr:
         raise NotImplementedError
 
     @_to_ada_expr.register
-    def _(self, expression: ir.CaseExpr, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.CaseExpr, is_global: Callable[[ID], bool]) -> Expr:
         choices = [
             (self._to_ada_expr(choice, is_global), self._to_ada_expr(expr, is_global))
             for choices, expr in expression.choices
@@ -4846,7 +4844,7 @@ class FSMGenerator:
         return ada.CaseExpr(self._to_ada_expr(expression.expression, is_global), choices)
 
     @_to_ada_expr.register
-    def _(self, expression: ir.SufficientSpace, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.SufficientSpace, is_global: Callable[[ID], bool]) -> Expr:
         return Call(
             expression.message_type.identifier * "Sufficient_Space",
             [
@@ -4858,7 +4856,7 @@ class FSMGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: ir.HasElement, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.HasElement, is_global: Callable[[ID], bool]) -> Expr:
         return Call(
             expression.prefix_type.identifier * "Has_Element",
             [Variable(context_id(expression.prefix, is_global))],

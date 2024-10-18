@@ -11,7 +11,7 @@ GNATCOLL_ORIGIN ?= https://github.com/AdaCore
 LANGKIT_ORIGIN ?= https://github.com/AdaCore
 ADASAT_ORIGIN ?= https://github.com/AdaCore
 VERSION ?= $(shell test -f pyproject.toml && test -f $(POETRY) && $(POETRY) version -s)
-PYTHON_VERSIONS ?= 3.8 3.9 3.10 3.11
+PYTHON_VERSIONS ?= 3.9 3.10 3.11
 CARGO_HOME ?= $(MAKEFILE_DIR)/.cargo-home
 NO_GIT_CHECKOUT ?=
 CHECK_VENV_FULL_SYNC ?=
@@ -40,7 +40,7 @@ GNATCOLL_DIR = contrib/gnatcoll-bindings
 LANGKIT_DIR = contrib/langkit
 ADASAT_DIR = contrib/adasat
 
-DEVUTILS_HEAD = 99579f4b0e2ea961e8d0a5504256b5fe843fea2a
+DEVUTILS_HEAD = 149c88af228302bfb7ba15cc28f2f2d87baee487
 GNATCOLL_HEAD = f988b2052d01310b830d63e86e19c8dc77d382a2
 LANGKIT_HEAD = 07218ed24a932e747b98416ceae74e1620276ecc
 ADASAT_HEAD = f20d814a4b26508d0dd6ee48a92bc560b122dad5

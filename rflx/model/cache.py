@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.resources
 import json
 import os
 import time
@@ -8,8 +9,6 @@ import typing as ty
 from functools import lru_cache, singledispatch
 from pathlib import Path
 from typing import Literal, TextIO
-
-import importlib_resources
 
 from rflx.const import CACHE_PATH
 from rflx.error import warn
@@ -199,8 +198,7 @@ def fingerprint() -> str:
     for d in dependencies():
         m.update(d.encode("utf-8"))
 
-    # TODO(eng/recordflux/RecordFlux#1359): Replace importlib_resources by importlib.resources
-    for f in importlib_resources.files("rflx").rglob("*"):
+    for f in Path(str(importlib.resources.files("rflx"))).rglob("*"):
         if not f.is_file() or any(
             p in str(f)
             for p in [
@@ -220,8 +218,7 @@ def fingerprint() -> str:
 
 
 @singledispatch
-def _digest_components(_: TopLevelDeclaration) -> ty.List[str]:  # noqa: UP006
-    # TODO(eng/recordflux/RecordFlux#1359): Replace typing.List by list
+def _digest_components(_: TopLevelDeclaration) -> list[str]:
     return []
 
 

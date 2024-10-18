@@ -142,7 +142,6 @@ If FSF GNAT is used, the `GNATcoll iconv binding <https://docs.adacore.com/live/
 
 To run RecordFlux one of the following Python versions is needed:
 
--  Python 3.8
 -  Python 3.9
 -  Python 3.10
 -  Python 3.11

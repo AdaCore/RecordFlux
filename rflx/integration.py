@@ -1,40 +1,29 @@
 from __future__ import annotations
 
-import typing as ty
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Optional
+from typing import Annotated, Optional
 
 from annotated_types import Gt
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from ruamel.yaml.error import MarkedYAMLError
 from ruamel.yaml.main import YAML
-from typing_extensions import Annotated
 
 from rflx.identifier import ID
 from rflx.model import Model
 from rflx.model.state_machine import StateMachine
 from rflx.rapidflux import ErrorEntry, Location, RecordFluxError, Severity
 
-# TODO(eng/recordflux/RecordFlux#1359): Replace ty.* by collections.abc.*
-# Sequence and Mapping are imported from collections.abc as importing them
-# from typing is deprecated. However pydantic does not support the imported
-# version from collections.abc. To fix that typing is imported as ty and the
-# typing versions of Sequence and Mapping are used in classes that derive
-# from pydantic.BaseModel.
-# This is only relevant for Python 3.8.
-
-
 # TODO(eng/recordflux/RecordFlux#1424): Replace remaining use of Optional
-# and Union. Pydantic has issues with PEP604 type annotations in Python
-# 3.8 and 3.9.
+# and Union. Pydantic has issues with PEP604 type annotations in Python 3.9.
 
 IntSize = Annotated[int, Gt(0)]
 
 
 class StateMachineSize(BaseModel):  # type: ignore[misc]
     default: Optional[IntSize] = Field(None, alias="Default")  # noqa: UP007
-    global_: Optional[ty.Mapping[str, IntSize]] = Field(None, alias="Global")  # noqa: UP007
-    local_: Optional[ty.Mapping[str, ty.Mapping[str, IntSize]]] = Field(  # noqa: UP007
+    global_: Optional[Mapping[str, IntSize]] = Field(None, alias="Global")  # noqa: UP007
+    local_: Optional[Mapping[str, Mapping[str, IntSize]]] = Field(  # noqa: UP007
         None,
         alias="Local",
     )
@@ -53,7 +42,7 @@ class StateMachineIntegration(BaseModel):  # type: ignore[misc]
 
 
 class IntegrationFile(BaseModel):  # type: ignore[misc]
-    state_machine: ty.Mapping[str, StateMachineIntegration] = Field(alias="Machine")
+    state_machine: Mapping[str, StateMachineIntegration] = Field(alias="Machine")
 
     model_config = ConfigDict(extra="forbid")
 

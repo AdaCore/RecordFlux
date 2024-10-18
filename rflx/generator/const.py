@@ -1,7 +1,6 @@
+import importlib.resources
 from pathlib import Path
 from typing import Final
-
-import importlib_resources
 
 from rflx import ada
 from rflx.common import file_name
@@ -49,8 +48,7 @@ LIBRARY_FILES = [
     ]
 ]
 
-# TODO(eng/recordflux/RecordFlux#1359): Replace importlib_resources by importlib.resources
-TEMPLATE_DIR: Final[Path] = importlib_resources.files("rflx") / "templates"
+TEMPLATE_DIR: Final[Path] = Path(str(importlib.resources.files("rflx"))) / "templates"
 
 TYPES = TYPES_PACKAGE
 TYPES_BYTE = TYPES * "Byte"

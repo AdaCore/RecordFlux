@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import textwrap
 from collections import OrderedDict, defaultdict
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 from rflx import expr, lang, model, ty
 from rflx.common import STDIN, unique

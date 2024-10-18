@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import typing
+from collections.abc import Sequence
 from functools import lru_cache
-from typing import Callable, Sequence
+from typing import Callable
 
 import pytest
 import z3

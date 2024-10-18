@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-import typing as ty
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from shutil import copytree
+from typing import Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from ruamel.yaml.main import YAML
@@ -15,36 +16,26 @@ from tests.utils import state_machine_main
 
 FEATURES = [f for f in FEATURE_DIR.glob("*") if f.is_dir() and f.name != "__pycache__"]
 
-# TODO(eng/recordflux/RecordFlux#1359): Replace ty.* by collections.abc.*
-# Sequence and Mapping are imported from collections.abc as importing them
-# from typing is deprecated. However pydantic does not support the imported
-# version from collections.abc. To fix that typing is imported as ty and the
-# typing versions of Sequence and Mapping are used in classes that derive
-# from pydantic.BaseModel.
-# This is only relevant for Python 3.8.
-
-
 # TODO(eng/recordflux/RecordFlux#1424): Replace remaining use of Optional
-# and Union. Pydantic has issues with PEP604 type annotations in Python
-# 3.8 and 3.9.
+# and Union. Pydantic has issues with PEP604 type annotations in Python 3.9.
 
 
 class ProofConfig(BaseModel):  # type: ignore[misc]
     enabled: bool = Field(default=True)
     timeout: int = Field(default=60)
     memlimit: int = Field(default=1500)
-    units: ty.Sequence[str] = Field(default_factory=list)
+    units: Sequence[str] = Field(default_factory=list)
 
     model_config = ConfigDict(extra="forbid")
 
 
 class Config(BaseModel):  # type: ignore[misc]
-    input: ty.Mapping[str, ty.Optional[ty.Sequence[ty.Union[int, str]]]] = Field(  # noqa: UP007
+    input: Mapping[str, Optional[Sequence[Union[int, str]]]] = Field(  # noqa: UP007
         default_factory=dict,
     )
-    output: ty.Sequence[str] = Field(default_factory=list)
+    output: Sequence[str] = Field(default_factory=list)
     sequence: str = Field(default="")
-    proof: ty.Optional[ProofConfig] = Field(default=None)  # noqa: UP007
+    proof: Optional[ProofConfig] = Field(default=None)  # noqa: UP007
     external_io_buffers: int = Field(default=0)
 
     model_config = ConfigDict(extra="forbid")
@@ -52,12 +43,12 @@ class Config(BaseModel):  # type: ignore[misc]
     @field_validator("proof")
     def initialize_proof_if_present(
         cls,  # noqa: N805
-        value: ty.Optional[ProofConfig],  # noqa: UP007
+        value: ProofConfig | None,
     ) -> ProofConfig:
         return value if value is not None else ProofConfig()
 
     @property
-    def inp(self) -> dict[str, ty.Sequence[tuple[int, ...]]]:
+    def inp(self) -> dict[str, Sequence[tuple[int, ...]]]:
         return (
             {
                 str(c): [tuple(int(e) for e in str(m).split()) for m in i]
@@ -69,7 +60,7 @@ class Config(BaseModel):  # type: ignore[misc]
         )
 
     @property
-    def out(self) -> ty.Sequence[str]:
+    def out(self) -> Sequence[str]:
         return self.output
 
 

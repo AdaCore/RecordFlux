@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.resources
 import json
 import logging as py_logging
 import os
@@ -9,11 +10,9 @@ import subprocess
 import sys
 from collections.abc import Sequence
 from enum import Enum
+from importlib.abc import Traversable
 from multiprocessing import cpu_count
 from pathlib import Path
-
-import importlib_resources
-from importlib_resources.abc import Traversable
 
 from rflx.common import assert_never
 from rflx.converter import iana
@@ -622,7 +621,7 @@ def install_vim_ftdetect(config_dir: Path, editor: str) -> None:
 def install_syntax_file(config_dir: Path, editor: str) -> None:
     syntax_dir = config_dir / "syntax"
     syntax_dir.mkdir(parents=True, exist_ok=True)
-    with importlib_resources.as_file(vim_syntax_file()) as syntax_file:
+    with importlib.resources.as_file(vim_syntax_file()) as syntax_file:
         file_path = syntax_dir / syntax_file.name
 
     shutil.copy(syntax_file, file_path)
@@ -640,16 +639,15 @@ def install_vim_files(config_dir: Path, editor: str) -> None:
 
 def install(args: argparse.Namespace) -> None:
     if args.ide is IDE.GNATSTUDIO:
-        # TODO(eng/recordflux/RecordFlux#1359): Replace importlib_resources by importlib.resources
-        gnatstudio_dir = importlib_resources.files("rflx") / "ide" / "gnatstudio"
+        gnatstudio_dir = importlib.resources.files("rflx") / "ide" / "gnatstudio"
         plugins_dir = args.gnat_studio_dir / "plug-ins"
         if not plugins_dir.exists():
             plugins_dir.mkdir(parents=True, exist_ok=True)
         print(f'Installing RecordFlux plugin into "{plugins_dir}"')  # noqa: T201
-        shutil.copy(Path(gnatstudio_dir) / "recordflux.py", plugins_dir)
+        shutil.copy(Path(str(gnatstudio_dir)) / "recordflux.py", plugins_dir)
 
     elif args.ide is IDE.VSCODE:
-        with importlib_resources.as_file(vscode_extension()) as extension:
+        with importlib.resources.as_file(vscode_extension()) as extension:
             try:
                 subprocess.run(["code", "--install-extension", extension, "--force"], check=True)
             except (FileNotFoundError, subprocess.CalledProcessError) as e:
@@ -711,14 +709,13 @@ def run_language_server(args: argparse.Namespace) -> None:
 
 
 def vscode_extension() -> Traversable:
-    # TODO(eng/recordflux/RecordFlux#1359): Replace importlib_resources by importlib.resources
-    path = importlib_resources.files("rflx") / "ide" / "vscode" / "recordflux.vsix"
+    path = importlib.resources.files("rflx") / "ide" / "vscode" / "recordflux.vsix"
     assert isinstance(path, Traversable)
     return path
 
 
 def vim_syntax_file() -> Traversable:
-    path = importlib_resources.files("rflx") / "ide" / "vim" / "recordflux.vim"
+    path = importlib.resources.files("rflx") / "ide" / "vim" / "recordflux.vim"
     assert isinstance(path, Traversable)
     return path
 

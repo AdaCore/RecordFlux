@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- Support for Python 3.8 (eng/recordflux/RecordFlux#1359)
+
 ### Fixed
 
 - Rejection of invalid parameter types and return types in function declarations (eng/recordflux/RecordFlux#977)

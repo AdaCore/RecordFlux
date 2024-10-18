@@ -2708,10 +2708,7 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
     field_types: Sequence[tuple[Field, ID, Sequence[tuple[ID, expr.Expr]]]]
     checksums: Mapping[ID, Sequence[expr.Expr]] = dataclass_field(default_factory=dict)
     byte_order: Mapping[Field, ByteOrder] | ByteOrder = dataclass_field(
-        # TODO(eng/recordflux/RecordFlux#1359): Fix type annotation
-        # The type should be `dict[Field, ByteOrder]`, but the subscription of `dict` is not
-        # supported by Python 3.8.
-        default_factory=dict,
+        default_factory=dict[Field, ByteOrder],
     )
     location: Location | None = dataclass_field(default=None)
 
