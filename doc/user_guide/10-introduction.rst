@@ -145,6 +145,7 @@ To run RecordFlux one of the following Python versions is needed:
 -  Python 3.9
 -  Python 3.10
 -  Python 3.11
+-  Python 3.12
 
 In addition, the Python package installer `pip` is needed to install RecordFlux from the Python Package Index (PyPI).
 The tool can be installed using either the system package manager (`python3-pip` on Debian/Ubuntu/Fedora, `python-pip` on Arch Linux) or any other way described in the pip `installation guide <https://pip.pypa.io/en/stable/installation/>`__.

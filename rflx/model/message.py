@@ -2745,7 +2745,7 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
         return result
 
     def types(self, declarations: Sequence[TopLevelDeclaration]) -> dict[Field, type_decl.TypeDecl]:
-        return {
+        return {  # pragma: no branch
             field: next(
                 (
                     t

@@ -21,6 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Communications",
@@ -69,13 +70,14 @@ script = "build.py"
 generate-setup-file = true
 
 [tool.poetry.dependencies]
-python = ">=3.9, <3.12"
+python = ">=3.9, <4"
 attrs = ">=22.1, <24"
 defusedxml = ">=0.7, <0.8"
 pydantic = ">=2, <3"
 pydotplus = ">=2, <3"
 pygls = ">=1.1, <2"
 "ruamel.yaml" = ">=0.18, <0.19"
+setuptools = ">=41"  # required by z3-solver <4.12.3
 z3-solver = ">=4, <4.12.3"
 
 [tool.poetry.group.build.dependencies]

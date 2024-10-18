@@ -337,6 +337,7 @@ python_compatibility:
       - PYTHON_VERSION:
         - "3.9"
         - "3.10"
+        - "3.12"
   script:
     - git fetch --unshallow
     - *setup_gnat
@@ -673,6 +674,7 @@ installation_from_pypi:
         - "3.9"
         - "3.10"
         - "3.11"
+        - "3.12"
   script:
     - git fetch --unshallow
     - git checkout $(git describe --tags --abbrev=0 --match "v*.*.*")
@@ -694,6 +696,7 @@ installation_from_testpypi:
         - "3.9"
         - "3.10"
         - "3.11"
+        - "3.12"
   script:
     - *setup_gnat
     - *setup_python_venv
