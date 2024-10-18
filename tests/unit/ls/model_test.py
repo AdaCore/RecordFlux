@@ -7,7 +7,7 @@ from rflx.error import Location
 from rflx.identifier import ID
 from rflx.ls.model import LSModel, Symbol, SymbolCategory
 from rflx.model import UncheckedEnumeration, UncheckedInteger, UncheckedSequence
-from rflx.rapidflux import UNKNOWN_LOCATION
+from rflx.rapidflux import NO_LOCATION
 from rflx.specification.parser import Parser
 
 
@@ -87,14 +87,14 @@ def test_integer_to_symbols() -> None:
         expr.Number(0),
         expr.Number(100),
         expr.Number(8),
-        UNKNOWN_LOCATION,
+        NO_LOCATION,
     )
     symbols = LSModel._to_symbols(integer)  # noqa: SLF001
     assert len(symbols) == 1
     assert symbols[0] == Symbol(
         ID("Package::Integer_Identifier"),
         SymbolCategory.NUMERIC,
-        UNKNOWN_LOCATION,
+        NO_LOCATION,
         None,
     )
 
@@ -106,20 +106,20 @@ def test_enumeration_to_symbols() -> None:
             [(ID("Literal"), expr.Number(0))],
             expr.Number(1),
             always_valid=True,
-            location=UNKNOWN_LOCATION,
+            location=NO_LOCATION,
         ),
     )
     assert len(symbols) == 2
     assert symbols[0] == Symbol(
         ID("Package::Literal"),
         SymbolCategory.ENUMERATION_LITERAL,
-        UNKNOWN_LOCATION,
+        NO_LOCATION,
         None,
     )
     assert symbols[1] == Symbol(
         ID("Package::Enumeration_Identifier"),
         SymbolCategory.ENUMERATION,
-        UNKNOWN_LOCATION,
+        NO_LOCATION,
         None,
     )
 
@@ -129,14 +129,14 @@ def test_sequence_to_symbols() -> None:
         UncheckedSequence(
             ID("Package::Sequence_Identifier"),
             ID("Package::Integer_Identifier"),
-            UNKNOWN_LOCATION,
+            NO_LOCATION,
         ),
     )
     assert len(symbols) == 1
     assert symbols[0] == Symbol(
         ID("Package::Sequence_Identifier"),
         SymbolCategory.SEQUENCE,
-        UNKNOWN_LOCATION,
+        NO_LOCATION,
         None,
     )
 
@@ -146,7 +146,7 @@ def test_to_symbol() -> None:
     assert symbol == Symbol(
         ID("Package_Identifier"),
         SymbolCategory.PACKAGE,
-        UNKNOWN_LOCATION,
+        NO_LOCATION,
         None,
     )
 

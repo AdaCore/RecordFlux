@@ -13,7 +13,7 @@ from rflx import expr, expr_conv, ir, ty
 from rflx.common import Base, indent, indent_next, verbose_repr
 from rflx.identifier import ID, StrID, id_generator
 from rflx.rapidflux import (
-    UNKNOWN_LOCATION,
+    NO_LOCATION,
     Annotation,
     ErrorEntry,
     Location,
@@ -36,7 +36,7 @@ class Transition(Base):
         target: StrID,
         condition: expr.Expr = expr.TRUE,
         description: str | None = None,
-        location: Location = UNKNOWN_LOCATION,
+        location: Location = NO_LOCATION,
     ):
         self.target = ID(target)
         self.condition = condition
@@ -76,7 +76,7 @@ class State(Base):
         actions: Sequence[stmt.Statement] | None = None,
         declarations: Sequence[decl.BasicDeclaration] | None = None,
         description: str | None = None,
-        location: Location = UNKNOWN_LOCATION,
+        location: Location = NO_LOCATION,
     ):
         if transitions:
             assert transitions[-1].condition == expr.TRUE, "missing default transition"
@@ -359,7 +359,7 @@ class StateMachine(TopLevelDeclaration):
         declarations: Sequence[decl.BasicDeclaration],
         parameters: Sequence[decl.FormalDeclaration],
         types: Sequence[type_decl.TypeDecl],
-        location: Location = UNKNOWN_LOCATION,
+        location: Location = NO_LOCATION,
         workers: int = 1,
     ):
         super().__init__(identifier, location)

@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fmt::Display, path::PathBuf, str::FromStr};
+use std::{collections::HashSet, fmt::Display, path::PathBuf};
 
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
@@ -260,7 +260,7 @@ pub fn common_type(types: &[Ty]) -> Ty {
 pub fn check_type(
     actual: &Ty,
     expected: &[Ty],
-    location: Option<&Location>,
+    location: &Location,
     description: &str,
 ) -> RapidFluxError {
     assert!(!expected.is_empty());
@@ -279,11 +279,11 @@ pub fn check_type(
         error.push(ErrorEntry::new(
             format!("expected {desc}"),
             Severity::Error,
-            location.cloned(),
+            location.clone(),
             vec![Annotation::new(
                 Some(format!("found {actual}")),
                 Severity::Error,
-                location.cloned().unwrap(),
+                location.clone(),
             )],
             false,
         ));
@@ -300,7 +300,7 @@ pub fn check_type(
 pub fn check_type_instance(
     actual: &Ty,
     expected: &[TyDiscriminants],
-    location: Option<&Location>,
+    location: &Location,
     description: &str,
     additional_annotations: &[Annotation],
 ) -> RapidFluxError {
@@ -324,13 +324,13 @@ pub fn check_type_instance(
         annotations.push(Annotation::new(
             Some(format!("found {actual}")),
             Severity::Error,
-            location.cloned().unwrap(),
+            location.clone(),
         ));
         annotations.extend(additional_annotations.iter().cloned());
         error.push(ErrorEntry::new(
             format!("expected {desc}"),
             Severity::Error,
-            location.cloned(),
+            location.clone(),
             annotations,
             false,
         ));
@@ -339,7 +339,7 @@ pub fn check_type_instance(
     error
 }
 
-fn undefined_type(location: Option<&Location>, description: &str) -> RapidFluxError {
+fn undefined_type(location: &Location, description: &str) -> RapidFluxError {
     let description = if description.is_empty() {
         String::new()
     } else {
@@ -348,7 +348,7 @@ fn undefined_type(location: Option<&Location>, description: &str) -> RapidFluxEr
     RapidFluxError::from(vec![ErrorEntry::new(
         format!("undefined{description}"),
         Severity::Error,
-        location.cloned(),
+        location.clone(),
         vec![],
         true,
     )])
@@ -359,7 +359,7 @@ pub struct Enumeration {
     pub id: ID,
     pub literals: Vec<ID>,
     pub always_valid: bool,
-    pub location: Option<Location>,
+    pub location: Location,
 }
 
 impl Enumeration {
@@ -397,7 +397,7 @@ impl Display for UniversalInteger {
 pub struct Integer {
     pub id: ID,
     pub bounds: Bounds,
-    pub location: Option<Location>,
+    pub location: Location,
 }
 
 impl Integer {
@@ -638,64 +638,67 @@ pub const UNIVERSAL_INTEGER: Ty = Ty::UniversalInteger(UniversalInteger {
 });
 
 lazy_static! {
-    static ref BUILTINS_LOCATION: Location = Location {
+    static ref BUILTINS_LOCATION: Location = Location::File {
         start: FilePosition::new(1, 1),
         end: FilePosition::new(1, 1),
-        source: Some(PathBuf::from_str(consts::BUILTINS_PACKAGE).expect("failed to create path")),
+        source: PathBuf::from(consts::BUILTINS_PACKAGE),
     };
     pub static ref BOOLEAN: Ty = Ty::Enumeration(Enumeration {
         id: create_id!(
             [consts::BUILTINS_PACKAGE, "Boolean"],
-            Some(BUILTINS_LOCATION.clone())
+            BUILTINS_LOCATION.clone()
         ),
-        literals: vec![create_id!(["False"], None), create_id!(["True"], None)],
+        literals: vec![
+            create_id!(["False"], Location::None),
+            create_id!(["True"], Location::None)
+        ],
         always_valid: false,
-        location: Some(BUILTINS_LOCATION.clone()),
+        location: BUILTINS_LOCATION.clone(),
     });
     pub static ref INDEX: Ty = Ty::Integer(Integer {
         id: create_id!(
             [consts::BUILTINS_PACKAGE, "Index"],
-            Some(BUILTINS_LOCATION.clone()),
+            BUILTINS_LOCATION.clone(),
         ),
         bounds: Bounds::new(1, LENGTH_BOUNDS.upper()),
-        location: Some(BUILTINS_LOCATION.clone()),
+        location: BUILTINS_LOCATION.clone(),
     });
     pub static ref BIT_LENGTH: Ty = Ty::Integer(Integer {
         id: create_id!(
             [consts::BUILTINS_PACKAGE, "Bit_Length"],
-            Some(BUILTINS_LOCATION.clone()),
+            BUILTINS_LOCATION.clone(),
         ),
         bounds: BIT_LENGTH_BOUNDS.clone(),
-        location: Some(BUILTINS_LOCATION.clone()),
+        location: BUILTINS_LOCATION.clone(),
     });
     pub static ref BIT_INDEX: Ty = Ty::Integer(Integer {
         id: create_id!(
             [consts::BUILTINS_PACKAGE, "Bit_Index"],
-            Some(BUILTINS_LOCATION.clone()),
+            BUILTINS_LOCATION.clone(),
         ),
         bounds: Bounds::new(1, BIT_LENGTH_BOUNDS.upper()),
-        location: Some(BUILTINS_LOCATION.clone()),
+        location: BUILTINS_LOCATION.clone(),
     });
     pub static ref BASE_INTEGER: Ty = Ty::Integer(Integer {
         id: create_id!(
             [consts::BUILTINS_PACKAGE, "Base_Integer"],
-            Some(BUILTINS_LOCATION.clone()),
+            BUILTINS_LOCATION.clone(),
         ),
         bounds: Bounds::new(0, i128::pow(2, consts::MAX_SCALAR_SIZE) - 1),
-        location: Some(BUILTINS_LOCATION.clone()),
+        location: BUILTINS_LOCATION.clone(),
     });
     static ref BYTE: Ty = Ty::Integer(Integer {
         id: create_id!(
             [consts::INTERNAL_PACKAGE, "Byte"],
-            Some(BUILTINS_LOCATION.clone()),
+            BUILTINS_LOCATION.clone(),
         ),
         bounds: Bounds::new(0, 255),
-        location: Some(BUILTINS_LOCATION.clone()),
+        location: BUILTINS_LOCATION.clone(),
     });
     pub static ref OPAQUE: Ty = Ty::Sequence(Sequence {
         id: create_id!(
             [consts::INTERNAL_PACKAGE, "Opaque"],
-            Some(BUILTINS_LOCATION.clone()),
+            BUILTINS_LOCATION.clone(),
         ),
         element: Box::new(BYTE.clone()),
     });
@@ -721,29 +724,29 @@ mod tests {
     };
 
     lazy_static! {
-        static ref A: ID = create_id!(["A"], None);
-        static ref B: ID = create_id!(["B"], None);
+        static ref A: ID = create_id!(["A"], Location::None);
+        static ref B: ID = create_id!(["B"], Location::None);
         static ref ENUM_A: Ty = Ty::Enumeration(Enumeration {
             id: A.clone(),
             literals: vec![],
             always_valid: true,
-            location: None,
+            location: Location::None,
         });
         static ref ENUM_B: Ty = Ty::Enumeration(Enumeration {
             id: B.clone(),
             literals: vec![],
             always_valid: true,
-            location: None,
+            location: Location::None,
         });
         static ref INT_A: Ty = Ty::Integer(Integer {
             id: A.clone(),
             bounds: Bounds::new(1, 5),
-            location: None,
+            location: Location::None,
         });
         static ref INT_B: Ty = Ty::Integer(Integer {
             id: B.clone(),
             bounds: Bounds::new(5, 9),
-            location: None,
+            location: Location::None,
         });
         static ref UNIV_INT_1_3: Ty = Ty::UniversalInteger(UniversalInteger {
             bounds: Bounds::new(1, 3),
@@ -1026,11 +1029,10 @@ mod tests {
             check_type(
                 actual,
                 &types.iter().copied().cloned().collect::<Vec<Ty>>(),
-                Some(&Location {
+                &Location::Stdin {
                     start: FilePosition::new(1, 1),
                     end: FilePosition::new(1, 1),
-                    source: None,
-                }),
+                },
                 "foo"
             )
             .to_string(),
@@ -1064,11 +1066,10 @@ mod tests {
             check_type_instance(
                 actual,
                 types,
-                Some(&Location {
+                &Location::Stdin {
                     start: FilePosition::new(1, 1),
                     end: FilePosition::new(1, 1),
-                    source: None,
-                }),
+                },
                 "",
                 &[]
             )

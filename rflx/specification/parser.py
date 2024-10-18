@@ -14,6 +14,7 @@ from rflx.identifier import ID, StrID
 from rflx.integration import Integration
 from rflx.model import AlwaysVerify, Cache, declaration as decl, statement as stmt
 from rflx.rapidflux import (
+    NO_LOCATION,
     Annotation,
     ErrorEntry,
     Location,
@@ -26,7 +27,11 @@ from rflx.rapidflux import (
 from . import style
 
 
-def node_location(node: lang.RFLXNode, filename: Path, end_location: bool = False) -> Location:
+def node_location(
+    node: lang.RFLXNode,
+    filename: Path | None,
+    end_location: bool = False,
+) -> Location:
     assert node.token_start
     assert node.token_end
     start = node.token_start.sloc_range
@@ -48,7 +53,6 @@ def type_location(identifier: ID, node: lang.RFLXNode) -> Location:
 
     The location object covers the area from the start of an identifier to the end of a node.
     """
-    assert identifier.location.source is not None
     return Location(
         identifier.location.start,
         identifier.location.source,
@@ -1357,7 +1361,11 @@ def create_message_structure(
                         ErrorEntry(
                             f'undefined field "{then.f_target.text}"',
                             Severity.ERROR,
-                            node_location(then.f_target, filename) if then.f_target else None,
+                            (
+                                node_location(then.f_target, filename)
+                                if then.f_target
+                                else NO_LOCATION
+                            ),
                         ),
                     ],
                 )

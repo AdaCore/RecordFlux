@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from rflx.identifier import ID
-from rflx.rapidflux import UNKNOWN_LOCATION, FatalError, Location
+from rflx.rapidflux import NO_LOCATION, FatalError, Location
 
 
 def test_id_constructor() -> None:
@@ -138,7 +138,7 @@ def test_id_parts() -> None:
 
 
 def test_id_location() -> None:
-    assert ID("A::B").location == UNKNOWN_LOCATION
+    assert ID("A::B").location == NO_LOCATION
     assert ID("A::B", Location((1, 2))).location == Location((1, 2))
 
 

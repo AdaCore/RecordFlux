@@ -98,7 +98,14 @@ from rflx.model import (
     StateMachine,
     TypeDecl,
 )
-from rflx.rapidflux import ErrorEntry, FatalError, RecordFluxError, Severity, logging
+from rflx.rapidflux import (
+    NO_LOCATION,
+    ErrorEntry,
+    FatalError,
+    RecordFluxError,
+    Severity,
+    logging,
+)
 
 from . import common, const, message as message_generator
 from .allocator import AllocatorGenerator
@@ -166,18 +173,18 @@ class Generator:
                     ErrorEntry(
                         "partial update of generated files",
                         Severity.ERROR,
-                        None,
+                        NO_LOCATION,
                     ),
                     ErrorEntry(
                         "files not generated in the current run could lead to unexpected behavior: "
                         + ", ".join(str(f.name) for f in non_updated_files),
                         Severity.NOTE,
-                        None,
+                        NO_LOCATION,
                     ),
                     ErrorEntry(
                         "remove the affected files or choose another directory and retry",
                         Severity.NOTE,
-                        None,
+                        NO_LOCATION,
                     ),
                 ],
             ).propagate()

@@ -216,7 +216,7 @@ impl ErrorEntry {
     #[pyo3(signature = (
             message,
             severity,
-            location = None,
+            location,
             annotations = Vec::new(),
             generate_default_annotation = true
         )
@@ -224,14 +224,14 @@ impl ErrorEntry {
     pub fn new(
         message: String,
         severity: Severity,
-        location: Option<Location>,
+        location: Location,
         annotations: Vec<Annotation>,
         generate_default_annotation: bool,
     ) -> Self {
         Self(lib::ErrorEntry::new(
             message,
             severity.into(),
-            location.map(|l| l.0),
+            location.0,
             annotations.into_iter().map(|a| a.0).collect(),
             generate_default_annotation,
         ))
@@ -271,7 +271,7 @@ impl ErrorEntry {
     ) -> (
         String,
         Borrowed<'py, 'py, PyAny>,
-        Option<Location>,
+        Location,
         Vec<Annotation>,
         bool,
     ) {
@@ -301,8 +301,8 @@ impl ErrorEntry {
     }
 
     #[getter]
-    fn location(&self) -> Option<Location> {
-        self.0.location().map(|l| Location(l.clone()))
+    fn location(&self) -> Location {
+        Location(self.0.location().clone())
     }
 
     #[getter]

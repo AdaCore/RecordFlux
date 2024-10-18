@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from rflx.rapidflux import ErrorEntry, RecordFluxError, Severity
+from rflx.rapidflux import NO_LOCATION, ErrorEntry, RecordFluxError, Severity
 
 
 class PyRFLXError(RecordFluxError):
@@ -8,4 +8,4 @@ class PyRFLXError(RecordFluxError):
         super().__init__(entries if entries is not None else [])
 
     def push_msg(self, message: str) -> None:
-        self.push(ErrorEntry(message, Severity.ERROR, None))
+        self.push(ErrorEntry(message, Severity.ERROR, NO_LOCATION))

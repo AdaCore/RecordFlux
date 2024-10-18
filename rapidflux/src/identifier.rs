@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use librapidflux::identifier as lib;
 
 use crate::{
-    diagnostics::{FatalError, Location, UNKNOWN_LOCATION},
+    diagnostics::{FatalError, Location, NO_LOCATION},
     impl_states,
 };
 
@@ -112,7 +112,7 @@ impl ID {
         }
         if other.is_instance_of::<ID>() {
             let other_id: ID = other.extract()?;
-            return Ok(if self.location() == *UNKNOWN_LOCATION {
+            return Ok(if self.location() == NO_LOCATION {
                 other_id._prefix(self.0.identifier())
             } else {
                 self._suffix(other_id.0.identifier())
@@ -131,7 +131,7 @@ impl ID {
         }
         if other.is_instance_of::<ID>() {
             let other_id: ID = other.extract()?;
-            return Ok(if self.location() == *UNKNOWN_LOCATION {
+            return Ok(if self.location() == NO_LOCATION {
                 other_id._suffix(self.0.identifier())
             } else {
                 self._prefix(other_id.0.identifier())
@@ -221,7 +221,10 @@ impl ID {
 }
 
 fn _new(identifier: &str, location: Option<Location>) -> Result<ID, IDError> {
-    Ok(ID(lib::ID::new(identifier, location.map(|l| l.0))?))
+    Ok(ID(lib::ID::new(
+        identifier,
+        location.map_or(librapidflux::diagnostics::Location::None, |l| l.0),
+    )?))
 }
 
 pub(crate) struct IDError(lib::IDError);
@@ -240,7 +243,7 @@ impl From<lib::IDError> for IDError {
 
 pub(crate) fn to_id(obj: &Bound<'_, PyAny>) -> Result<lib::ID, IDError> {
     if let Ok(s) = obj.extract::<String>() {
-        lib::ID::new(&s, None).map_err(IDError)
+        lib::ID::new(&s, librapidflux::diagnostics::Location::None).map_err(IDError)
     } else if let Ok(id) = obj.extract::<ID>() {
         Ok(id.0)
     } else {

@@ -8,7 +8,7 @@ from rflx.common import Base
 from rflx.expr import Expr, Variable
 from rflx.identifier import ID, StrID
 from rflx.rapidflux import (
-    UNKNOWN_LOCATION,
+    NO_LOCATION,
     Annotation,
     ErrorEntry,
     Location,
@@ -22,7 +22,7 @@ class Statement(Base):
         self,
         identifier: StrID,
         type_: ty.Type = ty.UNDEFINED,
-        location: Location = UNKNOWN_LOCATION,
+        location: Location = NO_LOCATION,
     ):
         self.identifier = ID(identifier)
         self.type_ = type_
@@ -53,7 +53,7 @@ class Assignment(Statement):
         identifier: StrID,
         expression: Expr,
         type_: ty.Type = ty.UNDEFINED,
-        location: Location = UNKNOWN_LOCATION,
+        location: Location = NO_LOCATION,
     ) -> None:
         super().__init__(identifier, type_, location)
         self.expression = expression
@@ -95,7 +95,7 @@ class MessageFieldAssignment(Assignment):
         field: StrID,
         expression: Expr,
         type_: ty.Type = ty.UNDEFINED,
-        location: Location = UNKNOWN_LOCATION,
+        location: Location = NO_LOCATION,
     ) -> None:
         super().__init__(message, expression, type_, location)
         self.message = ID(message)
@@ -169,7 +169,7 @@ class AttributeStatement(Statement):
         attribute: str,
         parameters: list[Expr],
         type_: ty.Type = ty.UNDEFINED,
-        location: Location = UNKNOWN_LOCATION,
+        location: Location = NO_LOCATION,
     ) -> None:
         super().__init__(identifier, type_, location)
         self.attribute = attribute
@@ -199,7 +199,7 @@ class ListAttributeStatement(AttributeStatement):
         identifier: StrID,
         parameter: Expr,
         type_: ty.Type = ty.UNDEFINED,
-        location: Location = UNKNOWN_LOCATION,
+        location: Location = NO_LOCATION,
     ) -> None:
         super().__init__(identifier, self.__class__.__name__, [parameter], type_, location)
 
@@ -301,7 +301,7 @@ class Reset(AttributeStatement):
         identifier: StrID,
         associations: Mapping[ID, Expr] | None = None,
         type_: ty.Type = ty.UNDEFINED,
-        location: Location = UNKNOWN_LOCATION,
+        location: Location = NO_LOCATION,
     ) -> None:
         super().__init__(identifier, self.__class__.__name__, [], type_, location)
         self.associations = associations or {}
@@ -388,7 +388,7 @@ class ChannelAttributeStatement(AttributeStatement):
         identifier: StrID,
         parameter: Expr,
         type_: ty.Type = ty.UNDEFINED,
-        location: Location = UNKNOWN_LOCATION,
+        location: Location = NO_LOCATION,
     ) -> None:
         super().__init__(identifier, self.__class__.__name__, [parameter], type_, location)
 

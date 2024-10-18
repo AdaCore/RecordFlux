@@ -9,7 +9,7 @@ from pydotplus import Dot, Edge, InvocationException, Node  # type: ignore[attr-
 from rflx.expr import TRUE, UNDEFINED
 from rflx.identifier import ID
 from rflx.model import FINAL_STATE, Link, Message, StateMachine
-from rflx.rapidflux import ErrorEntry, RecordFluxError, Severity, logging
+from rflx.rapidflux import NO_LOCATION, ErrorEntry, RecordFluxError, Severity, logging
 
 
 def _graph_with_defaults(name: str) -> Dot:
@@ -50,11 +50,11 @@ def write_graph(graph: Dot, filename: Path, fmt: str = "svg") -> None:
         except InvocationException as e:
             RecordFluxError(
                 [
-                    ErrorEntry(str(e), Severity.ERROR, None),
+                    ErrorEntry(str(e), Severity.ERROR, NO_LOCATION),
                     ErrorEntry(
                         "GraphViz is required for creating graphs",
                         Severity.NOTE,
-                        None,
+                        NO_LOCATION,
                     ),
                 ],
             ).propagate()

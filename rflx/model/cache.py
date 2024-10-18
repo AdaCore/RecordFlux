@@ -14,7 +14,7 @@ from rflx.const import CACHE_PATH
 from rflx.error import warn
 from rflx.model.message import Message, Refinement
 from rflx.model.top_level_declaration import TopLevelDeclaration
-from rflx.rapidflux import ErrorEntry, RecordFluxError, Severity
+from rflx.rapidflux import NO_LOCATION, ErrorEntry, RecordFluxError, Severity
 from rflx.version import dependencies
 
 DEFAULT_FILE = CACHE_PATH / "verification.json"
@@ -52,16 +52,19 @@ class FileLock:
                                 f"failed to acquire cache lock"
                                 f" after {FileLock.LOCK_TIMEOUT} seconds",
                                 Severity.ERROR,
+                                NO_LOCATION,
                             ),
                             ErrorEntry(
                                 f"the cache is locked by a process"
                                 f' with a PID of "{cache_locked_pid}"',
                                 Severity.NOTE,
+                                NO_LOCATION,
                             ),
                             ErrorEntry(
                                 f"if the process that owns the lock isn't active anymore, deleting "
                                 f'"{self._lock_file}" will solve this issue',
                                 Severity.HELP,
+                                NO_LOCATION,
                             ),
                         ],
                     ) from None

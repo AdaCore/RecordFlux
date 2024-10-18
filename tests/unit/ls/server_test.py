@@ -123,7 +123,7 @@ def test_to_lsp_location() -> None:
         Path("test").absolute().as_uri(),
         Range(Position(0, 1), Position(0, 1)),
     )
-    assert server.to_lsp_location(None) is None
+    assert server.to_lsp_location(error.NO_LOCATION) is None
 
 
 @pytest.mark.parametrize(
@@ -293,7 +293,7 @@ def test_publish_errors_as_diagnostics(monkeypatch: pytest.MonkeyPatch) -> None:
             error.ErrorEntry(
                 "bar",
                 error.Severity.ERROR,
-                None,
+                error.NO_LOCATION,
             ),
         ],
     )

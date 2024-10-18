@@ -8,7 +8,7 @@ import z3
 from rflx import expr, ir, ty
 from rflx.error import Location
 from rflx.identifier import ID, id_generator
-from rflx.rapidflux import UNKNOWN_LOCATION
+from rflx.rapidflux import NO_LOCATION
 
 PROOF_MANAGER = ir.ProofManager(2)
 INT_TY = ty.Integer("I", ty.Bounds(10, 100))
@@ -681,7 +681,7 @@ def test_field_access_attr_z3_expr(attribute: ir.FieldAccessAttr, expected: z3.E
     ],
 )
 def test_binary_expr_location(binary_expr: type[ir.BinaryExpr]) -> None:
-    assert binary_expr(ir.IntVar("X", INT_TY), ir.IntVal(1)).location == UNKNOWN_LOCATION
+    assert binary_expr(ir.IntVar("X", INT_TY), ir.IntVal(1)).location == NO_LOCATION
     assert binary_expr(
         ir.IntVar("X", INT_TY),
         ir.IntVal(1),
@@ -720,7 +720,7 @@ def test_binary_expr_origin_str(binary_expr: type[ir.BinaryExpr]) -> None:
         binary_expr(
             ir.IntVar("X", INT_TY),
             ir.IntVal(1),
-            origin=ir.ConstructedOrigin("Z", UNKNOWN_LOCATION),
+            origin=ir.ConstructedOrigin("Z", NO_LOCATION),
         ).origin_str
         == "Z"
     )
@@ -754,7 +754,7 @@ def test_binary_expr_accessed_vars(binary_expr: type[ir.BinaryExpr]) -> None:
         binary_expr(
             ir.IntVar("X", INT_TY),
             ir.IntVal(1),
-            origin=ir.ConstructedOrigin("Z", UNKNOWN_LOCATION),
+            origin=ir.ConstructedOrigin("Z", NO_LOCATION),
         ).origin_str
         == "Z"
     )

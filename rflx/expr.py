@@ -17,7 +17,7 @@ from rflx import const, ty
 from rflx.common import Base, indent, indent_next, unique
 from rflx.identifier import ID, StrID
 from rflx.rapidflux import (
-    UNKNOWN_LOCATION,
+    NO_LOCATION,
     Annotation,
     ErrorEntry,
     Location,
@@ -97,7 +97,7 @@ class Expr(Base):
 
     @property
     def location(self) -> Location:
-        return self._location or UNKNOWN_LOCATION
+        return self._location or NO_LOCATION
 
     @abstractmethod
     def _update_str(self) -> None:
@@ -2852,7 +2852,7 @@ def similar_fields(
 def _similar_field_names(
     field: ID,
     fields: Iterable[ID],
-    location: Location | None,
+    location: Location,
 ) -> list[ErrorEntry]:
     similar_flds = similar_fields(field, fields)
     if similar_flds:

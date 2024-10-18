@@ -68,9 +68,9 @@ LSP_TOKEN_CATEGORIES: Final = {
 }
 
 
-def to_lsp_location(location: error.Location | None) -> Location | None:
+def to_lsp_location(location: error.Location) -> Location | None:
     if (
-        location is None
+        location == error.NO_LOCATION
         or location.source is None
         or location.source.name in [str(BUILTINS_PACKAGE), str(INTERNAL_PACKAGE)]
     ):

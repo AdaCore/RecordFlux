@@ -10,7 +10,7 @@ from rflx.error import fail
 from rflx.expr import Expr, Selected, Variable
 from rflx.identifier import ID, StrID
 from rflx.rapidflux import (
-    UNKNOWN_LOCATION,
+    NO_LOCATION,
     Annotation,
     ErrorEntry,
     Location,
@@ -24,7 +24,7 @@ from . import type_decl
 class Declaration(Base):
     DESCRIPTIVE_NAME: ClassVar[str]
 
-    def __init__(self, identifier: StrID, location: Location = UNKNOWN_LOCATION):
+    def __init__(self, identifier: StrID, location: Location = NO_LOCATION):
         self.identifier = ID(identifier)
         self.location = location
         self._refcount = 0
@@ -62,7 +62,7 @@ class TypeCheckableDeclaration(Declaration):
         identifier: StrID,
         type_identifier: StrID,
         type_: ty.Type = ty.UNDEFINED,
-        location: Location = UNKNOWN_LOCATION,
+        location: Location = NO_LOCATION,
     ):
         super().__init__(identifier, location)
         self._type_identifier = ID(type_identifier)
@@ -103,7 +103,7 @@ class VariableDeclaration(TypeCheckableDeclaration, BasicDeclaration):
         type_identifier: StrID,
         expression: Expr | None = None,
         type_: ty.Type = ty.UNDEFINED,
-        location: Location = UNKNOWN_LOCATION,
+        location: Location = NO_LOCATION,
     ):
         super().__init__(identifier, type_identifier, type_, location)
         self.expression = expression
@@ -150,7 +150,7 @@ class RenamingDeclaration(TypeCheckableDeclaration, BasicDeclaration):
         type_identifier: StrID,
         expression: Selected,
         type_: ty.Type = ty.UNDEFINED,
-        location: Location = UNKNOWN_LOCATION,
+        location: Location = NO_LOCATION,
     ):
         super().__init__(identifier, type_identifier, type_, location)
         self.expression = expression
@@ -251,7 +251,7 @@ class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):
         parameters: Sequence[Parameter],
         return_type: StrID,
         type_: ty.Type = ty.UNDEFINED,
-        location: Location = UNKNOWN_LOCATION,
+        location: Location = NO_LOCATION,
     ):
         super().__init__(identifier, return_type, type_, location)
         self._parameters = parameters
@@ -299,7 +299,7 @@ class ChannelDeclaration(FormalDeclaration):
         identifier: StrID,
         readable: bool = False,
         writable: bool = False,
-        location: Location = UNKNOWN_LOCATION,
+        location: Location = NO_LOCATION,
     ):
         assert readable or writable
         super().__init__(identifier, location)

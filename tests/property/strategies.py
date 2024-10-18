@@ -27,7 +27,7 @@ from rflx.model import (
     Sequence,
     TypeDecl,
 )
-from rflx.rapidflux import ErrorEntry, Location, RecordFluxError, Severity
+from rflx.rapidflux import NO_LOCATION, ErrorEntry, Location, RecordFluxError, Severity
 
 T = TypeVar("T")
 
@@ -328,7 +328,7 @@ def messages(  # noqa: PLR0915
             ErrorEntry(
                 f"incorrectly generated message:\n {message!r}",
                 Severity.INFO,
-                None,
+                NO_LOCATION,
             ),
         )
         raise

@@ -97,7 +97,7 @@ from rflx.const import BUILTINS_PACKAGE, INTERNAL_PACKAGE
 from rflx.error import fail, fatal_fail
 from rflx.identifier import ID
 from rflx.integration import Integration
-from rflx.rapidflux import UNKNOWN_LOCATION, Location
+from rflx.rapidflux import NO_LOCATION, Location
 
 from . import common, const
 from .allocator import AllocatorGenerator
@@ -2996,11 +2996,7 @@ class FSMGenerator:
             )
 
         return [
-            *(
-                [CommentStatement(str(action.location))]
-                if action.location != UNKNOWN_LOCATION
-                else []
-            ),
+            *([CommentStatement(str(action.location))] if action.location != NO_LOCATION else []),
             *result,
         ]
 

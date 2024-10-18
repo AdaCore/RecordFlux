@@ -19,7 +19,7 @@ from rflx.common import Base
 from rflx.const import MAX_SCALAR_SIZE, MP_CONTEXT
 from rflx.error import info
 from rflx.identifier import ID, StrID
-from rflx.rapidflux import UNKNOWN_LOCATION, Location
+from rflx.rapidflux import NO_LOCATION, Location
 
 if TYPE_CHECKING:
     from rflx.model import type_decl
@@ -141,7 +141,7 @@ class Stmt(Base):
 
     @property
     def location(self) -> Location:
-        return self.origin.location if self.origin else UNKNOWN_LOCATION
+        return self.origin.location if self.origin else NO_LOCATION
 
     @property
     @abstractmethod
@@ -488,7 +488,7 @@ class Expr(Base):
 
     @property
     def location(self) -> Location:
-        return self.origin.location if self.origin else UNKNOWN_LOCATION
+        return self.origin.location if self.origin else NO_LOCATION
 
     @property
     @abstractmethod
@@ -958,7 +958,7 @@ class BinaryExpr(Expr):
             return self.origin.location
         if self.left.origin is not None:
             return self.left.origin.location
-        return UNKNOWN_LOCATION
+        return NO_LOCATION
 
     def _update_str(self) -> None:
         self._str = intern(f"{self.left}{self._symbol}{self.right}")
@@ -2079,7 +2079,7 @@ class State:
         return [a for a in self.actions if isinstance(a, VarDecl)]
 
 
-FINAL_STATE = State("Final", [], None, [], None, UNKNOWN_LOCATION)
+FINAL_STATE = State("Final", [], None, [], None, NO_LOCATION)
 
 
 @frozen(init=False)

@@ -1,16 +1,10 @@
 use core::fmt;
 use std::{fmt::Display, path::PathBuf};
 
-use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
-lazy_static! {
-    pub static ref UNKNOWN_LOCATION: Location = Location::new(
-        FilePosition(1, 1),
-        FilePosition(1, 1),
-        Some(PathBuf::from("<unknown>"))
-    );
-}
+pub const NO_SOURCE: &str = "<unknown>";
+pub const STDIN_SOURCE: &str = "<stdin>";
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default, Debug)]
 pub struct FilePosition(u32, u32);
@@ -78,10 +72,18 @@ impl Display for FilePosition {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default)]
-pub struct Location {
-    pub start: FilePosition,
-    pub end: FilePosition,
-    pub source: Option<PathBuf>,
+pub enum Location {
+    #[default]
+    None,
+    Stdin {
+        start: FilePosition,
+        end: FilePosition,
+    },
+    File {
+        start: FilePosition,
+        end: FilePosition,
+        source: PathBuf,
+    },
 }
 
 impl Location {
@@ -92,7 +94,15 @@ impl Location {
     /// This function will panic if the end is before the start.
     pub fn new(start: FilePosition, end: FilePosition, source: Option<PathBuf>) -> Self {
         assert!(start <= end);
-        Location { start, end, source }
+        assert!(
+            source.is_none()
+                || matches!(source, Some(ref s) if s.to_string_lossy() != STDIN_SOURCE && s.to_string_lossy() != NO_SOURCE)
+        );
+        if let Some(source) = source {
+            Location::File { start, end, source }
+        } else {
+            Location::Stdin { start, end }
+        }
     }
 
     /// Merges a list of locations into a single location.
@@ -107,79 +117,126 @@ impl Location {
     /// # Panics
     ///
     /// This function will panic if attempting to merge locations with and without a source file.
-    pub fn merge(locations: &[Self]) -> Option<Self> {
-        assert!(
-            locations
+    pub fn merge(locations: &[Self]) -> Self {
+        || -> Option<_> {
+            let known_locations = locations
                 .iter()
-                .all(|l| l == &*UNKNOWN_LOCATION || l.source.is_none())
-                || locations.iter().all(|l| l.source.is_some()),
-            "attempted to merge locations with and without source file"
-        );
-        let first_location = locations.first()?;
-        let filter_first_path = |l: &&Location| l.source.as_ref() == first_location.source.as_ref();
+                .filter(|l| **l != Location::None)
+                .collect::<Vec<_>>();
 
-        let min_loc = locations
-            .iter()
-            .filter(filter_first_path)
-            .map(|l| l.start)
-            .chain(locations.iter().filter(filter_first_path).map(|l| l.end))
-            .min()?;
+            assert!(
+                known_locations
+                    .iter()
+                    .all(|l| matches!(l, Location::Stdin { .. }))
+                    || known_locations
+                        .iter()
+                        .all(|l| matches!(l, Location::File { .. })),
+                "attempted to merge locations with and without source file"
+            );
 
-        let max_loc = locations
-            .iter()
-            .filter(filter_first_path)
-            .map(|l| l.start)
-            .chain(locations.iter().filter(filter_first_path).map(|l| l.end))
-            .max()
-            .expect("unreachable");
+            let first_location = known_locations.first()?;
+            let filter_first_path = |l: &&&Location| match (l, first_location) {
+                (Location::Stdin { .. }, Location::Stdin { .. }) => true,
+                (
+                    Location::File {
+                        source: l_source, ..
+                    },
+                    Location::File {
+                        source: first_source,
+                        ..
+                    },
+                ) => l_source == first_source,
+                _ => unreachable!(),
+            };
+            let filtered_locations = known_locations
+                .iter()
+                .filter(filter_first_path)
+                .collect::<Vec<_>>();
 
-        Some(Self {
-            start: min_loc,
-            end: max_loc,
-            source: locations.first()?.source.clone(),
-        })
+            let get_start = |l: &&&Location| match l {
+                Location::Stdin { start, .. } | Location::File { start, .. } => *start,
+                Location::None => unreachable!(),
+            };
+            let get_end = |l: &&&Location| match l {
+                Location::Stdin { end, .. } | Location::File { end, .. } => *end,
+                Location::None => unreachable!(),
+            };
+
+            let min_loc = filtered_locations
+                .iter()
+                .map(get_start)
+                .chain(filtered_locations.iter().map(get_end))
+                .min()?;
+            let max_loc = filtered_locations
+                .iter()
+                .map(get_start)
+                .chain(filtered_locations.iter().map(get_end))
+                .max()
+                .expect("unreachable");
+
+            match first_location {
+                Location::Stdin { .. } => Some(Location::Stdin {
+                    start: min_loc,
+                    end: max_loc,
+                }),
+                Location::File { source, .. } => Some(Location::File {
+                    start: min_loc,
+                    end: max_loc,
+                    source: source.clone(),
+                }),
+                Location::None => unreachable!(),
+            }
+        }()
+        .unwrap_or(Location::None)
     }
 
     /// Retrieve a `Range<usize>` representing the location to annotate in an error.
     ///
     /// # Panics
-    /// This function is called for a location that references no source file.
+    ///
+    /// This function will panic if it is called for `Location::None`.
     pub fn to_file_offset(&self, source: &str) -> std::ops::Range<usize> {
-        let start_offset = self.start.get_offset(source);
-        let end_offset = self.end.get_offset(source);
+        match self {
+            Location::Stdin { start, end, .. } | Location::File { start, end, .. } => {
+                let start_offset = start.get_offset(source);
+                let end_offset = end.get_offset(source);
 
-        std::ops::Range {
-            start: start_offset - 1,
-            end: end_offset - 1,
+                std::ops::Range {
+                    start: start_offset - 1,
+                    end: end_offset - 1,
+                }
+            }
+            Location::None => {
+                panic!("attempted to get file offset without location")
+            }
         }
     }
 
     pub fn has_source(&self) -> bool {
-        self.source.is_some()
+        matches!(self, Location::File { .. })
     }
 }
 
 impl fmt::Display for Location {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}:{}",
-            self.source
-                .as_ref()
-                .map_or("<stdin>".to_string(), |p| p.to_string_lossy().to_string()),
-            self.start
-        )
+        match self {
+            Location::None => write!(f, "{NO_SOURCE}"),
+            Location::Stdin { start, .. } => write!(f, "{STDIN_SOURCE}:{start}"),
+            Location::File { start, source, .. } => {
+                write!(f, "{}:{start}", source.to_string_lossy())
+            }
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::{ops::Range, path::PathBuf, str::FromStr};
+    use std::{ops::Range, path::PathBuf};
 
     use bincode::{deserialize, serialize};
     use rstest::rstest;
 
-    use crate::diagnostics::{FilePosition, Location, UNKNOWN_LOCATION};
+    use crate::diagnostics::{FilePosition, Location};
 
     #[test]
     #[should_panic(
@@ -214,13 +271,18 @@ Third",
 
     #[rstest]
     #[case::location_with_start_and_end(
-        Location {
-            source: None,
+        Location::Stdin {
             start: FilePosition::new(1, 1),
             end: FilePosition::new(1, 3)
         },
         "foo code",
         0usize..2usize
+    )]
+    #[should_panic(expected = "attempted to get file offset without location")]
+    #[case::no_location(
+        Location::None,
+        "foo code",
+        0usize..0usize
     )]
     fn test_location_to_file_offset(
         #[case] location: Location,
@@ -231,6 +293,7 @@ Third",
     }
 
     #[rstest]
+    #[case::location_none(Location::None, "<unknown>")]
     #[case::location_start(
         Location::new(FilePosition::new(1, 2), FilePosition::new(1, 2), None),
         "<stdin>:1:2"
@@ -260,7 +323,7 @@ Third",
         Location::new(
             FilePosition::new(1, 1),
             FilePosition::new(1, 1),
-            Some(PathBuf::from_str("foo.rflx").expect("failed to create path")),
+            Some(PathBuf::from("foo.rflx")),
         ),
         true
     )]
@@ -275,151 +338,145 @@ Third",
     #[rstest]
     #[case::location_different_line_with_end(
         &[
-            Location {
+            Location::Stdin {
                 start: FilePosition::new(1, 1),
                 end: FilePosition::new(1, 10),
-                ..Location::default()
             },
-            Location {
+            Location::Stdin {
                 start: FilePosition::new(3, 1),
                 end: FilePosition::new(3, 10),
-                ..Default::default()
             }
         ],
-        Some(Location {
+        Location::Stdin {
             start: FilePosition::new(1, 1),
             end: FilePosition::new(3, 10),
-            ..Default::default()
-        }),
+        },
     )]
     #[case::location_same_line_with_end(
         &[
-            Location {
+            Location::Stdin {
                 start: FilePosition::new(1, 1),
                 end: FilePosition::new(1, 10),
-                ..Location::default()
             },
-            Location {
+            Location::Stdin {
                 start: FilePosition::new(1, 4),
                 end: FilePosition::new(1, 27),
-                ..Default::default()
             }
         ],
-        Some(Location {
+        Location::Stdin {
             start: FilePosition::new(1, 1),
             end: FilePosition::new(1, 27),
-            ..Default::default()
-        }),
+        },
     )]
     #[case::location_overlap(
         &[
-            Location {
+            Location::Stdin {
                 start: FilePosition::new(1, 1),
                 end: FilePosition::new(1, 10),
-                ..Location::default()
             },
-            Location {
+            Location::Stdin {
                 start: FilePosition::new(1, 1),
                 end: FilePosition::new(28, 4),
-                ..Location::default()
             },
-            Location {
+            Location::Stdin {
                 start: FilePosition::new(1, 4),
                 end: FilePosition::new(1, 27),
-                ..Default::default()
             }
         ],
-        Some(Location {
+        Location::Stdin {
             start: FilePosition::new(1, 1),
             end: FilePosition::new(28, 4),
-            ..Default::default()
-        }),
+        },
     )]
-    #[case::location_one_element(
+    #[case::one_element(
         &[
-            Location {
+            Location::Stdin {
                 start: FilePosition::new(1, 1),
                 end: FilePosition::new(1, 10),
-                ..Location::default()
             },
         ],
-        Some(Location {
+        Location::Stdin {
             start: FilePosition::new(1, 1),
             end: FilePosition::new(1, 10),
-            ..Default::default()
-        }),
+        },
     )]
-    #[case::location_with_source(
+    #[case::files(
         &[
-            Location {
+            Location::File {
                 start: FilePosition::new(1, 1),
                 end: FilePosition::new(1, 10),
-                source: Some(PathBuf::from_str("foo.rflx").expect("failed to create path"))
+                source: PathBuf::from("foo.rflx")
             },
-            Location {
+            Location::File {
                 start: FilePosition::new(1, 1),
                 end: FilePosition::new(1, 10),
-                source: Some(PathBuf::from_str("foo.rflx").expect("failed to create path"))
+                source: PathBuf::from("foo.rflx")
             },
         ],
-        Some(Location {
+        Location::File {
             start: FilePosition::new(1, 1),
             end: FilePosition::new(1, 10),
-            source: Some(PathBuf::from_str("foo.rflx").expect("failed to create path"))
-        }),
+            source: PathBuf::from("foo.rflx")
+        },
     )]
-    #[case::location_merge_first_filename(
+    #[case::files_with_mixed_sources(
         &[
-            Location {
+            Location::File {
                 start: FilePosition::new(1, 1),
                 end: FilePosition::new(1, 17),
-                source: Some(PathBuf::from_str("foo.rflx").expect("failed to create path"))
+                source: PathBuf::from("foo.rflx")
             },
-            Location {
+            Location::File {
                 start: FilePosition::new(1, 1),
                 end: FilePosition::new(1, 10),
-                source: Some(PathBuf::from_str("bar.rflx").expect("failed to create path"))
+                source: PathBuf::from("bar.rflx")
             },
         ],
-        Some(Location {
+        Location::File {
             start: FilePosition::new(1, 1),
             end: FilePosition::new(1, 17),
-            source: Some(PathBuf::from_str("foo.rflx").expect("failed to create path"))
-        }),
+            source: PathBuf::from("foo.rflx")
+        },
     )]
     #[should_panic(expected = "attempted to merge locations with and without source file")]
-    #[case::location_merge_source_present_and_absent(
+    #[case::stdin_and_file(
         &[
-            Location {
+            Location::Stdin {
                 start: FilePosition::new(1, 1),
                 end: FilePosition::new(1, 17),
-                source: None,
             },
-            Location {
+            Location::File {
                 start: FilePosition::new(1, 1),
                 end: FilePosition::new(1, 10),
-                source: Some(PathBuf::from_str("bar.rflx").expect("failed to create path"))
+                source: PathBuf::from("bar.rflx")
             },
         ],
-        None,
+        Location::None,
     )]
-    #[case::location_merge_unknown(
+    #[case::none_and_file(
         &[
-            Location {
+            Location::None,
+            Location::File {
                 start: FilePosition::new(1, 4),
                 end: FilePosition::new(1, 10),
-                source: Some(PathBuf::from_str("bar.rflx").expect("failed to create path"))
+                source: PathBuf::from("bar.rflx")
             },
-            UNKNOWN_LOCATION.clone(),
+            Location::None,
         ],
-        Some(Location {
+        Location::File {
             start: FilePosition::new(1, 4),
             end: FilePosition::new(1, 10),
-            source: Some(PathBuf::from_str("bar.rflx").expect("failed to create path"))
-        }),
+            source: PathBuf::from("bar.rflx")
+        },
     )]
-    #[case::location_no_elements(&[], None)]
-    fn test_location_merge(#[case] locations: &[Location], #[case] expected: Option<Location>) {
+    #[case::none(
+        &[
+            Location::None,
+        ],
+        Location::None,
+    )]
+    #[case::no_elements(&[], Location::None)]
+    fn test_location_merge(#[case] locations: &[Location], #[case] expected: Location) {
         assert_eq!(Location::merge(locations), expected);
     }
 

@@ -17,7 +17,7 @@ from rflx.expr import similar_fields
 from rflx.identifier import ID, StrID
 from rflx.model.top_level_declaration import TopLevelDeclaration
 from rflx.rapidflux import (
-    UNKNOWN_LOCATION,
+    NO_LOCATION,
     Annotation,
     ErrorEntry,
     Location,
@@ -68,7 +68,7 @@ class Link(Base):
     condition: expr.Expr = expr.TRUE
     size: expr.Expr = expr.UNDEFINED
     first: expr.Expr = expr.UNDEFINED
-    location: Location = dataclass_field(default=UNKNOWN_LOCATION, repr=False)
+    location: Location = dataclass_field(default=NO_LOCATION, repr=False)
 
     def __str__(self) -> str:
         condition = indent_next(
@@ -111,7 +111,7 @@ class Message(type_decl.TypeDecl):
         types: Mapping[Field, type_decl.TypeDecl],
         checksums: Mapping[ID, Sequence[expr.Expr]] | None = None,
         byte_order: ByteOrder | Mapping[Field, ByteOrder] | None = None,
-        location: Location = UNKNOWN_LOCATION,
+        location: Location = NO_LOCATION,
         skip_verification: bool = False,
         workers: int = 1,
     ) -> None:
@@ -2405,7 +2405,7 @@ class DerivedMessage(Message):
         types: Mapping[Field, type_decl.TypeDecl] | None = None,
         checksums: Mapping[ID, Sequence[expr.Expr]] | None = None,
         byte_order: ByteOrder | Mapping[Field, ByteOrder] | None = None,
-        location: Location = UNKNOWN_LOCATION,
+        location: Location = NO_LOCATION,
         skip_verification: bool = False,
         workers: int = 1,
     ) -> None:
@@ -2471,7 +2471,7 @@ class Refinement(type_decl.TypeDecl):
         field: Field,
         sdu: Message,
         condition: expr.Expr = expr.TRUE,
-        location: Location = UNKNOWN_LOCATION,
+        location: Location = NO_LOCATION,
         skip_verification: bool = False,
     ) -> None:
         super().__init__(
@@ -2676,7 +2676,7 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
     byte_order: Mapping[Field, ByteOrder] | ByteOrder = dataclass_field(
         default_factory=dict[Field, ByteOrder],
     )
-    location: Location = dataclass_field(default=UNKNOWN_LOCATION)
+    location: Location = dataclass_field(default=NO_LOCATION)
 
     @property
     def fields(self) -> list[Field]:
@@ -3219,7 +3219,7 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
 class UncheckedDerivedMessage(type_decl.UncheckedTypeDecl):
     identifier: ID
     base_identifier: ID
-    location: Location = dataclass_field(default=UNKNOWN_LOCATION)
+    location: Location = dataclass_field(default=NO_LOCATION)
 
     def checked(
         self,
@@ -3276,7 +3276,7 @@ class UncheckedRefinement(type_decl.UncheckedTypeDecl):
     field: Field
     sdu: ID
     condition: expr.Expr
-    location: Location = dataclass_field(default=UNKNOWN_LOCATION)
+    location: Location = dataclass_field(default=NO_LOCATION)
 
     def __init__(  # noqa: PLR0913
         self,
@@ -3285,7 +3285,7 @@ class UncheckedRefinement(type_decl.UncheckedTypeDecl):
         field: Field,
         sdu: ID,
         condition: expr.Expr = expr.TRUE,
-        location: Location = UNKNOWN_LOCATION,
+        location: Location = NO_LOCATION,
     ) -> None:
         super().__init__(
             ID(package) * f"__REFINEMENT__{sdu.flat}__{pdu.flat}__{field.name}__",

@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fatal error caused by variable in case expression (eng/recordflux/RecordFlux#1800)
 - Simplification of expressions with a unary minus operator (eng/recordflux/RecordFlux#1595, eng/recordflux/RecordFlux#1797)
 - Evaluation of unary minus applied to binary expressions (eng/recordflux/RecordFlux#1797)
+- Fatal errors caused by missing locations (eng/recordflux/RecordFlux#1785)
 
 ### Changed
 

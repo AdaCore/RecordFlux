@@ -12,7 +12,7 @@ from rflx.common import indent_next, verbose_repr
 from rflx.error import fail
 from rflx.identifier import ID, StrID
 from rflx.rapidflux import (
-    UNKNOWN_LOCATION,
+    NO_LOCATION,
     Annotation,
     ErrorEntry,
     Location,
@@ -70,7 +70,7 @@ class Scalar(TypeDecl):
         self,
         identifier: StrID,
         size: expr.Expr,
-        location: Location = UNKNOWN_LOCATION,
+        location: Location = NO_LOCATION,
     ) -> None:
         super().__init__(identifier, location)
 
@@ -110,7 +110,7 @@ class Integer(Scalar):
         first: expr.Expr,
         last: expr.Expr,
         size: expr.Expr,
-        location: Location = UNKNOWN_LOCATION,
+        location: Location = NO_LOCATION,
     ) -> None:
         super().__init__(identifier, size, location)
 
@@ -307,7 +307,7 @@ class UnsignedInteger(Integer):
         self,
         identifier: StrID,
         size: expr.Expr,
-        location: Location | None = None,
+        location: Location = NO_LOCATION,
     ) -> None:
         super().__init__(
             identifier,
@@ -332,7 +332,7 @@ class Enumeration(Scalar):
         literals: abc.Sequence[tuple[StrID, expr.Number]],
         size: expr.Expr,
         always_valid: bool,
-        location: Location = UNKNOWN_LOCATION,
+        location: Location = NO_LOCATION,
     ) -> None:
         super().__init__(identifier, size, location)
 
@@ -531,7 +531,7 @@ class Sequence(Composite):
         self,
         identifier: StrID,
         element_type: TypeDecl,
-        location: Location = UNKNOWN_LOCATION,
+        location: Location = NO_LOCATION,
     ) -> None:
         super().__init__(identifier, location)
         self.element_type = element_type
@@ -649,7 +649,7 @@ class Sequence(Composite):
 
 
 class Opaque(Composite):
-    def __init__(self, location: Location = UNKNOWN_LOCATION) -> None:
+    def __init__(self, location: Location = NO_LOCATION) -> None:
         super().__init__(const.INTERNAL_PACKAGE * "Opaque", location)
 
     def __repr__(self) -> str:
@@ -702,7 +702,7 @@ class UncheckedInteger(UncheckedTypeDecl):
 class UncheckedUnsignedInteger(UncheckedTypeDecl):
     identifier: ID
     size: expr.Expr
-    location: Location | None
+    location: Location
 
     def checked(
         self,

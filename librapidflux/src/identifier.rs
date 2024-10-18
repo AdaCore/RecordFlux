@@ -3,7 +3,7 @@ use std::{fmt, string::ToString};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::diagnostics::{Location, UNKNOWN_LOCATION};
+use crate::diagnostics::Location;
 
 pub const ID_SEP: &str = "::";
 const ALT_ID_SEP: &str = ".";
@@ -14,14 +14,14 @@ pub type IDResult<T> = Result<T, IDError>;
 #[derive(Clone, Serialize, Deserialize, Eq, Debug)]
 pub struct ID {
     identifier: String,
-    location: Option<Location>,
+    location: Location,
 }
 
 impl ID {
     /// # Errors
     ///
     /// Will return `IDError::InvalidIdentifier` if identifier is invalid.
-    pub fn new(identifier: &str, location: Option<Location>) -> IDResult<Self> {
+    pub fn new(identifier: &str, location: Location) -> IDResult<Self> {
         let identifier = identifier.replace(ALT_ID_SEP, ID_SEP);
         if !identifier.is_empty()
             && identifier.split(ID_SEP).all(|p| {
@@ -77,10 +77,10 @@ impl ID {
     pub fn join(&self, id: &ID) -> IDResult<Self> {
         Self::new(
             &(self.identifier.clone() + ID_SEP + id.identifier()),
-            if self.location.is_some() {
-                self.location.clone()
-            } else {
+            if self.location == Location::None {
                 id.location.clone()
+            } else {
+                self.location.clone()
             },
         )
     }
@@ -90,11 +90,7 @@ impl ID {
     }
 
     pub fn location(&self) -> &Location {
-        if let Some(location) = &self.location {
-            location
-        } else {
-            &UNKNOWN_LOCATION
-        }
+        &self.location
     }
 
     pub fn parts(&self) -> Vec<&str> {
@@ -115,12 +111,12 @@ impl ID {
                     .rsplit_once(ID_SEP)
                     .map(|(_, name)| name)
                     .expect("invalid identifier"),
-                location: self.location.as_ref(),
+                location: &self.location,
             }
         } else {
             IDRef {
                 identifier: &self.identifier,
-                location: self.location.as_ref(),
+                location: &self.location,
             }
         }
     }
@@ -139,7 +135,7 @@ impl ID {
                     .rsplit_once(ID_SEP)
                     .map(|(parent, _)| parent)
                     .expect("invalid identifier"),
-                location: self.location.as_ref(),
+                location: &self.location,
             })
         } else {
             None
@@ -182,14 +178,14 @@ impl std::hash::Hash for ID {
 #[derive(Debug, PartialEq)]
 pub struct IDRef<'a> {
     identifier: &'a str,
-    location: Option<&'a Location>,
+    location: &'a Location,
 }
 
 impl IDRef<'_> {
     pub fn to_owned(&self) -> ID {
         ID {
             identifier: self.identifier.to_string(),
-            location: self.location.cloned(),
+            location: self.location.clone(),
         }
     }
 }
@@ -211,13 +207,14 @@ pub enum IDError {
 /// # Examples
 ///
 /// ```rust
-/// use librapidflux::identifier::ID;
 /// use librapidflux::create_id;
+/// use librapidflux::diagnostics::Location;
+/// use librapidflux::identifier::ID;
 ///
-/// let id = create_id!(["A", "B"], None);
+/// let id = create_id!(["A", "B"], Location::None);
 ///
 /// assert_eq!(id.identifier(), "A::B");
-/// assert_eq!(id.location(), None);
+/// assert_eq!(*id.location(), Location::None);
 /// ```
 #[macro_export]
 macro_rules! create_id {
@@ -233,7 +230,7 @@ mod tests {
     use pretty_assertions::assert_eq;
     use rstest::rstest;
 
-    use crate::diagnostics::{FilePosition, Location, UNKNOWN_LOCATION};
+    use crate::diagnostics::{FilePosition, Location};
 
     use super::{IDError, IDRef, ID};
 
@@ -244,10 +241,10 @@ mod tests {
     #[case("A.B::C", "A::B::C")]
     fn test_id_new(#[case] identifier: &str, #[case] expected: &str) {
         assert_eq!(
-            ID::new(identifier, None),
+            ID::new(identifier, Location::None),
             Ok(ID {
                 identifier: expected.to_string(),
-                location: None
+                location: Location::None
             })
         );
     }
@@ -262,18 +259,21 @@ mod tests {
     #[case::colon_in_part_2("A:::B")]
     #[case::unicode_character("🐛")]
     fn test_id_new_invalid(#[case] identifier: &str) {
-        assert_eq!(ID::new(identifier, None), Err(IDError::InvalidIdentifier));
+        assert_eq!(
+            ID::new(identifier, Location::None),
+            Err(IDError::InvalidIdentifier)
+        );
     }
 
     #[test]
     fn test_id_identifier() {
-        assert_eq!(id("A::B", None).identifier(), "A::B");
+        assert_eq!(id("A::B", Location::None).identifier(), "A::B");
     }
 
     #[rstest]
-    #[case(None, &UNKNOWN_LOCATION)]
-    #[case(Some(location(1)), &location(1))]
-    fn test_id_location(#[case] loc: Option<Location>, #[case] expected: &Location) {
+    #[case(Location::None, &Location::None)]
+    #[case(location(1), &location(1))]
+    fn test_id_location(#[case] loc: Location, #[case] expected: &Location) {
         assert_eq!(id("A::B", loc.clone()).location(), expected);
     }
 
@@ -282,7 +282,7 @@ mod tests {
     #[case("A::B", &["A", "B"])]
     #[case("A::B::C", &["A", "B", "C"])]
     fn test_id_parts(#[case] identifier: &str, #[case] expected: &[&str]) {
-        assert_eq!(id(identifier, None).parts(), expected);
+        assert_eq!(id(identifier, Location::None).parts(), expected);
     }
 
     #[rstest]
@@ -291,10 +291,10 @@ mod tests {
     #[case("A::B::C", "C")]
     fn test_id_name(#[case] identifier: &str, #[case] expected: &str) {
         assert_eq!(
-            id(identifier, None).name(),
+            id(identifier, Location::None).name(),
             IDRef {
                 identifier: expected,
-                location: None
+                location: &Location::None
             }
         );
     }
@@ -304,17 +304,17 @@ mod tests {
     #[case("A::B::C", "A::B")]
     fn test_id_parent(#[case] identifier: &str, #[case] expected: &str) {
         assert_eq!(
-            id(identifier, None).parent().expect("no parent"),
+            id(identifier, Location::None).parent().expect("no parent"),
             IDRef {
                 identifier: expected,
-                location: None
+                location: &Location::None
             }
         );
     }
 
     #[test]
     fn test_id_parent_none() {
-        assert_eq!(id("A", None).parent(), None);
+        assert_eq!(id("A", Location::None).parent(), None);
     }
 
     #[rstest]
@@ -322,7 +322,7 @@ mod tests {
     #[case("A::B", "A_B")]
     #[case("A::B::C", "A_B_C")]
     fn test_id_flat(#[case] identifier: &str, #[case] expected: &str) {
-        assert_eq!(id(identifier, None).flat(), expected);
+        assert_eq!(id(identifier, Location::None).flat(), expected);
     }
 
     #[rstest]
@@ -330,12 +330,12 @@ mod tests {
     #[case("A::B", "A.B")]
     #[case("A::B::C", "A.B.C")]
     fn test_id_ada_str(#[case] identifier: &str, #[case] expected: &str) {
-        assert_eq!(id(identifier, None).to_ada_string(), expected);
+        assert_eq!(id(identifier, Location::None).to_ada_string(), expected);
     }
 
     #[test]
     fn test_id_serde() {
-        let id = id("A::B", None);
+        let id = id("A::B", Location::None);
         let bytes = bincode::serialize(&id).expect("failed to serialize");
         let deserialized_id = bincode::deserialize(&bytes).expect("failed to deserialize");
         assert_eq!(id, deserialized_id);
@@ -347,29 +347,41 @@ mod tests {
     #[case("A::B", "C", "A::BC")]
     #[case("A::B", "C::D", "A::BC::D")]
     fn test_id_prefix_suffix(#[case] left: &str, #[case] right: &str, #[case] expected: &str) {
-        assert_eq!(id(left, None).suffix(right), Ok(id(expected, None)));
-        assert_eq!(id(right, None).prefix(left), Ok(id(expected, None)));
+        assert_eq!(
+            id(left, Location::None).suffix(right),
+            Ok(id(expected, Location::None))
+        );
+        assert_eq!(
+            id(right, Location::None).prefix(left),
+            Ok(id(expected, Location::None))
+        );
     }
 
     #[rstest]
     #[case("A", "", "A")]
     #[case("A", "::", "A")]
     fn test_id_prefix_ident(#[case] left: &str, #[case] right: &str, #[case] expected: &str) {
-        assert_eq!(id(left, None).suffix(right), Ok(id(expected, None)));
-        assert_eq!(id(left, None).prefix(right), Ok(id(expected, None)));
+        assert_eq!(
+            id(left, Location::None).suffix(right),
+            Ok(id(expected, Location::None))
+        );
+        assert_eq!(
+            id(left, Location::None).prefix(right),
+            Ok(id(expected, Location::None))
+        );
     }
 
     #[rstest]
-    #[case(None, &UNKNOWN_LOCATION)]
-    #[case(Some(location(1)), &location(1))]
-    fn test_id_prefix_location(#[case] loc: Option<Location>, #[case] expected: &Location) {
+    #[case(Location::None, &Location::None)]
+    #[case(location(1), &location(1))]
+    fn test_id_prefix_location(#[case] loc: Location, #[case] expected: &Location) {
         assert_eq!(id("B", loc).prefix("A").unwrap().location(), expected);
     }
 
     #[rstest]
-    #[case(None, &UNKNOWN_LOCATION)]
-    #[case(Some(location(1)), &location(1))]
-    fn test_id_suffix_location(#[case] loc: Option<Location>, #[case] expected: &Location) {
+    #[case(Location::None, &Location::None)]
+    #[case(location(1), &location(1))]
+    fn test_id_suffix_location(#[case] loc: Location, #[case] expected: &Location) {
         assert_eq!(id("A", loc).suffix("B").unwrap().location(), expected);
     }
 
@@ -380,19 +392,19 @@ mod tests {
     #[case("A::B", "C::D", "A::B::C::D")]
     fn test_id_join(#[case] left: &str, #[case] right: &str, #[case] expected: &str) {
         assert_eq!(
-            id(left, None).join(&id(right, None)),
-            Ok(id(expected, None))
+            id(left, Location::None).join(&id(right, Location::None)),
+            Ok(id(expected, Location::None))
         );
     }
 
     #[rstest]
-    #[case(Some(location(1)), Some(location(2)), &location(1))]
-    #[case(Some(location(1)), None, &location(1))]
-    #[case(None, Some(location(2)), &location(2))]
-    #[case(None, None, &UNKNOWN_LOCATION)]
+    #[case(location(1), location(2), &location(1))]
+    #[case(location(1), Location::None, &location(1))]
+    #[case(Location::None, location(2), &location(2))]
+    #[case(Location::None, Location::None, &Location::None)]
     fn test_id_join_location(
-        #[case] left: Option<Location>,
-        #[case] right: Option<Location>,
+        #[case] left: Location,
+        #[case] right: Location,
         #[case] expected: &Location,
     ) {
         assert_eq!(
@@ -405,19 +417,19 @@ mod tests {
     #[case("A")]
     #[case("A::B")]
     fn test_id_display(#[case] identifier: &str) {
-        assert_eq!(id(identifier, None).to_string(), identifier);
+        assert_eq!(id(identifier, Location::None).to_string(), identifier);
     }
 
     #[test]
     fn test_id_hash() {
         let mut a1_hasher = DefaultHasher::new();
-        id("A", None).hash(&mut a1_hasher);
+        id("A", Location::None).hash(&mut a1_hasher);
         let mut a2_hasher = DefaultHasher::new();
-        id("A", None).hash(&mut a2_hasher);
+        id("A", Location::None).hash(&mut a2_hasher);
         assert_eq!(a1_hasher.finish(), a2_hasher.finish(),);
 
         let mut b_hasher = DefaultHasher::new();
-        id("B", None).hash(&mut b_hasher);
+        id("B", Location::None).hash(&mut b_hasher);
         assert_ne!(a1_hasher.finish(), b_hasher.finish(),);
     }
 
@@ -427,14 +439,13 @@ mod tests {
     #[case::not_equal("A::B", "A::A", false)]
     fn test_id_eq(#[case] left: &str, #[case] right: &str, #[case] expected: bool) {
         assert_eq!(
-            id(left, None)
+            id(left, Location::None)
                 == id(
                     right,
-                    Some(Location {
-                        source: None,
+                    Location::Stdin {
                         start: FilePosition::new(1, 1),
                         end: FilePosition::new(1, 1)
-                    })
+                    }
                 ),
             expected
         );
@@ -442,7 +453,7 @@ mod tests {
 
     #[test]
     fn test_id_as_ref() {
-        assert_eq!(id("foo", None).as_ref(), "foo");
+        assert_eq!(id("foo", Location::None).as_ref(), "foo");
     }
 
     #[test]
@@ -451,11 +462,11 @@ mod tests {
         let location = location(1);
         let id_ref = IDRef {
             identifier: &identifier,
-            location: Some(&location),
+            location: &location,
         };
         let id = id_ref.to_owned();
         assert_eq!(id.identifier, identifier);
-        assert_eq!(id.location, Some(location));
+        assert_eq!(id.location, location);
     }
 
     #[test]
@@ -466,21 +477,20 @@ mod tests {
     #[test]
     fn test_create_id() {
         assert_eq!(
-            create_id!(["A", "B"], Some(location(1))),
+            create_id!(["A", "B"], location(1)),
             ID {
                 identifier: "A::B".to_string(),
-                location: Some(location(1))
+                location: location(1)
             }
         );
     }
 
-    fn id(identifier: &str, location: Option<Location>) -> ID {
+    fn id(identifier: &str, location: Location) -> ID {
         ID::new(identifier, location).expect("invalid identifier")
     }
 
     fn location(value: u32) -> Location {
-        Location {
-            source: None,
+        Location::Stdin {
             start: FilePosition::new(value, value),
             end: FilePosition::new(value, value),
         }

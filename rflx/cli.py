@@ -27,7 +27,7 @@ from rflx.identifier import ID
 from rflx.integration import Integration
 from rflx.model import AlwaysVerify, Cache, Message, Model, NeverVerify, StateMachine
 from rflx.pyrflx import PyRFLXError
-from rflx.rapidflux import ErrorEntry, RecordFluxError, Severity, logging
+from rflx.rapidflux import NO_LOCATION, ErrorEntry, RecordFluxError, Severity, logging
 from rflx.specification import Parser
 from rflx.validator import ValidationError, Validator
 from rflx.version import version
@@ -443,6 +443,7 @@ def main(  # noqa: PLR0915
                 ErrorEntry(
                     'unsafe option "--no-verification" given without "--unsafe"',
                     Severity.ERROR,
+                    NO_LOCATION,
                 ),
             ],
         ).print_messages()
@@ -531,7 +532,7 @@ def parse(
 
     for f in files:
         if not f.is_file():
-            error.push(ErrorEntry(f'file not found: "{f}"', Severity.ERROR))
+            error.push(ErrorEntry(f'file not found: "{f}"', Severity.ERROR, NO_LOCATION))
             continue
 
         present_files.append(Path(f))
@@ -659,10 +660,11 @@ def install(args: argparse.Namespace) -> None:
         if home_dir is None and xdg_config_home is None:
             RecordFluxError(
                 [
-                    ErrorEntry("could not find config directory", Severity.ERROR),
+                    ErrorEntry("could not find config directory", Severity.ERROR, NO_LOCATION),
                     ErrorEntry(
                         "make sure $HOME or $XDG_CONFIG_HOME variable is set",
                         Severity.HELP,
+                        NO_LOCATION,
                     ),
                 ],
             ).propagate()
@@ -680,8 +682,8 @@ def install(args: argparse.Namespace) -> None:
         if home_dir is None:
             RecordFluxError(
                 [
-                    ErrorEntry("could not locate home directory", Severity.ERROR),
-                    ErrorEntry("make sure $HOME variable is set", Severity.HELP),
+                    ErrorEntry("could not locate home directory", Severity.ERROR, NO_LOCATION),
+                    ErrorEntry("make sure $HOME variable is set", Severity.HELP, NO_LOCATION),
                 ],
             ).propagate()
         assert home_dir is not None

@@ -21,10 +21,7 @@ mod utils;
 fn rapidflux(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     // Locations
     m.add_class::<diagnostics::Location>()?;
-    let _ = m.add(
-        "UNKNOWN_LOCATION",
-        diagnostics::Location(librapidflux::diagnostics::UNKNOWN_LOCATION.clone()),
-    );
+    let _ = m.add("NO_LOCATION", diagnostics::NO_LOCATION);
 
     // Errors
     m.add_class::<diagnostics::Severity>()?;

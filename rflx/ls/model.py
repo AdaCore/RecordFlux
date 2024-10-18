@@ -87,7 +87,7 @@ class Symbol:
 
     identifier: ID
     category: SymbolCategory
-    definition_location: Location | None
+    definition_location: Location
     parent: ID | None
 
 

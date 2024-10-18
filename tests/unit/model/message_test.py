@@ -2766,8 +2766,8 @@ def test_no_path_to_final_transitive() -> None:
         Link(Field("F2"), Field("F3"), Greater(Variable("F1"), Number(100))),
         Link(Field("F3"), FINAL),
         Link(Field("F2"), Field("F4"), LessEqual(Variable("F1"), Number(100))),
-        Link(Field("F4"), Field("F5")),
-        Link(Field("F5"), Field("F6")),
+        Link(Field(ID("F4", Location((1, 1)))), Field("F5")),
+        Link(Field(ID("F5", Location((2, 2)))), Field(ID("F6", Location((3, 3))))),
     ]
 
     types = {
@@ -2782,9 +2782,9 @@ def test_no_path_to_final_transitive() -> None:
         structure,
         types,
         r"^"
-        r'<unknown>:1:1: error: no path to FINAL for field "F4"\n'
-        r'<unknown>:1:1: error: no path to FINAL for field "F5"\n'
-        r'<unknown>:1:1: error: no path to FINAL for field "F6"'
+        r'<stdin>:1:1: error: no path to FINAL for field "F4"\n'
+        r'<stdin>:2:2: error: no path to FINAL for field "F5"\n'
+        r'<stdin>:3:3: error: no path to FINAL for field "F6"'
         r"$",
     )
 

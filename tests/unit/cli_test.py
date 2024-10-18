@@ -20,7 +20,14 @@ from rflx.converter import iana
 from rflx.error import fail
 from rflx.ls.server import server
 from rflx.pyrflx import PyRFLXError
-from rflx.rapidflux import ErrorEntry, Location, RecordFluxError, Severity, logging
+from rflx.rapidflux import (
+    NO_LOCATION,
+    ErrorEntry,
+    Location,
+    RecordFluxError,
+    Severity,
+    logging,
+)
 from tests.const import DATA_DIR, GITHUB_TRACKER_REF_PATTERN, GNAT_TRACKER_REF_PATTERN, SPEC_DIR
 from tests.utils import assert_stderr_regex, raise_fatal_error
 
@@ -44,7 +51,7 @@ def raise_error() -> None:
 
 
 def raise_pyrflx_error() -> None:
-    raise PyRFLXError([ErrorEntry("TEST", Severity.ERROR)])
+    raise PyRFLXError([ErrorEntry("TEST", Severity.ERROR, NO_LOCATION)])
 
 
 def raise_validation_error() -> None:

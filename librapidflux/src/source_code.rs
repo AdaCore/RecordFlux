@@ -61,7 +61,7 @@ pub fn clear() {
 mod tests {
     #![allow(clippy::used_underscore_binding)]
 
-    use std::{path::PathBuf, str::FromStr, sync::Arc};
+    use std::{path::PathBuf, sync::Arc};
 
     use rstest::{fixture, rstest};
     use serial_test::serial;
@@ -78,7 +78,7 @@ mod tests {
     #[rstest]
     #[serial]
     fn test_register_source_file(_cleanup: ()) {
-        let source_path = PathBuf::from_str("foo.rflx").expect("failed to create path");
+        let source_path = PathBuf::from("foo.rflx");
         register(source_path.clone(), "some source code".to_string());
 
         let locked_map = SOURCE_CODE_MAP.lock().expect("mutex is poisoned");
@@ -91,13 +91,13 @@ mod tests {
     #[rstest]
     #[serial]
     fn test_retrieve_empty(_cleanup: ()) {
-        assert!(retrieve(&PathBuf::from_str("foo.rflx").expect("failed to create path")).is_none());
+        assert!(retrieve(&PathBuf::from("foo.rflx")).is_none());
     }
 
     #[rstest]
     #[serial]
     fn test_retrieve_source_code(_cleanup: ()) {
-        let source_path = PathBuf::from_str("foo.rflx").expect("failed to create path");
+        let source_path = PathBuf::from("foo.rflx");
 
         {
             let mut locked = SOURCE_CODE_MAP.lock().expect("mutex is poisoned");
@@ -117,7 +117,7 @@ mod tests {
     #[rstest]
     #[serial]
     fn test_retrieve_source_code_non_existent(_cleanup: ()) {
-        let source_path = PathBuf::from_str("foo.rflx").expect("failed to create path");
+        let source_path = PathBuf::from("foo.rflx");
 
         {
             let mut locked = SOURCE_CODE_MAP.lock().expect("mutex is poisoned");
@@ -127,13 +127,13 @@ mod tests {
             );
         }
 
-        assert!(retrieve(&PathBuf::from_str("bar.rflx").expect("failed to create path")).is_none());
+        assert!(retrieve(&PathBuf::from("bar.rflx")).is_none());
     }
 
     #[test]
     #[serial]
     fn test_clear_source_code_map() {
-        let source_path = PathBuf::from_str("foo.rflx").expect("failed to create path");
+        let source_path = PathBuf::from("foo.rflx");
 
         {
             let mut locked = SOURCE_CODE_MAP.lock().expect("mutex is poisoned");

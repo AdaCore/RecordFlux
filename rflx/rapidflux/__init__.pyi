@@ -5,7 +5,7 @@ from typing import Final
 
 from typing_extensions import Self
 
-UNKNOWN_LOCATION: Final[Location]
+NO_LOCATION: Final[Location]
 
 class ID:
     def __init__(
@@ -49,7 +49,7 @@ class Location:
     def short(self) -> Location: ...
     def __lt__(self, other: object) -> bool: ...
     @staticmethod
-    def merge(locations: Sequence[Location | None]) -> Location: ...
+    def merge(locations: Sequence[Location]) -> Location: ...
 
 class Severity(Enum):
     ERROR: Severity
@@ -77,7 +77,7 @@ class ErrorEntry:
         self,
         message: str,
         severity: Severity,
-        location: Location | None = None,
+        location: Location,
         annotations: Sequence[Annotation] = [],
         generate_default_annotation: bool = True,
     ) -> None: ...
@@ -87,7 +87,7 @@ class ErrorEntry:
     @property
     def severity(self) -> Severity: ...
     @property
-    def location(self) -> Location | None: ...
+    def location(self) -> Location: ...
     @property
     def annotations(self) -> Sequence[Annotation]: ...
 

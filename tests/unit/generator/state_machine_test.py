@@ -21,7 +21,7 @@ from rflx.generator.state_machine import (
 )
 from rflx.identifier import ID, id_generator
 from rflx.integration import Integration
-from rflx.rapidflux import UNKNOWN_LOCATION, Location, RecordFluxError
+from rflx.rapidflux import NO_LOCATION, Location, RecordFluxError
 from tests.data import models
 
 INT_TY = ty.Integer("I", ty.Bounds(1, 100))
@@ -41,19 +41,19 @@ def dummy_state_machine() -> ir.StateMachine:
                         "Final",
                         ir.ComplexExpr([], ir.BoolVal(value=True)),
                         None,
-                        UNKNOWN_LOCATION,
+                        NO_LOCATION,
                     ),
                 ],
                 None,
                 [],
                 None,
-                UNKNOWN_LOCATION,
+                NO_LOCATION,
             ),
         ],
         declarations=[],
         parameters=[],
         types={t.identifier: t for t in models.universal_model().types},
-        location=UNKNOWN_LOCATION,
+        location=NO_LOCATION,
         variable_id=id_generator(),
     )
 
@@ -62,7 +62,7 @@ def dummy_state_machine() -> ir.StateMachine:
     ("parameter", "expected"),
     [
         (
-            ir.FuncDecl("F", [], "T", type_=ty.BOOLEAN, location=UNKNOWN_LOCATION),
+            ir.FuncDecl("F", [], "T", type_=ty.BOOLEAN, location=NO_LOCATION),
             [
                 ada.SubprogramDeclaration(
                     specification=ada.ProcedureSpecification(
@@ -91,7 +91,7 @@ def dummy_state_machine() -> ir.StateMachine:
                 ],
                 "T",
                 type_=ty.Message("T", is_definite=True),
-                location=UNKNOWN_LOCATION,
+                location=NO_LOCATION,
             ),
             [
                 ada.SubprogramDeclaration(
@@ -559,7 +559,7 @@ def test_state_machine_declare_error(
             type_,
             lambda _: False,
             expression=expression,
-            alloc_id=UNKNOWN_LOCATION,
+            alloc_id=NO_LOCATION,
         )
 
 
@@ -616,7 +616,7 @@ def test_state_machine_state_action_error(
             ID("S"),
             action,
             ExceptionHandler(
-                ir.State("State", [], None, [], None, UNKNOWN_LOCATION),
+                ir.State("State", [], None, [], None, NO_LOCATION),
                 [],
                 lambda: None,
             ),
@@ -1008,11 +1008,11 @@ def test_state_machine_assign_error(
                         "E",
                         ir.ComplexExpr([], ir.BoolVal(value=True)),
                         None,
-                        UNKNOWN_LOCATION,
+                        NO_LOCATION,
                     ),
                     [],
                     None,
-                    UNKNOWN_LOCATION,
+                    NO_LOCATION,
                 ),
                 [],
                 lambda: None,
@@ -1088,11 +1088,11 @@ def test_state_machine_append_error(
                         "E",
                         ir.ComplexExpr([], ir.BoolVal(value=True)),
                         None,
-                        UNKNOWN_LOCATION,
+                        NO_LOCATION,
                     ),
                     [],
                     None,
-                    UNKNOWN_LOCATION,
+                    NO_LOCATION,
                 ),
                 [],
                 lambda: None,

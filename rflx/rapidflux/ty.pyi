@@ -53,11 +53,7 @@ class AnyInteger(Any):
     def bounds(self) -> Bounds: ...
 
 class UniversalInteger(AnyInteger):
-    def __init__(
-        self,
-        bounds: Bounds,
-        location: Location | None = None,
-    ) -> None: ...
+    def __init__(self, bounds: Bounds) -> None: ...
 
 class Integer(AnyInteger):
     def __init__(
@@ -164,13 +160,13 @@ def common_type(types: abc.Sequence[Type]) -> Type: ...
 def check_type(
     actual: Type,
     expected: Type | tuple[Type, ...],
-    location: Location | None,
+    location: Location,
     description: str,
 ) -> RecordFluxError: ...
 def check_type_instance(
     actual: Type,
     expected: type[Type] | tuple[type[Type], ...],
-    location: Location | None,
+    location: Location,
     description: str = "",
     additional_annotations: abc.Sequence[Annotation] | None = None,
 ) -> RecordFluxError: ...

@@ -6,13 +6,13 @@ from dataclasses import dataclass
 
 from rflx.common import Base
 from rflx.identifier import ID, StrID
-from rflx.rapidflux import UNKNOWN_LOCATION, ErrorEntry, Location, RecordFluxError, Severity
+from rflx.rapidflux import NO_LOCATION, ErrorEntry, Location, RecordFluxError, Severity
 
 
 class TopLevelDeclaration(Base):
-    def __init__(self, identifier: StrID, location: Location = UNKNOWN_LOCATION) -> None:
+    def __init__(self, identifier: StrID, location: Location = NO_LOCATION) -> None:
         self.identifier = ID(identifier)
-        self.location = location or UNKNOWN_LOCATION
+        self.location = location
         self.error = RecordFluxError()
 
         self._check_identifier()

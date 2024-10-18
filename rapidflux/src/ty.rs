@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use librapidflux::ty as lib;
 
 use crate::{
-    diagnostics::{Annotation, Location, RapidFluxError, UNKNOWN_LOCATION},
+    diagnostics::{Annotation, Location, RapidFluxError, NO_LOCATION},
     identifier::{to_id, ID},
     impl_states, register_submodule_declarations,
 };
@@ -208,7 +208,7 @@ impl Enumeration {
                 id: to_id(identifier)?,
                 literals: literals.iter().map(|l| l.0.clone()).collect(),
                 always_valid,
-                location: location.map(|l| l.0),
+                location: location.map_or(NO_LOCATION.0, |l| l.0),
             })),
         )
     }
@@ -265,11 +265,7 @@ impl Enumeration {
 
     #[getter]
     fn location(&self) -> Location {
-        if let Some(location) = &self.0.location {
-            Location(location.clone())
-        } else {
-            UNKNOWN_LOCATION.clone()
-        }
+        Location(self.0.location.clone())
     }
 
     fn is_compatible(&self, other: &Bound<'_, PyAny>) -> bool {
@@ -373,7 +369,7 @@ impl Integer {
         Ok(AnyInteger::new().add_subclass(Self(lib::Integer {
             id: to_id(identifier)?,
             bounds: bounds.0,
-            location: location.map(|l| l.0),
+            location: location.map_or(NO_LOCATION.0, |l| l.0),
         })))
     }
 
@@ -405,11 +401,7 @@ impl Integer {
 
     #[getter]
     fn location(&self) -> Location {
-        if let Some(location) = &self.0.location {
-            Location(location.clone())
-        } else {
-            UNKNOWN_LOCATION.clone()
-        }
+        Location(self.0.location.clone())
     }
 
     fn is_compatible(&self, other: &Bound<'_, PyAny>) -> bool {
@@ -1068,12 +1060,12 @@ fn common_type(types: &Bound<'_, PyList>, py: Python<'_>) -> PyObject {
 }
 
 #[pyfunction]
-#[pyo3(signature = (actual, expected, location = None, description = ""))]
+#[pyo3(signature = (actual, expected, location, description = ""))]
 #[allow(clippy::needless_pass_by_value)]
 fn check_type(
     actual: &Bound<'_, PyAny>,
     expected: &Bound<'_, PyAny>,
-    location: Option<&Location>,
+    location: &Location,
     description: &str,
 ) -> RapidFluxError {
     let expected = if let Ok(tuple) = expected.extract::<Vec<Bound<'_, PyAny>>>() {
@@ -1086,17 +1078,17 @@ fn check_type(
     RapidFluxError(lib::check_type(
         &to_ty(actual),
         &expected.iter().map(|e| to_ty(e)).collect::<Vec<_>>(),
-        location.map(|l| &l.0),
+        &location.0,
         description,
     ))
 }
 
 #[pyfunction]
-#[pyo3(signature = (actual, expected, location = None, description = "", additional_annotations = None))]
+#[pyo3(signature = (actual, expected, location, description = "", additional_annotations = None))]
 fn check_type_instance(
     actual: &Bound<'_, PyAny>,
     expected: &Bound<'_, PyAny>,
-    location: Option<&Location>,
+    location: &Location,
     description: &str,
     additional_annotations: Option<Vec<Annotation>>,
     py: Python<'_>,
@@ -1143,7 +1135,7 @@ fn check_type_instance(
     Ok(RapidFluxError(lib::check_type_instance(
         &to_ty(actual),
         &exp,
-        location.map(|l| &l.0),
+        &location.0,
         description,
         &additional_annotations
             .unwrap_or_default()
