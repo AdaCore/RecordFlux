@@ -54,6 +54,13 @@ The script is based on Scapy https://scapy.net/.
         help="show list of all available Scapy layers",
     )
     arg_parser.add_argument(
+        "-p",
+        "--payload",
+        required=False,
+        action='store_true',
+        help="extract payload of the layer instead of the whole layer",
+    )
+    arg_parser.add_argument(
         "layer",
         metavar="LAYER",
         type=str,
@@ -88,6 +95,8 @@ The script is based on Scapy https://scapy.net/.
     for i, pkt in enumerate(pkts):
         if pkt.haslayer(layer):
             p = pkt.getlayer(layer)
+            if args.payload:
+                p = p.payload
             prefix = args.pcap.stem.replace(" ", "_")
             number = str(i).zfill(ceil(log(len(pkts)) / log(10)))
             filename = args.output / f"{prefix}_{number}.raw"
