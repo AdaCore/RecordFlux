@@ -29,8 +29,6 @@ is
       S.Slot_Ptr_6 := M.Slot_6'Unrestricted_Access;
       S.Slot_Ptr_7 := M.Slot_7'Unrestricted_Access;
       S.Slot_Ptr_8 := M.Slot_8'Unrestricted_Access;
-      S.Slot_Ptr_9 := M.Slot_9'Unrestricted_Access;
-      S.Slot_Ptr_10 := M.Slot_10'Unrestricted_Access;
    end Initialize;
 
    procedure Finalize (S : in out Slots) with
@@ -46,8 +44,6 @@ is
       S.Slot_Ptr_6 := null;
       S.Slot_Ptr_7 := null;
       S.Slot_Ptr_8 := null;
-      S.Slot_Ptr_9 := null;
-      S.Slot_Ptr_10 := null;
    end Finalize;
 
 end RFLX.Test.S.FSM_Allocator;

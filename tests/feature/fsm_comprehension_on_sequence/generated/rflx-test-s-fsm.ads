@@ -28,7 +28,7 @@ is
 
    type Channel is (C_Channel);
 
-   type State is (S_Start, S_Process, S_Send_1, S_Send_2, S_Final);
+   type State is (S_Start, S_Process_1, S_Send_1, S_Process_2, S_Send_2, S_Final);
 
    type Private_Context is private;
 

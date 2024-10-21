@@ -15,14 +15,13 @@ package Test is
          Options'Append (Universal::Option'(Option_Type => Universal::OT_Null));
          Options'Append (Universal::Option'(Option_Type => Universal::OT_Data, Length => 2, Data => [2, 3]));
       transition
-         goto Process
+         goto Process_1
       exception
          goto null
       end Start;
 
-      state Process is
+      state Process_1 is
          Option_Types : Universal::Option_Types;
-         Message_Options : Universal::Options;
       begin
          Option_Types := [for E in Options => E.Option_Type];
          Option_Types := [for E in Options if True => E.Option_Type];
@@ -31,23 +30,32 @@ package Test is
          Message_1 := Universal::Message'(Message_Type => Universal::MT_Option_Types,
                                           Length => Option_Types'Size / 8,
                                           Option_Types => Option_Types);
+      transition
+         goto Send_1
+      exception
+         goto null
+      end Process_1;
+
+      state Send_1 is
+      begin
+         Channel'Write (Message_1);
+      transition
+         goto Process_2
+      end Send_1;
+
+      state Process_2 is
+         Message_Options : Universal::Options;
+      begin
          Message_Options := [for E in Options if E.Option_Type = Universal::OT_Data => E];
          Message_2 := Universal::Message'(Message_Type => Universal::MT_Options,
                                           Length => Message_Options'Size / 8,
                                           Options => Message_Options);
          Message_Options'Reset;
       transition
-         goto Send_1
+         goto Send_2
       exception
          goto null
-      end Process;
-
-      state Send_1 is
-      begin
-         Channel'Write (Message_1);
-      transition
-         goto Send_2
-      end Send_1;
+      end Process_2;
 
       state Send_2 is
       begin

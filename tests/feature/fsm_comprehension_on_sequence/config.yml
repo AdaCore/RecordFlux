@@ -2,9 +2,10 @@ output:
   - Channel
 sequence: |
   State: Start
-  State: Process
+  State: Process_1
   Read Channel: 4 0 2 1 1
   State: Send_1
+  State: Process_2
   Read Channel: 5 0 9 1 0 1 2 1 0 2 2 3
   State: Send_2
 proof:

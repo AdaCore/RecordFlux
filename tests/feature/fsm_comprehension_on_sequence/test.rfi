@@ -3,5 +3,5 @@ Machine:
     Buffer_Size:
       Default: 4096
       Local:
-        Process:
+        Process_1:
           Option_Types: 8096
