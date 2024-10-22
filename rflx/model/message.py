@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import itertools
 from collections import defaultdict
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor
 from copy import copy
 from dataclasses import dataclass, field as dataclass_field
 from enum import Enum
 from functools import cached_property, partial
-from typing import Callable
 
 from rflx import expr, expr_proof, ty
 from rflx.common import Base, indent, indent_next, unique, verbose_repr

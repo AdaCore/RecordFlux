@@ -3,7 +3,8 @@ from __future__ import annotations
 import sys
 import traceback
 import types
-from typing import Callable, Final
+from collections.abc import Callable
+from typing import Final
 
 from rflx.version import is_gnat_tracker_release, version
 

@@ -3,8 +3,9 @@ from __future__ import annotations
 import dataclasses
 import math
 import os
+from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import TYPE_CHECKING, Optional
 
 from rflx.model import NeverVerify
 from rflx.pyrflx import MessageValue, PyRFLX
