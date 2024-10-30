@@ -1146,25 +1146,27 @@ class Generator:
                 )
         condition = (
             condition.substituted(
-                mapping={
-                    expr.Variable(f.name): (
-                        expr.Selected(
-                            expr.Call(
+                expr.substitution(
+                    {
+                        expr.Variable(f.name): (
+                            expr.Selected(
+                                expr.Call(
+                                    pdu_identifier * f"Get_{f.name}",
+                                    t.type_,
+                                    [expr.Variable("Ctx")],
+                                ),
+                                "Enum",
+                            )
+                            if isinstance(t, Enumeration) and t.always_valid
+                            else expr.Call(
                                 pdu_identifier * f"Get_{f.name}",
                                 t.type_,
                                 [expr.Variable("Ctx")],
-                            ),
-                            "Enum",
+                            )
                         )
-                        if isinstance(t, Enumeration) and t.always_valid
-                        else expr.Call(
-                            pdu_identifier * f"Get_{f.name}",
-                            t.type_,
-                            [expr.Variable("Ctx")],
-                        )
-                    )
-                    for f, t in condition_fields.items()
-                },
+                        for f, t in condition_fields.items()
+                    },
+                ),
             )
             .substituted(
                 lambda e: (

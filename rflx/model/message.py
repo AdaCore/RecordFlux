@@ -406,7 +406,7 @@ class Message(type_decl.TypeDecl):
             return field_type.size
 
         sizes = [
-            l.size.substituted(mapping=to_mapping(self.message_constraints)).simplified()
+            l.size.substituted(expr.substitution(to_mapping(self.message_constraints))).simplified()
             for l in self.incoming(field)
         ]
         size = sizes[0]
@@ -453,24 +453,26 @@ class Message(type_decl.TypeDecl):
             literals = {l for l in variables - fields if len(l.parts) == 1}
 
             return expression.substituted(
-                mapping={
-                    **{
-                        v: v.__class__(
-                            ID(prefix + v.name, v.identifier.location),
-                            location=v.location,
-                        )
-                        for v in expression.variables()
-                        if v.identifier in fields
+                expr.substitution(
+                    {
+                        **{
+                            v: v.__class__(
+                                ID(prefix + v.name, v.identifier.location),
+                                location=v.location,
+                            )
+                            for v in expression.variables()
+                            if v.identifier in fields
+                        },
+                        **{
+                            v: v.__class__(self.package * v.name)
+                            for v in expression.variables()
+                            if v.identifier in literals
+                            and v.identifier not in type_decl.BUILTIN_LITERALS
+                            and v.identifier != ID("Message")
+                            and Field(v.identifier) not in self.parameters
+                        },
                     },
-                    **{
-                        v: v.__class__(self.package * v.name)
-                        for v in expression.variables()
-                        if v.identifier in literals
-                        and v.identifier not in type_decl.BUILTIN_LITERALS
-                        and v.identifier != ID("Message")
-                        and Field(v.identifier) not in self.parameters
-                    },
-                },
+                ),
             ).simplified()
 
         structure = []
@@ -779,16 +781,16 @@ class Message(type_decl.TypeDecl):
                         overlay_condition,
                         location=Location.merge([c.location for c in path_conditions]),
                     )
-                    .substituted(mapping=to_mapping(link_size_expressions + facts))
-                    .substituted(mapping=type_constraints)
+                    .substituted(expr.substitution(to_mapping(link_size_expressions + facts)))
+                    .substituted(expr.substitution(type_constraints))
                     .substituted(add_message_prefix)
                     .substituted(remove_variable_prefix)
                     .simplified()
                 )
                 field_size = (
                     expr.Size(expr.Variable(field.name, type_=self.types[field].type_))
-                    .substituted(mapping=to_mapping(link_size_expressions + facts))
-                    .substituted(mapping=type_constraints)
+                    .substituted(expr.substitution(to_mapping(link_size_expressions + facts)))
+                    .substituted(expr.substitution(type_constraints))
                     .substituted(add_message_prefix)
                     .substituted(remove_variable_prefix)
                 )
@@ -823,7 +825,7 @@ class Message(type_decl.TypeDecl):
                     for field_size in [expr.Add(*(s for _, s in groups))]
                 ],
             )
-            .substituted(mapping=to_mapping(values))
+            .substituted(expr.substitution(to_mapping(values)))
             .simplified()
         )
 
@@ -2908,7 +2910,7 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
         self._check_message_attributes(message, inner_message, field)
         self._check_name_conflicts(message, inner_message, field)
 
-        substitution: Mapping[expr.Name, expr.Expr] = (
+        substitution: Mapping[expr.Expr, expr.Expr] = (
             {expr.Variable(a): e for a, e in message_arguments[inner_message.identifier].items()}
             if inner_message.identifier in message_arguments
             else {}
@@ -2961,9 +2963,9 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
                         Link(
                             link.source,
                             initial_link.target,
-                            link.condition.substituted(mapping=substitution),
-                            initial_link.size.substituted(mapping=substitution),
-                            link.first.substituted(mapping=substitution),
+                            link.condition.substituted(expr.substitution(substitution)),
+                            initial_link.size.substituted(expr.substitution(substitution)),
+                            link.first.substituted(expr.substitution(substitution)),
                             link.location,
                         ),
                     )
@@ -2975,7 +2977,7 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
                                 final_link.condition,
                                 location=link.condition.location,
                             )
-                            .substituted(mapping=substitution)
+                            .substituted(expr.substitution(substitution))
                             .substituted(substitute_message_variables)
                             .substituted(typed_variable)
                         )
@@ -2999,14 +3001,16 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
                                     link.target,
                                     merged_condition.simplified(),
                                     link.size.substituted(
-                                        mapping={
-                                            **substitution,
-                                            expr.Last(field.identifier): expr.Last(
-                                                final_link.source.identifier,
-                                            ),
-                                        },
+                                        expr.substitution(
+                                            {
+                                                **substitution,
+                                                expr.Last(field.identifier): expr.Last(
+                                                    final_link.source.identifier,
+                                                ),
+                                            },
+                                        ),
                                     ),
-                                    link.first.substituted(mapping=substitution),
+                                    link.first.substituted(expr.substitution(substitution)),
                                     link.location,
                                 ),
                             )
@@ -3018,9 +3022,9 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
             Link(
                 l.source,
                 l.target,
-                l.condition.substituted(mapping=substitution),
-                l.size.substituted(mapping=substitution),
-                l.first.substituted(mapping=substitution),
+                l.condition.substituted(expr.substitution(substitution)),
+                l.size.substituted(expr.substitution(substitution)),
+                l.first.substituted(expr.substitution(substitution)),
                 l.location,
             )
             for l in inner_message.structure
@@ -3476,12 +3480,8 @@ def expression_list(expression: expr.Expr) -> Sequence[expr.Expr]:
     return [expression]
 
 
-def to_mapping(facts: Sequence[expr.Expr]) -> dict[expr.Name, expr.Expr]:
-    return {
-        f.left: f.right
-        for f in facts
-        if isinstance(f, expr.Equal) and isinstance(f.left, expr.Name)
-    }
+def to_mapping(facts: Sequence[expr.Expr]) -> dict[expr.Expr, expr.Expr]:
+    return {f.left: f.right for f in facts if isinstance(f, expr.Equal)}
 
 
 def normalize_identifiers(

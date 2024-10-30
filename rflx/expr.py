@@ -148,12 +148,7 @@ class Expr(Base):
     def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
         return [self] if match(self) else []
 
-    def substituted(
-        self,
-        func: Callable[[Expr], Expr] | None = None,
-        mapping: Mapping[Name, Expr] | None = None,
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
+    def substituted(self, func: Callable[[Expr], Expr]) -> Expr:
         return func(self)
 
     @abstractmethod
@@ -193,12 +188,7 @@ class Not(Expr):
             *self.expr.findall(match),
         ]
 
-    def substituted(
-        self,
-        func: Callable[[Expr], Expr] | None = None,
-        mapping: Mapping[Name, Expr] | None = None,
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
+    def substituted(self, func: Callable[[Expr], Expr]) -> Expr:
         expr = func(self)
         if isinstance(expr, Not):
             return expr.__class__(
@@ -284,12 +274,7 @@ class BinExpr(Expr):
             *self.right.findall(match),
         ]
 
-    def substituted(
-        self,
-        func: Callable[[Expr], Expr] | None = None,
-        mapping: Mapping[Name, Expr] | None = None,
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
+    def substituted(self, func: Callable[[Expr], Expr]) -> Expr:
         expr = func(self)
         if isinstance(expr, BinExpr):
             return expr.__class__(
@@ -354,12 +339,7 @@ class AssExpr(Expr):
             *[m for t in self.terms for m in t.findall(match)],
         ]
 
-    def substituted(
-        self,
-        func: Callable[[Expr], Expr] | None = None,
-        mapping: Mapping[Name, Expr] | None = None,
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
+    def substituted(self, func: Callable[[Expr], Expr]) -> Expr:
         expr = func(self)
         if isinstance(expr, AssExpr):
             return expr.__class__(
@@ -721,12 +701,7 @@ class Neg(Expr):
             *self.expr.findall(match),
         ]
 
-    def substituted(
-        self,
-        func: Callable[[Expr], Expr] | None = None,
-        mapping: Mapping[Name, Expr] | None = None,
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
+    def substituted(self, func: Callable[[Expr], Expr]) -> Expr:
         expr = func(self)
         if isinstance(expr, Neg):
             return expr.__class__(
@@ -976,12 +951,7 @@ class Name(Expr):
     def representation(self) -> str:
         raise NotImplementedError
 
-    def substituted(
-        self,
-        func: Callable[[Expr], Expr] | None = None,
-        mapping: Mapping[Name, Expr] | None = None,
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
+    def substituted(self, func: Callable[[Expr], Expr]) -> Expr:
         return func(self)
 
     def simplified(self) -> Expr:
@@ -1153,12 +1123,7 @@ class Attribute(Name):
     def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
         return [self] if match(self) else self.prefix.findall(match)
 
-    def substituted(
-        self,
-        func: Callable[[Expr], Expr] | None = None,
-        mapping: Mapping[Name, Expr] | None = None,
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
+    def substituted(self, func: Callable[[Expr], Expr]) -> Expr:
         expr = func(self)
         if isinstance(expr, Attribute):
             prefix = expr.prefix.substituted(func)
@@ -1331,11 +1296,7 @@ class Val(Attribute):
     def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
         raise NotImplementedError
 
-    def substituted(
-        self,
-        func: Callable[[Expr], Expr] | None = None,  # noqa: ARG002
-        mapping: Mapping[Name, Expr] | None = None,  # noqa: ARG002
-    ) -> Expr:
+    def substituted(self, func: Callable[[Expr], Expr]) -> Expr:  # noqa: ARG002
         return self
 
     def simplified(self) -> Expr:
@@ -1420,12 +1381,7 @@ class Selected(Name):
     def variables(self) -> list[Variable]:
         return self.prefix.variables()
 
-    def substituted(
-        self,
-        func: Callable[[Expr], Expr] | None = None,
-        mapping: Mapping[Name, Expr] | None = None,
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
+    def substituted(self, func: Callable[[Expr], Expr]) -> Expr:
         expr = func(self)
         if isinstance(expr, self.__class__):
             return expr.__class__(
@@ -1514,12 +1470,7 @@ class Call(Name):
             *[e for a in self.args for e in a.findall(match)],
         ]
 
-    def substituted(
-        self,
-        func: Callable[[Expr], Expr] | None = None,
-        mapping: Mapping[Name, Expr] | None = None,
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
+    def substituted(self, func: Callable[[Expr], Expr]) -> Expr:
         expr = func(self)
         assert isinstance(expr, Call)
         return expr.__class__(
@@ -1595,12 +1546,7 @@ class Aggregate(Expr):
     def precedence(self) -> Precedence:
         return Precedence.LITERAL
 
-    def substituted(
-        self,
-        func: Callable[[Expr], Expr] | None = None,
-        mapping: Mapping[Name, Expr] | None = None,
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
+    def substituted(self, func: Callable[[Expr], Expr]) -> Expr:
         expr = func(self)
         if isinstance(expr, self.__class__):
             return expr.__class__(
@@ -1632,12 +1578,7 @@ class String(Aggregate):
     def precedence(self) -> Precedence:
         return Precedence.LITERAL
 
-    def substituted(
-        self,
-        func: Callable[[Expr], Expr] | None = None,
-        mapping: Mapping[Name, Expr] | None = None,
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
+    def substituted(self, func: Callable[[Expr], Expr]) -> Expr:
         return func(self)
 
     def simplified(self) -> Expr:
@@ -1934,12 +1875,7 @@ class IfExpr(Expr):
     def precedence(self) -> Precedence:
         return Precedence.LITERAL
 
-    def substituted(
-        self,
-        func: Callable[[Expr], Expr] | None = None,
-        mapping: Mapping[Name, Expr] | None = None,
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
+    def substituted(self, func: Callable[[Expr], Expr]) -> Expr:
         expr = func(self)
         if isinstance(expr, IfExpr):
             return expr.__class__(
@@ -2026,12 +1962,7 @@ class QuantifiedExpr(Expr):
             ),
         )
 
-    def substituted(
-        self,
-        func: Callable[[Expr], Expr] | None = None,
-        mapping: Mapping[Name, Expr] | None = None,
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
+    def substituted(self, func: Callable[[Expr], Expr]) -> Expr:
         expr = func(self)
         assert isinstance(expr, QuantifiedExpr)
         return expr.__class__(
@@ -2111,12 +2042,7 @@ class ValueRange(Expr):
     def precedence(self) -> Precedence:
         raise NotImplementedError
 
-    def substituted(
-        self,
-        func: Callable[[Expr], Expr] | None = None,
-        mapping: Mapping[Name, Expr] | None = None,
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
+    def substituted(self, func: Callable[[Expr], Expr]) -> Expr:
         expr = func(self)
         if isinstance(expr, self.__class__):
             return self.__class__(
@@ -2192,12 +2118,7 @@ class Conversion(Expr):
     def precedence(self) -> Precedence:
         return Precedence.LITERAL
 
-    def substituted(
-        self,
-        func: Callable[[Expr], Expr] | None = None,
-        mapping: Mapping[Name, Expr] | None = None,
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
+    def substituted(self, func: Callable[[Expr], Expr]) -> Expr:
         expr = func(self)
         if isinstance(expr, Conversion):
             return expr.__class__(
@@ -2307,12 +2228,7 @@ class Comprehension(Expr):
             self.location,
         )
 
-    def substituted(
-        self,
-        func: Callable[[Expr], Expr] | None = None,
-        mapping: Mapping[Name, Expr] | None = None,
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
+    def substituted(self, func: Callable[[Expr], Expr]) -> Expr:
         expr = func(self)
         if isinstance(expr, Comprehension):
             return expr.__class__(
@@ -2474,12 +2390,7 @@ class MessageAggregate(Expr):
             self.location,
         )
 
-    def substituted(
-        self,
-        func: Callable[[Expr], Expr] | None = None,
-        mapping: Mapping[Name, Expr] | None = None,
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
+    def substituted(self, func: Callable[[Expr], Expr]) -> Expr:
         expr = func(self)
         if isinstance(expr, self.__class__):
             return expr.__class__(
@@ -2524,18 +2435,8 @@ class DeltaMessageAggregate(MessageAggregate):
         return RecordFluxError()
 
 
-def substitution(
-    mapping: Mapping[Name, Expr],
-    func: Callable[[Expr], Expr] | None = None,
-) -> Callable[[Expr], Expr]:
-    assert not (mapping and func)
-    if func:
-        return func
-    return lambda expression: (
-        mapping[expression]
-        if isinstance(expression, Name) and expression in mapping
-        else expression
-    )
+def substitution(mapping: Mapping[Expr, Expr]) -> Callable[[Expr], Expr]:
+    return lambda expression: mapping.get(expression, expression)
 
 
 def _entity_name(expr: Expr) -> str:
@@ -2792,12 +2693,7 @@ class CaseExpr(Expr):
             location=self.location,
         )
 
-    def substituted(
-        self,
-        func: Callable[[Expr], Expr] | None = None,
-        mapping: Mapping[Name, Expr] | None = None,
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
+    def substituted(self, func: Callable[[Expr], Expr]) -> Expr:
         expr = func(self)
         if isinstance(expr, CaseExpr):
             return expr.__class__(

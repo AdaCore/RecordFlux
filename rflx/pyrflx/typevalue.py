@@ -28,6 +28,7 @@ from rflx.expr import (
     ValidChecksum,
     ValueRange,
     Variable,
+    substitution,
 )
 from rflx.identifier import ID
 from rflx.model import (
@@ -204,7 +205,9 @@ class IntegerValue(ScalarValue):
         if check and (
             And(*self._type.constraints("__VALUE__"))
             .substituted(
-                mapping={Variable("__VALUE__"): Number(value), Size("__VALUE__"): self._type.size},
+                substitution(
+                    {Variable("__VALUE__"): Number(value), Size("__VALUE__"): self._type.size},
+                ),
             )
             .simplified()
             != TRUE
@@ -250,7 +253,7 @@ class EnumValue(ScalarValue):
         super().__init__(vtype)
         self._imported = imported
         self._builtin = self._type.package == BUILTINS_PACKAGE
-        self._literals: dict[Name, Expr] = {}
+        self._literals: dict[Expr, Expr] = {}
 
         for k, v in self._type.literals.items():
             if self._builtin or not self._imported:
@@ -272,11 +275,13 @@ class EnumValue(ScalarValue):
             (
                 And(*self._type.constraints("__VALUE__", same_package=not self._imported))
                 .substituted(
-                    mapping={
-                        **self.literals,
-                        Variable("__VALUE__"): self._type.literals[prefixed_value.name],
-                        Size("__VALUE__"): self._type.size,
-                    },
+                    substitution(
+                        {
+                            **self.literals,
+                            Variable("__VALUE__"): self._type.literals[prefixed_value.name],
+                            Size("__VALUE__"): self._type.size,
+                        },
+                    ),
                 )
                 .simplified()
             )
@@ -332,7 +337,7 @@ class EnumValue(ScalarValue):
         return str
 
     @property
-    def literals(self) -> abc.Mapping[Name, Expr]:
+    def literals(self) -> abc.Mapping[Expr, Expr]:
         return self._literals
 
     def as_json(self) -> object:

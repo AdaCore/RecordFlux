@@ -400,18 +400,20 @@ def message_structure_invariant(
                 substitution(message, prefix, embedded, target_type=ty.BIT_INDEX),
             )
             .substituted(
-                mapping={
-                    expr.UNDEFINED: expr.Add(
-                        expr.Selected(
-                            expr.Indexed(
-                                prefixed("Cursors"),
-                                expr.Variable(link.source.affixed_name),
+                expr.substitution(
+                    {
+                        expr.UNDEFINED: expr.Add(
+                            expr.Selected(
+                                expr.Indexed(
+                                    prefixed("Cursors"),
+                                    expr.Variable(link.source.affixed_name),
+                                ),
+                                "Last",
                             ),
-                            "Last",
+                            expr.Number(1),
                         ),
-                        expr.Number(1),
-                    ),
-                },
+                    },
+                ),
             )
             .simplified()
         )

@@ -2201,29 +2201,31 @@ def create_field_condition_function(prefix: str, message: Message) -> UnitPart:
     def condition(field: Field, message: Message) -> Expr:
         c: expr.Expr = expr.Or(*[l.condition for l in message.outgoing(field)])
         c = c.substituted(
-            mapping={
-                expr.Size(field.name): expr.Call(
-                    const.TYPES_BASE_INT,
-                    ty.BASE_INTEGER,
-                    [expr.Variable("Size")],
-                ),
-                expr.Last(field.name): expr.Call(
-                    const.TYPES_BASE_INT,
-                    ty.BASE_INTEGER,
-                    [
-                        expr.Call(
-                            "Field_Last",
-                            ty.BIT_LENGTH,
-                            [
-                                expr.Variable("Ctx"),
-                                expr.Variable(field.affixed_name),
-                            ],
-                        ),
-                    ],
-                ),
-                # Eng/RecordFlux/RecordFlux#276
-                **{expr.ValidChecksum(f): expr.TRUE for f in message.checksums},
-            },
+            expr.substitution(
+                {
+                    expr.Size(field.name): expr.Call(
+                        const.TYPES_BASE_INT,
+                        ty.BASE_INTEGER,
+                        [expr.Variable("Size")],
+                    ),
+                    expr.Last(field.name): expr.Call(
+                        const.TYPES_BASE_INT,
+                        ty.BASE_INTEGER,
+                        [
+                            expr.Call(
+                                "Field_Last",
+                                ty.BIT_LENGTH,
+                                [
+                                    expr.Variable("Ctx"),
+                                    expr.Variable(field.affixed_name),
+                                ],
+                            ),
+                        ],
+                    ),
+                    # Eng/RecordFlux/RecordFlux#276
+                    **{expr.ValidChecksum(f): expr.TRUE for f in message.checksums},
+                },
+            ),
         )
         if message.field_types[field] == BOOLEAN:
             c = c.substituted(
@@ -3522,8 +3524,10 @@ def _create_valid_structure_function(prefix: str, message: Message) -> UnitPart:
         for condition in [
             expr_conv.to_ada(
                 link.condition.substituted(
-                    # Eng/RecordFlux/RecordFlux#276
-                    mapping={expr.ValidChecksum(f): expr.TRUE for f in message.checksums},
+                    expr.substitution(
+                        # Eng/RecordFlux/RecordFlux#276
+                        {expr.ValidChecksum(f): expr.TRUE for f in message.checksums},
+                    ),
                 )
                 .substituted(_struct_substitution(message))
                 .substituted(common.substitution(message, prefix))
