@@ -203,7 +203,7 @@ Code Design Guidelines
 
 The following guidelines should be followed for clarity and consistency throughout the project:
 
-- The formatting of error messages should be consistent. An error message starts with a lowercase letter and identifiers are highlighted by double quotes.
+- The formatting of error messages should be consistent and conform to the guidelines given in the section `Error Messages`_.
 - Private functions are preferred over inner functions. Long inner functions can impede the comprehension of a function.
 - Internal methods are prefixed by a single underscore.
 - The methods of a class are sorted to make it easer to identify the public interface of a class:
@@ -363,7 +363,7 @@ This section provides guidelines for composing all types of descriptions within 
    They may be displayed alongside the user's code or in a designated area, such as VS Code's "problems" menu.
    This context is considered to enhance the user experience.
 
-Since error messages are no full sentences, they do not start with a capital letter or end with a period.
+Since error messages are no full sentences, they do not start with a capital letter nor end with a period.
 
 Example
 ^^^^^^^
@@ -412,6 +412,7 @@ User code
 
 The user's source code is shown with relevant annotations to provide visual explanations of the problem.
 Annotations highlight problematic parts, offer context, or give hints.
+Identifiers are represented in double quotes.
 Optional descriptions can be added next to annotations to give more details.
 Source file lines are displayed to make the error easier to locate.
 Precision is key in providing code locations that are directly related to the problem, avoiding repetitive information in annotation labels and adding relevant details when necessary.
@@ -522,6 +523,50 @@ Annotations have their own severity, which means that an error message can have 
 This feature is useful to create compact error messages, however, sometimes having a separate entry dedicated to "note" or "help" may be preferable to improve readability.
 It is up to the error message author to think about the most suitable way to present the error to the user.
 Each annotation can have an optional text that is printed next to it.
+
+Default Annotations
+^^^^^^^^^^^^^^^^^^^
+
+It is often useful to show a piece of user's code along with a message concerning the code.
+The simplest way to do that is by using the default annotation mechanism implemented in the `ErrorEntry` class which can be used to construct messages of all the severity categories defined above.
+
+For instance, the following error message:
+
+.. code:: console
+
+   test.rflx:4:4: error: "session" keyword is deprecated
+
+is by default automatically augmented by the tool with a default annotation like this:
+
+.. code:: console
+
+   error: "session" keyword is deprecated
+   --> test.rflx:4:4
+     |
+   4 |    session S is
+     |    ^^^^^^^
+
+However, if an explicit `help` annotation has been provided in the message constructor, then having it together with the default annotation leads to a duplicate underline under the highlighted code section:
+
+.. code:: console
+
+   error: "session" keyword is deprecated
+   --> test.rflx:4:4
+     |
+   4 |    session S is
+     |    ^^^^^^^
+     |    ------- help: use "machine" instead
+
+To avoid this set the `generate_default_annotation` parameter to `False` when constructing an instance of `ErrorEntry` class.
+This yields a more optimal message like the one below:
+
+.. code:: console
+
+   error: "session" keyword is deprecated
+   --> test.rflx:4:4
+     |
+   4 |    session S is
+     |    ------- help: use "machine" instead
 
 Full examples
 -------------
