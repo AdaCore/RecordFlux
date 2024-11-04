@@ -1,7 +1,7 @@
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
-with {prefix}RFLX_Types.Operations;
+with RFLX_Template.RFLX_Types.Operations;
 
-package body {prefix}RFLX_Scalar_Sequence with
+package body RFLX_Template.RFLX_Scalar_Sequence with
   SPARK_Mode
 is
 
@@ -14,7 +14,7 @@ is
       Buffer_First : constant RFLX_Types.Index := Buffer'First;
       Buffer_Last : constant RFLX_Types.Index := Buffer'Last;
    begin
-      Ctx := (Buffer_First => Buffer_First, Buffer_Last => Buffer_Last, First => First, Last => Last, Buffer => Buffer, Sequence_Last => First - 1, State => S_Valid, First_Element => {prefix}RFLX_Types.Base_Integer'First, Next_Element => {prefix}RFLX_Types.Base_Integer'First);
+      Ctx := (Buffer_First => Buffer_First, Buffer_Last => Buffer_Last, First => First, Last => Last, Buffer => Buffer, Sequence_Last => First - 1, State => S_Valid, First_Element => RFLX_Template.RFLX_Types.Base_Integer'First, Next_Element => RFLX_Template.RFLX_Types.Base_Integer'First);
       Buffer := null;
    end Initialize;
 
@@ -40,7 +40,7 @@ is
    end Copy;
 
    procedure Next (Ctx : in out Context) is
-      Last_Bit : constant RFLX_Types.Bit_Index := Ctx.Sequence_Last + {prefix}RFLX_Types.Bit_Index (Element_Size);
+      Last_Bit : constant RFLX_Types.Bit_Index := Ctx.Sequence_Last + RFLX_Template.RFLX_Types.Bit_Index (Element_Size);
       Buffer_First : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Sequence_Last + 1);
       Buffer_Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Last_Bit);
       Offset : constant RFLX_Types.Offset := RFLX_Types.Offset ((8 - Last_Bit mod 8) mod 8);
@@ -50,7 +50,7 @@ is
          and Buffer_Last <= Ctx.Buffer'Last
          and Buffer_First <= Buffer_Last
       then
-         Ctx.Next_Element := {prefix}RFLX_Types.Operations.Extract (Ctx.Buffer.all, Buffer_First, Buffer_Last, Offset, Element_Size, RFLX_Types.High_Order_First);
+         Ctx.Next_Element := RFLX_Template.RFLX_Types.Operations.Extract (Ctx.Buffer.all, Buffer_First, Buffer_Last, Offset, Element_Size, RFLX_Types.High_Order_First);
          if Valid_Element (Ctx) then
             if Size (Ctx) = 0 then
                Ctx.First_Element := Ctx.Next_Element;
@@ -59,7 +59,7 @@ is
             Ctx.State := S_Invalid;
          end if;
       end if;
-      Ctx.Sequence_Last := Ctx.Sequence_Last + {prefix}RFLX_Types.Bit_Index (Element_Size);
+      Ctx.Sequence_Last := Ctx.Sequence_Last + RFLX_Template.RFLX_Types.Bit_Index (Element_Size);
    end Next;
 
    function Get_Element (Ctx : Context) return Element_Type is
@@ -74,7 +74,7 @@ is
       Last : RFLX_Types.Index;
       Offset : RFLX_Types.Offset;
    begin
-      Last_Bit := Ctx.Sequence_Last + {prefix}RFLX_Types.Bit_Index (Element_Size);
+      Last_Bit := Ctx.Sequence_Last + RFLX_Template.RFLX_Types.Bit_Index (Element_Size);
       First := RFLX_Types.To_Index (Ctx.Sequence_Last + 1);
       Last := RFLX_Types.To_Index (Last_Bit);
       Offset := RFLX_Types.Offset ((8 - Last_Bit mod 8) mod 8);
@@ -83,12 +83,12 @@ is
          and Last <= Ctx.Buffer'Last
          and First <= Last
       then
-         {prefix}RFLX_Types.Operations.Insert (To_Base_Int (Value), Ctx.Buffer.all, First, Last, Offset, Element_Size, RFLX_Types.High_Order_First);
+         RFLX_Template.RFLX_Types.Operations.Insert (To_Base_Int (Value), Ctx.Buffer.all, First, Last, Offset, Element_Size, RFLX_Types.High_Order_First);
       end if;
       if Size (Ctx) = 0 then
          Ctx.First_Element := To_Base_Int (Value);
       end if;
-      Ctx.Sequence_Last := Ctx.Sequence_Last + {prefix}RFLX_Types.Bit_Index (Element_Size);
+      Ctx.Sequence_Last := Ctx.Sequence_Last + RFLX_Template.RFLX_Types.Bit_Index (Element_Size);
    end Append_Element;
 
    procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes) is
@@ -100,4 +100,4 @@ is
       end if;
    end Data;
 
-end {prefix}RFLX_Scalar_Sequence;
+end RFLX_Template.RFLX_Scalar_Sequence;

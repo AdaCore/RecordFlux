@@ -1,7 +1,7 @@
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, """Always_Terminates"" is not a valid aspect identifier");
 with Ada.Unchecked_Deallocation;
-with {prefix}RFLX_Arithmetic;
+with RFLX_Template.RFLX_Arithmetic;
 
 generic
    type Custom_Index is range <>;
@@ -10,7 +10,7 @@ generic
    type Custom_Bytes_Ptr is access Custom_Bytes;
    type Custom_Length is range <>;
    type Custom_Bit_Length is range <>;
-package {prefix}RFLX_Generic_Types with
+package RFLX_Template.RFLX_Generic_Types with
   SPARK_Mode,
   Always_Terminates
 is
@@ -45,9 +45,9 @@ is
 
    pragma Compile_Time_Error (Bit_Length'Pos (Bit_Length'Last) /= Length'Pos (Length'Last) * 8, "Bit_Length'Last must be equal to Length'Last * 8");
 
-   subtype U64 is {prefix}RFLX_Arithmetic.U64;
+   subtype U64 is RFLX_Template.RFLX_Arithmetic.U64;
 
-   subtype Base_Integer is {prefix}RFLX_Arithmetic.Base_Integer;
+   subtype Base_Integer is RFLX_Template.RFLX_Arithmetic.Base_Integer;
 
    subtype Bit_Index is Bit_Length range 1 .. Bit_Length'Last;
 
@@ -96,8 +96,8 @@ is
 
    pragma Warnings (On, "precondition is always False");
 
-   procedure Lemma_Size (Val : Base_Integer; Size : Positive) renames {prefix}RFLX_Arithmetic.Lemma_Size;
+   procedure Lemma_Size (Val : Base_Integer; Size : Positive) renames RFLX_Template.RFLX_Arithmetic.Lemma_Size;
 
    procedure Free is new Ada.Unchecked_Deallocation (Object => Bytes, Name => Bytes_Ptr);
 
-end {prefix}RFLX_Generic_Types;
+end RFLX_Template.RFLX_Generic_Types;

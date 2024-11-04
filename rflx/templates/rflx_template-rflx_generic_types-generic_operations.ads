@@ -1,10 +1,10 @@
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, """Always_Terminates"" is not a valid aspect identifier");
-with {prefix}RFLX_Generic_Types.Generic_Operators;
+with RFLX_Template.RFLX_Generic_Types.Generic_Operators;
 
 generic
-   with package Operators is new {prefix}RFLX_Generic_Types.Generic_Operators (<>);
-package {prefix}RFLX_Generic_Types.Generic_Operations with
+   with package Operators is new RFLX_Template.RFLX_Generic_Types.Generic_Operators (<>);
+package RFLX_Template.RFLX_Generic_Types.Generic_Operations with
   SPARK_Mode,
   Always_Terminates
 is
@@ -65,4 +65,4 @@ is
        Buffer'First = Buffer'Old'First
        and Buffer'Last = Buffer'Old'Last;
 
-end {prefix}RFLX_Generic_Types.Generic_Operations;
+end RFLX_Template.RFLX_Generic_Types.Generic_Operations;

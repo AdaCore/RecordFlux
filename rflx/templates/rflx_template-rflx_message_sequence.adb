@@ -1,6 +1,6 @@
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 
-package body {prefix}RFLX_Message_Sequence with
+package body RFLX_Template.RFLX_Message_Sequence with
   SPARK_Mode
 is
 
@@ -79,4 +79,4 @@ is
       end if;
    end Data;
 
-end {prefix}RFLX_Message_Sequence;
+end RFLX_Template.RFLX_Message_Sequence;

@@ -2,7 +2,7 @@ pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, """Always_Terminates"" is not a valid aspect identifier");
 
 generic
-package {prefix}RFLX_Generic_Types.Generic_Operators with
+package RFLX_Template.RFLX_Generic_Types.Generic_Operators with
   SPARK_Mode,
   Always_Terminates
 is
@@ -23,4 +23,4 @@ is
        Right < Length'Last
        and then Length (Left) >= Length (Index'First) + Right;
 
-end {prefix}RFLX_Generic_Types.Generic_Operators;
+end RFLX_Template.RFLX_Generic_Types.Generic_Operators;

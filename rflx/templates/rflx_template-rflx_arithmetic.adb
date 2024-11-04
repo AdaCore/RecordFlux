@@ -1,6 +1,6 @@
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 
-package body {prefix}RFLX_Arithmetic with
+package body RFLX_Template.RFLX_Arithmetic with
   SPARK_Mode
 is
 
@@ -75,4 +75,4 @@ is
       end if;
    end Lemma_Size;
 
-end {prefix}RFLX_Arithmetic;
+end RFLX_Template.RFLX_Arithmetic;

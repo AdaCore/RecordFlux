@@ -1,7 +1,7 @@
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
-with {prefix}RFLX_Arithmetic;
+with RFLX_Template.RFLX_Arithmetic;
 
-package body {prefix}RFLX_Generic_Types.Generic_Operations with
+package body RFLX_Template.RFLX_Generic_Types.Generic_Operations with
   SPARK_Mode
 is
    --
@@ -38,7 +38,7 @@ is
    -- RME_Index: Index pointing to RME
    --
 
-   use {prefix}RFLX_Arithmetic;
+   use RFLX_Template.RFLX_Arithmetic;
 
    procedure Get_Index_Offset (First, Last : Long_Integer; Off : Offset; Value_Size : Positive; RME_Index : out Index; LME_Index : out Index; RME_Size : out Natural; LME_Size : out Natural) with
      Pre =>
@@ -290,4 +290,4 @@ is
       Insert (U64 (Val), Buffer, First, Last, Off, Size, BO);
    end Insert;
 
-end {prefix}RFLX_Generic_Types.Generic_Operations;
+end RFLX_Template.RFLX_Generic_Types.Generic_Operations;

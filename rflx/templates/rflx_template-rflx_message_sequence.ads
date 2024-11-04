@@ -1,6 +1,6 @@
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, """Always_Terminates"" is not a valid aspect identifier");
-with {prefix}RFLX_Types;
+with RFLX_Template.RFLX_Types;
 
 generic
    type Element_Context (Buffer_First, Buffer_Last : RFLX_Types.Index; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) is private;
@@ -12,7 +12,7 @@ generic
    with function Element_Last (Ctx : Element_Context) return RFLX_Types.Bit_Index;
    with function Element_Initialized (Ctx : Element_Context) return Boolean;
    with function Element_Valid_Message (Ctx : Element_Context) return Boolean;
-package {prefix}RFLX_Message_Sequence with
+package RFLX_Template.RFLX_Message_Sequence with
   SPARK_Mode,
   Always_Terminates
 is
@@ -207,7 +207,7 @@ private
    -- Eng/RecordFlux/Workarounds#24
    pragma Warnings (Off, "use clause for package * has no effect");
 
-   use {prefix}RFLX_Types;
+   use RFLX_Template.RFLX_Types;
 
    pragma Warnings (On, "use clause for package * has no effect");
 
@@ -254,4 +254,4 @@ private
    function Byte_Size (Ctx : Context) return RFLX_Types.Length is
      (RFLX_Types.To_Length (Size (Ctx)));
 
-end {prefix}RFLX_Message_Sequence;
+end RFLX_Template.RFLX_Message_Sequence;

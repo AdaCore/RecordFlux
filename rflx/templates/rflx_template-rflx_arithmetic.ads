@@ -1,7 +1,7 @@
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, """Always_Terminates"" is not a valid aspect identifier");
 
-package {prefix}RFLX_Arithmetic with
+package RFLX_Template.RFLX_Arithmetic with
   SPARK_Mode,
   Always_Terminates
 is
@@ -128,4 +128,4 @@ is
      Post =>
        Fits_Into (U64 (Val), Size);
 
-end {prefix}RFLX_Arithmetic;
+end RFLX_Template.RFLX_Arithmetic;

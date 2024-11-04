@@ -1,14 +1,14 @@
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, """Always_Terminates"" is not a valid aspect identifier");
-with {prefix}RFLX_Types;
+with RFLX_Template.RFLX_Types;
 
 generic
    type Element_Type is private;
    Element_Size : Positive;
-   with function Valid (Element : {prefix}RFLX_Types.Base_Integer) return Boolean;
-   with function To_Actual (Element : {prefix}RFLX_Types.Base_Integer) return Element_Type;
-   with function To_Base_Int (Element : Element_Type) return {prefix}RFLX_Types.Base_Integer;
-package {prefix}RFLX_Scalar_Sequence with
+   with function Valid (Element : RFLX_Template.RFLX_Types.Base_Integer) return Boolean;
+   with function To_Actual (Element : RFLX_Template.RFLX_Types.Base_Integer) return Element_Type;
+   with function To_Base_Int (Element : Element_Type) return RFLX_Template.RFLX_Types.Base_Integer;
+package RFLX_Template.RFLX_Scalar_Sequence with
   SPARK_Mode,
   Always_Terminates
 is
@@ -118,7 +118,7 @@ is
        and then Has_Element (Ctx),
      Post =>
        Has_Buffer (Ctx)
-       and Sequence_Last (Ctx) = Sequence_Last (Ctx)'Old + {prefix}RFLX_Types.Bit_Index (Element_Size)
+       and Sequence_Last (Ctx) = Sequence_Last (Ctx)'Old + RFLX_Template.RFLX_Types.Bit_Index (Element_Size)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -135,7 +135,7 @@ is
    function Head (Ctx : Context) return Element_Type with
      Pre =>
        Valid (Ctx)
-       and then Sequence_Last (Ctx) >= (Ctx.First + {prefix}RFLX_Types.Bit_Index (Element_Size)) - 1;
+       and then Sequence_Last (Ctx) >= (Ctx.First + RFLX_Template.RFLX_Types.Bit_Index (Element_Size)) - 1;
 
    procedure Append_Element (Ctx : in out Context; Value : Element_Type) with
      Pre =>
@@ -143,11 +143,11 @@ is
        and then Valid (Ctx)
        and then Valid (To_Base_Int (Value))
        and then (if Element_Size < 64 then To_Base_Int (Value) < 2**Element_Size)
-       and then Available_Space (Ctx) >= {prefix}RFLX_Types.Bit_Index (Element_Size),
+       and then Available_Space (Ctx) >= RFLX_Template.RFLX_Types.Bit_Index (Element_Size),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx)
-       and Sequence_Last (Ctx) = Sequence_Last (Ctx)'Old + {prefix}RFLX_Types.Bit_Index (Element_Size)
+       and Sequence_Last (Ctx) = Sequence_Last (Ctx)'Old + RFLX_Template.RFLX_Types.Bit_Index (Element_Size)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -176,7 +176,7 @@ private
    -- Eng/RecordFlux/Workarounds#24
    pragma Warnings (Off, "use clause for package * has no effect");
 
-   use {prefix}RFLX_Types;
+   use RFLX_Template.RFLX_Types;
 
    pragma Warnings (On, "use clause for package * has no effect");
 
@@ -187,8 +187,8 @@ private
          Sequence_Last : RFLX_Types.Bit_Length := First - 1;
          Buffer : RFLX_Types.Bytes_Ptr := null;
          State : Context_State := S_Valid;
-         First_Element : {prefix}RFLX_Types.Base_Integer := {prefix}RFLX_Types.Base_Integer'First;
-         Next_Element : {prefix}RFLX_Types.Base_Integer := {prefix}RFLX_Types.Base_Integer'First;
+         First_Element : RFLX_Template.RFLX_Types.Base_Integer := RFLX_Template.RFLX_Types.Base_Integer'First;
+         Next_Element : RFLX_Template.RFLX_Types.Base_Integer := RFLX_Template.RFLX_Types.Base_Integer'First;
       end record with
      Dynamic_Predicate =>
        (if Buffer /= null then Buffer'First = Buffer_First and Buffer'Last = Buffer_Last)
@@ -204,7 +204,7 @@ private
 
    function Has_Element (Ctx : Context) return Boolean is
      (Ctx.State = S_Valid
-      and Ctx.Last - Ctx.Sequence_Last >= {prefix}RFLX_Types.Bit_Index (Element_Size));
+      and Ctx.Last - Ctx.Sequence_Last >= RFLX_Template.RFLX_Types.Bit_Index (Element_Size));
 
    function Valid_Element (Ctx : Context) return Boolean is
      (Ctx.State = S_Valid
@@ -228,4 +228,4 @@ private
    function Byte_Size (Ctx : Context) return RFLX_Types.Length is
      (RFLX_Types.To_Length (Size (Ctx)));
 
-end {prefix}RFLX_Scalar_Sequence;
+end RFLX_Template.RFLX_Scalar_Sequence;
