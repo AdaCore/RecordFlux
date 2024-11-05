@@ -38,7 +38,7 @@ The initial setup can be repeated after resetting the repository with ``make cle
 
 **Note:**
 An editable installation is used, so all changes to the Python source code take effect immediately and no reinstallation is required.
-An exception is the ``language`` module, which contains the specification of the langkit-based specification parser.
+An exception is the ``language`` module, which contains the specification of the `langkit <https://github.com/AdaCore/langkit>`_-based specification parser.
 The parser must be regenerated and recompiled using ``make parser`` before changes take effect.
 
 The repository contains configuration files for Visual Studio Code which enable most linters available from the Makefile and coverage reports integrated into the IDE.
@@ -68,6 +68,7 @@ Make targets for common development tasks are:
 - ``install`` Install project in editable mode
 - ``doc`` Generate HTML documentation
 - ``dist`` Create Python package
+- ``vscode`` Build the VS Code extension (which can be then installed via `rflx install vscode`)
 - ``clean`` Remove build directories and generated files
 - ``clean_all`` Bring the repository to a completely clean state
 
@@ -621,3 +622,42 @@ Full examples
     36 |       then Other
     37 |          if Foo = Field and Bad = Baz
                      ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+RecordFlux language
+===================
+
+General
+-------
+
+The primary specification for the RecordFlux language is the `Language Reference <../../doc/language_reference/language_reference.rst>`_ document which formally specifies its syntax and documents also the intended semantics.
+The grammar specification in that document is machine-readable and `tools/check_grammar.py` can be used to validate whether the contents of a given `.rflx` file is compatible with that syntax definition.
+
+A parser for the RecordFlux language is implemented in the `rflx` tool using the `Langkit <https://github.com/AdaCore/langkit>`_ framework.
+
+Syntax highlighting of `.rflx` files has been provided for the following IDEs and editors: VS Code, GNAT Studio, Vim and Neovim.
+These can be installed using the `rflx install` command.
+A prerequisite for installing the RecordFlux VS Code extension is to build it locally with the command `make vscode`.
+
+Making changes to the syntax
+----------------------------
+
+Making changes to the RecordFlux syntax, such as adding or removing keywords, should normally be first made in the `Language Reference <../../doc/language_reference/language_reference.rst>`_ together with the explanation of the semantics and then followed by implementation in the various parts of the tool.
+
+Grammar-related components
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following components depend on the grammar definition and need to be checked upon each change of the grammar and manually updated when needed:
+
+(1) Grammar in the Language Reference: `language_reference.rst <../../doc/language_reference/language_reference.rst>`_.
+(2) Langkit based parser: `lexer.py <../../language/lexer.py>`_.
+(3) VS Code: `recordflux.tmLanguage.json <../../rflx/ide/vscode/syntax/recordflux.tmLanguage.json>`_.
+(4) GNAT Studio: `recordflux.py <../../rflx/ide/gnatstudio/recordflux.py>`_.
+(5) Vim and Neovim: `recordflux.vim <../../rflx/ide/vim/recordflux.vim>`_.
+(6) Documentation highlighter: `tools/rflxlexer.py <../../tools/rflxlexer.py>`_.
+
+Backwards compatibility
+^^^^^^^^^^^^^^^^^^^^^^^
+
+When the RecordFlux syntax is changed in a backwards incompatible manner, for instance, a construct is removed or a keyword is changed, then the old construct must still be preserved in the parser and a dedicated syntax check must be implemented.
+This is more helpful to the user since generic parsing errors are difficult to interpret.
+For instance, you can have a look at how the syntax check for modular type definitions of the form `type T is mod 8` is implemented in `parser.py <../../rflx/specification/parser.py>`_.
