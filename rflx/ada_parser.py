@@ -2559,3 +2559,11 @@ def parse(text: str, source: Path | None = None) -> ada.PackageUnit:
                 source=source,
             ),
         )
+
+
+def parse_file(spec: Path) -> ada.PackageUnit:
+    data = [spec.read_text()]
+    body = spec.with_suffix(".adb")
+    if body.exists():
+        data.append(body.read_text())
+    return parse(text="\n".join(data), source=spec)
