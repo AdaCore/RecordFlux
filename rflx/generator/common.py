@@ -92,12 +92,11 @@ def type_to_id(type_: ty.NamedType) -> ID:
 
 def substitution(
     message: model.Message,
-    prefix: str,
     embedded: bool = False,
     public: bool = False,
     target_type: ty.NamedType = ty.BASE_INTEGER,
 ) -> Callable[[expr.Expr], expr.Expr]:
-    facts = substitution_facts(message, prefix, embedded, public, target_type)
+    facts = substitution_facts(message, embedded, public, target_type)
 
     def func(
         expression: expr.Expr,
@@ -219,7 +218,6 @@ def substitution(
 
 def substitution_facts(
     message: model.Message,
-    prefix: str,
     embedded: bool = False,
     public: bool = False,
     target_type: ty.NamedType = ty.BASE_INTEGER,
@@ -353,7 +351,7 @@ def substitution_facts(
                 expr.Call(
                     "To_Base_Integer",
                     ty.BASE_INTEGER,
-                    [expr.Variable(prefix * t.package * l)],
+                    [expr.Variable(const.PREFIX_ID * t.package * l)],
                 ),
             )
             for t in message.types.values()
@@ -367,7 +365,6 @@ def substitution_facts(
 
 def message_structure_invariant(
     message: model.Message,
-    prefix: str,
     embedded: bool = False,
 ) -> Expr:
     """
@@ -385,19 +382,19 @@ def message_structure_invariant(
 
     def link_property(link: model.Link, unique: bool) -> Expr:
         field_type = message.types[link.target]
-        condition = link.condition.substituted(substitution(message, prefix, embedded)).simplified()
+        condition = link.condition.substituted(substitution(message, embedded)).simplified()
         size = (
             field_type.size
             if isinstance(field_type, model.Scalar)
             else link.size.substituted(
-                substitution(message, prefix, embedded, target_type=ty.BIT_LENGTH),
+                substitution(message, embedded, target_type=ty.BIT_LENGTH),
             ).simplified()
         )
         first = (
             prefixed("First")
             if link.source == model.INITIAL
             else link.first.substituted(
-                substitution(message, prefix, embedded, target_type=ty.BIT_INDEX),
+                substitution(message, embedded, target_type=ty.BIT_INDEX),
             )
             .substituted(
                 expr.substitution(
@@ -486,7 +483,6 @@ def message_structure_invariant(
 
 def context_predicate(
     message: model.Message,
-    prefix: str,
 ) -> Expr:
 
     return AndThen(
@@ -522,7 +518,7 @@ def context_predicate(
                 *[Variable(p.identifier) for p in message.parameter_types],
             ],
         ),
-        message_structure_invariant(message, prefix, embedded=True),
+        message_structure_invariant(message, embedded=True),
     )
 
 
@@ -565,13 +561,12 @@ def context_invariant(message: model.Message, loop_entry: bool = False) -> list[
 def valid_path_to_next_field_condition(
     message: model.Message,
     field: model.Field,
-    prefix: str,
 ) -> list[Expr]:
     return [
         IfThenElse(
             expr_conv.to_ada(
                 l.condition.substituted(
-                    substitution(message, public=True, prefix=prefix),
+                    substitution(message, public=True),
                 ).simplified(),
             ),
             (
@@ -720,8 +715,7 @@ def field_bit_location_declarations(field_name: Name) -> list[Declaration]:
     ]
 
 
-def field_condition_call(  # noqa: PLR0913
-    prefix: str,
+def field_condition_call(
     message: model.Message,
     field: model.Field,
     value: Expr | None = None,
@@ -729,7 +723,7 @@ def field_condition_call(  # noqa: PLR0913
     size: Expr | None = None,
     context: ID | None = None,
 ) -> Expr:
-    package = prefix * message.identifier
+    package = const.PREFIX_ID * message.identifier
     if context is None:
         context = ID("Ctx")
     if value is None:
@@ -753,10 +747,10 @@ def field_condition_call(  # noqa: PLR0913
     )
 
 
-def to_base_integer(prefix: str, type_package: ID) -> ID:
+def to_base_integer(type_package: ID) -> ID:
     if type_package == BUILTINS_PACKAGE:
         return ID("To_Base_Integer")
-    return prefix * type_package * "To_Base_Integer"
+    return const.PREFIX_ID * type_package * "To_Base_Integer"
 
 
 def ada_type_identifier(type_identifier: ID) -> ID:
@@ -766,11 +760,11 @@ def ada_type_identifier(type_identifier: ID) -> ID:
     return type_identifier
 
 
-def prefixed_type_identifier(type_identifier: ID, prefix: str) -> ID:
+def prefixed_type_identifier(type_identifier: ID) -> ID:
     if model.is_builtin_type(type_identifier):
         return type_identifier.name
 
-    return prefix * type_identifier
+    return const.PREFIX_ID * type_identifier
 
 
 def enum_name(enum_type: model.Enumeration) -> ID:
@@ -815,7 +809,6 @@ def has_size_dependent_condition(
 
 def create_sequence_instantiation(
     sequence_type: model.Sequence,
-    prefix: str = "",
     flat: bool = False,
 ) -> tuple[list[ContextItem], GenericPackageInstantiation]:
     element_type = sequence_type.element_type
@@ -825,15 +818,21 @@ def create_sequence_instantiation(
     sequence_package: GenericPackageInstantiation
     if isinstance(element_type, model.Message):
         element_type_identifier = ID(
-            element_type.identifier.flat if flat else prefix * element_type.identifier,
+            element_type.identifier.flat if flat else const.PREFIX_ID * element_type.identifier,
         )
         sequence_context = [
-            WithClause(prefix * const.MESSAGE_SEQUENCE_PACKAGE),
+            WithClause(const.PREFIX_ID * const.MESSAGE_SEQUENCE_PACKAGE),
             *([] if flat else [WithClause(element_type_identifier)]),
         ]
         sequence_package = GenericPackageInstantiation(
-            ID(sequence_type.identifier.flat if flat else prefix * sequence_type.identifier),
-            prefix * const.MESSAGE_SEQUENCE_PACKAGE,
+            ID(
+                (
+                    sequence_type.identifier.flat
+                    if flat
+                    else const.PREFIX_ID * sequence_type.identifier
+                ),
+            ),
+            const.PREFIX_ID * const.MESSAGE_SEQUENCE_PACKAGE,
             [
                 (None, element_type_identifier * "Context"),
                 (None, element_type_identifier * "Initialize"),
@@ -847,24 +846,30 @@ def create_sequence_instantiation(
             ],
         )
     elif isinstance(element_type, model.Scalar):
-        element_type_identifier = prefix * element_type.identifier
+        element_type_identifier = const.PREFIX_ID * element_type.identifier
         sequence_context = [
-            WithClause(prefix * const.SCALAR_SEQUENCE_PACKAGE),
+            WithClause(const.PREFIX_ID * const.SCALAR_SEQUENCE_PACKAGE),
             *(
-                [WithClause(prefix * element_type_package)]
+                [WithClause(const.PREFIX_ID * element_type_package)]
                 if element_type_package != sequence_type.package
                 else []
             ),
         ]
         sequence_package = GenericPackageInstantiation(
-            ID(sequence_type.identifier.flat if flat else prefix * sequence_type.identifier),
-            prefix * const.SCALAR_SEQUENCE_PACKAGE,
+            ID(
+                (
+                    sequence_type.identifier.flat
+                    if flat
+                    else const.PREFIX_ID * sequence_type.identifier
+                ),
+            ),
+            const.PREFIX_ID * const.SCALAR_SEQUENCE_PACKAGE,
             [
                 (None, element_type_identifier),
                 (None, str(element_type.size)),
-                (None, prefix * element_type_package * f"Valid_{element_type.name}"),
-                (None, prefix * element_type_package * "To_Actual"),
-                (None, prefix * element_type_package * "To_Base_Integer"),
+                (None, const.PREFIX_ID * element_type_package * f"Valid_{element_type.name}"),
+                (None, const.PREFIX_ID * element_type_package * "To_Actual"),
+                (None, const.PREFIX_ID * element_type_package * "To_Base_Integer"),
             ],
         )
     else:
@@ -926,14 +931,12 @@ def unchanged_cursor_before_or_invalid(
 def conditional_field_size(
     field: model.Field,
     message: model.Message,
-    prefix: str,
 ) -> Expr:
     def substituted(expression: expr.Expr) -> Expr:
         return expr_conv.to_ada(
             expression.substituted(
                 substitution(
                     message,
-                    prefix,
                     target_type=ty.BIT_LENGTH,
                     embedded=True,
                 ),
@@ -1001,14 +1004,14 @@ def context_cursors_initialization(message: model.Message) -> Expr:
     )
 
 
-def byte_aligned_field(prefix: str, message: model.Message, field: model.Field) -> Expr:
+def byte_aligned_field(message: model.Message, field: model.Field) -> Expr:
     return Equal(
         Rem(
             Call(
-                prefix * message.identifier * "Field_First",
+                const.PREFIX_ID * message.identifier * "Field_First",
                 [
                     Variable("Ctx"),
-                    Variable(prefix * message.identifier * field.affixed_name),
+                    Variable(const.PREFIX_ID * message.identifier * field.affixed_name),
                 ],
             ),
             Size(const.TYPES_BYTE),

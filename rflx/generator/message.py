@@ -369,7 +369,6 @@ def create_cursors_invariant_function() -> UnitPart:
 def create_valid_predecessors_invariant_function(
     message: Message,
     composite_fields: abc.Sequence[Field],
-    prefix: str,
 ) -> UnitPart:
     """
     Create the invariant that defines the state of predecessors of valid fields.
@@ -451,7 +450,6 @@ def create_valid_predecessors_invariant_function(
                                                     common.substitution(
                                                         message,
                                                         embedded=True,
-                                                        prefix=prefix,
                                                     ),
                                                 ),
                                             ).simplified(),
@@ -481,7 +479,6 @@ def create_valid_predecessors_invariant_function(
 def create_valid_next_internal_function(
     message: Message,
     composite_fields: abc.Sequence[Field],
-    prefix: str,
 ) -> UnitPart:
     """
     Create the function that tells us if a field can be set.
@@ -512,7 +509,7 @@ def create_valid_next_internal_function(
         if link.source == INITIAL:
             return TRUE
         condition = link.condition.substituted(
-            common.substitution(message, prefix, embedded=True),
+            common.substitution(message, embedded=True),
         ).simplified()
         return AndThen(
             Call(
@@ -577,7 +574,7 @@ def create_valid_next_internal_function(
     )
 
 
-def create_field_size_internal_function(message: Message, prefix: str) -> UnitPart:
+def create_field_size_internal_function(message: Message) -> UnitPart:
     specification = FunctionSpecification(
         "Field_Size_Internal",
         "RFLX_Types.Bit_Length'Base",
@@ -613,7 +610,7 @@ def create_field_size_internal_function(message: Message, prefix: str) -> UnitPa
                         [
                             (
                                 Variable(f.affixed_name),
-                                common.conditional_field_size(f, message, prefix),
+                                common.conditional_field_size(f, message),
                             )
                             for f in message.fields
                         ],
@@ -669,7 +666,7 @@ def create_field_size_internal_function(message: Message, prefix: str) -> UnitPa
     )
 
 
-def create_field_first_internal_function(message: Message, prefix: str) -> UnitPart:
+def create_field_first_internal_function(message: Message) -> UnitPart:
     def recursive_call(fld: Field) -> expr.Expr:
         return expr.Call(
             "Field_First_" + fld.name,
@@ -706,7 +703,7 @@ def create_field_first_internal_function(message: Message, prefix: str) -> UnitP
 
     def link_first_expr(link: Link) -> tuple[expr.Expr, expr.Expr]:
         condition = link.condition.substituted(
-            common.substitution(message, prefix, embedded=True),
+            common.substitution(message, embedded=True),
         ).simplified()
         precond = (
             expr.AndThen(
@@ -870,7 +867,6 @@ def create_field_first_internal_function(message: Message, prefix: str) -> UnitP
 
 def create_valid_context_function(
     message: Message,
-    prefix: str,
 ) -> UnitPart:
     specification = FunctionSpecification(
         "Valid_Context",
@@ -908,7 +904,7 @@ def create_valid_context_function(
             ),
             ExpressionFunctionDeclaration(
                 specification,
-                common.context_predicate(message, prefix),
+                common.context_predicate(message),
                 [Postcondition(TRUE)],
             ),
             Pragma(
@@ -1254,7 +1250,7 @@ def create_restricted_initialize_procedure(message: Message) -> UnitPart:
     )
 
 
-def create_initialized_function(prefix: str, message: Message) -> UnitPart:
+def create_initialized_function(message: Message) -> UnitPart:
     specification = FunctionSpecification("Initialized", "Boolean", [Parameter(["Ctx"], "Context")])
     first_field = message.fields[0]
 
@@ -1301,7 +1297,7 @@ def create_initialized_function(prefix: str, message: Message) -> UnitPart:
                             Variable(first_field.affixed_name),
                         ],
                     ),
-                    common.byte_aligned_field(prefix, message, first_field),
+                    common.byte_aligned_field(message, first_field),
                     Equal(
                         Call(
                             "Available_Space",
@@ -1323,7 +1319,7 @@ def create_initialized_function(prefix: str, message: Message) -> UnitPart:
     )
 
 
-def create_reset_procedure(prefix: str, message: Message) -> UnitPart:
+def create_reset_procedure(message: Message) -> UnitPart:
     """
     Reset the state and buffer bounds of the context.
 
@@ -1352,7 +1348,10 @@ def create_reset_procedure(prefix: str, message: Message) -> UnitPart:
                     Precondition(
                         And(
                             Not(Constrained("Ctx")),
-                            Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
+                            Call(
+                                const.PREFIX_ID * message.identifier * "Has_Buffer",
+                                [Variable("Ctx")],
+                            ),
                         ),
                     ),
                     Postcondition(
@@ -1405,7 +1404,7 @@ def create_reset_procedure(prefix: str, message: Message) -> UnitPart:
     )
 
 
-def create_restricted_reset_procedure(prefix: str, message: Message) -> UnitPart:
+def create_restricted_reset_procedure(message: Message) -> UnitPart:
     specification = ProcedureSpecification(
         "Reset",
         [
@@ -1424,7 +1423,10 @@ def create_restricted_reset_procedure(prefix: str, message: Message) -> UnitPart
                     Precondition(
                         And(
                             Not(Constrained("Ctx")),
-                            Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
+                            Call(
+                                const.PREFIX_ID * message.identifier * "Has_Buffer",
+                                [Variable("Ctx")],
+                            ),
                             GreaterEqual(
                                 Call(const.TYPES_TO_INDEX, [Variable("First")]),
                                 Variable("Ctx.Buffer_First"),
@@ -1482,7 +1484,7 @@ def create_restricted_reset_procedure(prefix: str, message: Message) -> UnitPart
     )
 
 
-def create_take_buffer_procedure(prefix: str, message: Message) -> UnitPart:
+def create_take_buffer_procedure(message: Message) -> UnitPart:
     specification = ProcedureSpecification(
         "Take_Buffer",
         [InOutParameter(["Ctx"], "Context"), OutParameter(["Buffer"], const.TYPES_BYTES_PTR)],
@@ -1494,7 +1496,10 @@ def create_take_buffer_procedure(prefix: str, message: Message) -> UnitPart:
                 specification,
                 [
                     Precondition(
-                        Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
+                        Call(
+                            const.PREFIX_ID * message.identifier * "Has_Buffer",
+                            [Variable("Ctx")],
+                        ),
                     ),
                     Postcondition(
                         AndThen(
@@ -1525,7 +1530,7 @@ def create_take_buffer_procedure(prefix: str, message: Message) -> UnitPart:
     )
 
 
-def create_copy_procedure(prefix: str, message: Message) -> UnitPart:
+def create_copy_procedure(message: Message) -> UnitPart:
     specification = ProcedureSpecification(
         "Copy",
         [Parameter(["Ctx"], "Context"), OutParameter(["Buffer"], const.TYPES_BYTES)],
@@ -1538,14 +1543,17 @@ def create_copy_procedure(prefix: str, message: Message) -> UnitPart:
                 [
                     Precondition(
                         AndThen(
-                            Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
                             Call(
-                                prefix * message.identifier * "Well_Formed_Message",
+                                const.PREFIX_ID * message.identifier * "Has_Buffer",
+                                [Variable("Ctx")],
+                            ),
+                            Call(
+                                const.PREFIX_ID * message.identifier * "Well_Formed_Message",
                                 [Variable("Ctx")],
                             ),
                             Equal(
                                 Call(
-                                    prefix * message.identifier * "Byte_Size",
+                                    const.PREFIX_ID * message.identifier * "Byte_Size",
                                     [Variable("Ctx")],
                                 ),
                                 Length("Buffer"),
@@ -1600,7 +1608,7 @@ def create_copy_procedure(prefix: str, message: Message) -> UnitPart:
     )
 
 
-def create_read_function(prefix: str, message: Message) -> UnitPart:
+def create_read_function(message: Message) -> UnitPart:
     specification = FunctionSpecification(
         "Read",
         const.TYPES_BYTES,
@@ -1615,9 +1623,12 @@ def create_read_function(prefix: str, message: Message) -> UnitPart:
                     Ghost(),
                     Precondition(
                         AndThen(
-                            Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
                             Call(
-                                prefix * message.identifier * "Well_Formed_Message",
+                                const.PREFIX_ID * message.identifier * "Has_Buffer",
+                                [Variable("Ctx")],
+                            ),
+                            Call(
+                                const.PREFIX_ID * message.identifier * "Well_Formed_Message",
                                 [Variable("Ctx")],
                             ),
                         ),
@@ -1641,7 +1652,7 @@ def create_read_function(prefix: str, message: Message) -> UnitPart:
     )
 
 
-def create_generic_read_procedure(prefix: str, message: Message) -> UnitPart:
+def create_generic_read_procedure(message: Message) -> UnitPart:
     specification = ProcedureSpecification(
         "Generic_Read",
         [Parameter(["Ctx"], "Context")],
@@ -1681,9 +1692,12 @@ def create_generic_read_procedure(prefix: str, message: Message) -> UnitPart:
                 [
                     Precondition(
                         AndThen(
-                            Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
                             Call(
-                                prefix * message.identifier * "Well_Formed_Message",
+                                const.PREFIX_ID * message.identifier * "Has_Buffer",
+                                [Variable("Ctx")],
+                            ),
+                            Call(
+                                const.PREFIX_ID * message.identifier * "Well_Formed_Message",
                                 [Variable("Ctx")],
                             ),
                             Call("Pre", [Call("Read", [Variable("Ctx")])]),
@@ -1731,7 +1745,7 @@ def create_generic_read_procedure(prefix: str, message: Message) -> UnitPart:
     )
 
 
-def create_generic_write_procedure(prefix: str, message: Message) -> UnitPart:
+def create_generic_write_procedure(message: Message) -> UnitPart:
     """
     Write data into the buffer of the context using an externally provided subprogram.
 
@@ -1784,11 +1798,14 @@ def create_generic_write_procedure(prefix: str, message: Message) -> UnitPart:
                     Precondition(
                         AndThen(
                             Not(Constrained("Ctx")),
-                            Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
+                            Call(
+                                const.PREFIX_ID * message.identifier * "Has_Buffer",
+                                [Variable("Ctx")],
+                            ),
                             Less(
                                 Variable("Offset"),
                                 Call(
-                                    prefix * message.identifier * "Buffer_Length",
+                                    const.PREFIX_ID * message.identifier * "Buffer_Length",
                                     [Variable("Ctx")],
                                 ),
                             ),
@@ -1796,7 +1813,7 @@ def create_generic_write_procedure(prefix: str, message: Message) -> UnitPart:
                                 "Pre",
                                 [
                                     Call(
-                                        prefix * message.identifier * "Buffer_Length",
+                                        const.PREFIX_ID * message.identifier * "Buffer_Length",
                                         [Variable("Ctx")],
                                     ),
                                     Variable("Offset"),
@@ -1927,7 +1944,6 @@ def create_generic_write_procedure(prefix: str, message: Message) -> UnitPart:
 
 
 def create_valid_value_function(
-    prefix: str,
     message: Message,
     scalar_fields: abc.Mapping[Field, Scalar],
 ) -> UnitPart:
@@ -1970,7 +1986,7 @@ def create_valid_value_function(
                                         (
                                             f"Valid_{t.name}"
                                             if is_builtin_type(t.identifier)
-                                            else prefix * t.package * f"Valid_{t.name}"
+                                            else const.PREFIX_ID * t.package * f"Valid_{t.name}"
                                         ),
                                         [Variable("Val")],
                                     )
@@ -1990,7 +2006,6 @@ def create_valid_value_function(
 
 
 def create_field_size_function(
-    prefix: str,
     message: Message,
     scalar_fields: abc.Mapping[Field, TypeDecl],
     composite_fields: abc.Sequence[Field],
@@ -2009,7 +2024,7 @@ def create_field_size_function(
                     Precondition(
                         And(
                             Call(
-                                prefix * message.identifier * "Valid_Next",
+                                const.PREFIX_ID * message.identifier * "Valid_Next",
                                 [Variable("Ctx"), Variable("Fld")],
                             ),
                         ),
@@ -2068,7 +2083,7 @@ def create_field_size_function(
     )
 
 
-def create_field_first_function(prefix: str, message: Message) -> UnitPart:
+def create_field_first_function(message: Message) -> UnitPart:
     specification = FunctionSpecification(
         "Field_First",
         const.TYPES_BIT_INDEX,
@@ -2088,7 +2103,7 @@ def create_field_first_function(prefix: str, message: Message) -> UnitPart:
                     Precondition(
                         And(
                             Call(
-                                prefix * message.identifier * "Valid_Next",
+                                const.PREFIX_ID * message.identifier * "Valid_Next",
                                 [Variable("Ctx"), Variable("Fld")],
                             ),
                         ),
@@ -2126,7 +2141,6 @@ def create_field_first_function(prefix: str, message: Message) -> UnitPart:
 
 
 def create_field_last_function(
-    prefix: str,
     message: Message,
     scalar_fields: abc.Mapping[Field, TypeDecl],
     composite_fields: abc.Sequence[Field],
@@ -2145,11 +2159,11 @@ def create_field_last_function(
                     Precondition(
                         AndThen(
                             Call(
-                                prefix * message.identifier * "Valid_Next",
+                                const.PREFIX_ID * message.identifier * "Valid_Next",
                                 [Variable("Ctx"), Variable("Fld")],
                             ),
                             Call(
-                                prefix * message.identifier * "Sufficient_Space",
+                                const.PREFIX_ID * message.identifier * "Sufficient_Space",
                                 [Variable("Ctx"), Variable("Fld")],
                             ),
                         ),
@@ -2197,7 +2211,7 @@ def create_field_last_function(
     )
 
 
-def create_field_condition_function(prefix: str, message: Message) -> UnitPart:
+def create_field_condition_function(message: Message) -> UnitPart:
     """
     Check if the condition at any outgoing link of the field is valid.
 
@@ -2256,7 +2270,7 @@ def create_field_condition_function(prefix: str, message: Message) -> UnitPart:
             c = c.substituted(
                 lambda x: expr.Variable("Agg") if x == expr.Variable(field.name) else x,
             )
-        return expr_conv.to_ada(c.substituted(common.substitution(message, prefix)).simplified())
+        return expr_conv.to_ada(c.substituted(common.substitution(message)).simplified())
 
     parameters = [
         Parameter(["Ctx"], "Context"),
@@ -2292,11 +2306,14 @@ def create_field_condition_function(prefix: str, message: Message) -> UnitPart:
                 [
                     Precondition(
                         AndThen(
-                            Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
+                            Call(
+                                const.PREFIX_ID * message.identifier * "Has_Buffer",
+                                [Variable("Ctx")],
+                            ),
                             *(
                                 [
                                     Call(
-                                        prefix * message.identifier * "Valid_Value",
+                                        const.PREFIX_ID * message.identifier * "Valid_Value",
                                         [Variable("Fld"), Variable("Val")],
                                     ),
                                 ]
@@ -2304,11 +2321,11 @@ def create_field_condition_function(prefix: str, message: Message) -> UnitPart:
                                 else []
                             ),
                             Call(
-                                prefix * message.identifier * "Valid_Next",
+                                const.PREFIX_ID * message.identifier * "Valid_Next",
                                 [Variable("Ctx"), Variable("Fld")],
                             ),
                             Call(
-                                prefix * message.identifier * "Sufficient_Space",
+                                const.PREFIX_ID * message.identifier * "Sufficient_Space",
                                 [Variable("Ctx"), Variable("Fld")],
                             ),
                         ),
@@ -2388,7 +2405,7 @@ def create_has_buffer_function() -> UnitPart:
     )
 
 
-def create_buffer_length_function(prefix: str, message: Message) -> UnitPart:
+def create_buffer_length_function(message: Message) -> UnitPart:
     specification = FunctionSpecification(
         "Buffer_Length",
         const.TYPES_LENGTH,
@@ -2399,14 +2416,21 @@ def create_buffer_length_function(prefix: str, message: Message) -> UnitPart:
         [
             SubprogramDeclaration(
                 specification,
-                [Precondition(Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]))],
+                [
+                    Precondition(
+                        Call(
+                            const.PREFIX_ID * message.identifier * "Has_Buffer",
+                            [Variable("Ctx")],
+                        ),
+                    ),
+                ],
             ),
         ],
         private=[ExpressionFunctionDeclaration(specification, Length("Ctx.Buffer"))],
     )
 
 
-def create_buffer_size_function(prefix: str, message: Message) -> UnitPart:
+def create_buffer_size_function(message: Message) -> UnitPart:
     specification = FunctionSpecification(
         "Buffer_Size",
         const.TYPES_BIT_LENGTH,
@@ -2417,7 +2441,14 @@ def create_buffer_size_function(prefix: str, message: Message) -> UnitPart:
         [
             SubprogramDeclaration(
                 specification,
-                [Precondition(Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]))],
+                [
+                    Precondition(
+                        Call(
+                            const.PREFIX_ID * message.identifier * "Has_Buffer",
+                            [Variable("Ctx")],
+                        ),
+                    ),
+                ],
             ),
         ],
         private=[
@@ -2518,7 +2549,7 @@ def create_written_last_function() -> UnitPart:
     )
 
 
-def create_data_procedure(prefix: str, message: Message) -> UnitPart:
+def create_data_procedure(message: Message) -> UnitPart:
     specification = ProcedureSpecification(
         "Data",
         [Parameter(["Ctx"], "Context"), OutParameter(["Data"], const.TYPES_BYTES)],
@@ -2531,15 +2562,18 @@ def create_data_procedure(prefix: str, message: Message) -> UnitPart:
                 [
                     Precondition(
                         AndThen(
-                            Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
                             Call(
-                                prefix * message.identifier * "Well_Formed_Message",
+                                const.PREFIX_ID * message.identifier * "Has_Buffer",
+                                [Variable("Ctx")],
+                            ),
+                            Call(
+                                const.PREFIX_ID * message.identifier * "Well_Formed_Message",
                                 [Variable("Ctx")],
                             ),
                             Equal(
                                 Length("Data"),
                                 Call(
-                                    prefix * message.identifier * "Byte_Size",
+                                    const.PREFIX_ID * message.identifier * "Byte_Size",
                                     [
                                         Variable("Ctx"),
                                     ],
@@ -2602,7 +2636,7 @@ def create_valid_next_function(message: Message) -> UnitPart:
     )
 
 
-def create_available_space_function(prefix: str, message: Message) -> UnitPart:
+def create_available_space_function(message: Message) -> UnitPart:
     specification = FunctionSpecification(
         "Available_Space",
         const.TYPES_BIT_LENGTH,
@@ -2616,7 +2650,7 @@ def create_available_space_function(prefix: str, message: Message) -> UnitPart:
                 [
                     Precondition(
                         Call(
-                            prefix * message.identifier * "Valid_Next",
+                            const.PREFIX_ID * message.identifier * "Valid_Next",
                             [Variable("Ctx"), Variable("Fld")],
                         ),
                     ),
@@ -2636,7 +2670,7 @@ def create_available_space_function(prefix: str, message: Message) -> UnitPart:
     )
 
 
-def create_sufficient_space_function(prefix: str, message: Message) -> UnitPart:
+def create_sufficient_space_function(message: Message) -> UnitPart:
     specification = FunctionSpecification(
         "Sufficient_Space",
         "Boolean",
@@ -2650,7 +2684,7 @@ def create_sufficient_space_function(prefix: str, message: Message) -> UnitPart:
                 [
                     Precondition(
                         Call(
-                            prefix * message.identifier * "Valid_Next",
+                            const.PREFIX_ID * message.identifier * "Valid_Next",
                             [Variable("Ctx"), Variable("Fld")],
                         ),
                     ),
@@ -2670,7 +2704,6 @@ def create_sufficient_space_function(prefix: str, message: Message) -> UnitPart:
 
 
 def create_equal_function(
-    prefix: str,
     message: Message,
     scalar_fields: abc.Mapping[Field, TypeDecl],
     composite_fields: abc.Sequence[Field],
@@ -2722,9 +2755,12 @@ def create_equal_function(
                 [
                     Precondition(
                         And(
-                            Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
                             Call(
-                                prefix * message.identifier * "Valid_Next",
+                                const.PREFIX_ID * message.identifier * "Has_Buffer",
+                                [Variable("Ctx")],
+                            ),
+                            Call(
+                                const.PREFIX_ID * message.identifier * "Valid_Next",
                                 [Variable("Ctx"), Variable("Fld")],
                             ),
                         ),
@@ -2776,7 +2812,7 @@ def create_equal_function(
     )
 
 
-def create_sufficient_buffer_length_function(prefix: str, message: Message) -> UnitPart:
+def create_sufficient_buffer_length_function(message: Message) -> UnitPart:
     return UnitPart(
         [],
         [
@@ -2811,9 +2847,12 @@ def create_sufficient_buffer_length_function(prefix: str, message: Message) -> U
                 [
                     Precondition(
                         And(
-                            Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
                             Call(
-                                prefix * message.identifier * "Valid_Next",
+                                const.PREFIX_ID * message.identifier * "Has_Buffer",
+                                [Variable("Ctx")],
+                            ),
+                            Call(
+                                const.PREFIX_ID * message.identifier * "Valid_Next",
                                 [Variable("Ctx"), Variable("Fld")],
                             ),
                         ),
@@ -2824,7 +2863,7 @@ def create_sufficient_buffer_length_function(prefix: str, message: Message) -> U
     )
 
 
-def create_reset_dependent_fields_procedure(prefix: str, message: Message) -> UnitPart:
+def create_reset_dependent_fields_procedure(message: Message) -> UnitPart:
     specification = ProcedureSpecification(
         "Reset_Dependent_Fields",
         [InOutParameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
@@ -2880,7 +2919,7 @@ def create_reset_dependent_fields_procedure(prefix: str, message: Message) -> Un
                     Precondition(
                         And(
                             Call(
-                                prefix * message.identifier * "Valid_Next",
+                                const.PREFIX_ID * message.identifier * "Valid_Next",
                                 [Variable("Ctx"), Variable("Fld")],
                             ),
                         ),
@@ -2952,7 +2991,6 @@ def create_composite_field_function(
 
 
 def create_switch_procedures(
-    prefix: str,
     message: Message,
     sequence_fields: abc.Mapping[Field, TypeDecl],
 ) -> UnitPart:
@@ -2963,7 +3001,7 @@ def create_switch_procedures(
                 InOutParameter(["Ctx"], "Context"),
                 OutParameter(
                     ["Seq_Ctx"],
-                    prefix * common.sequence_name(message, field) * "Context",
+                    const.PREFIX_ID * common.sequence_name(message, field) * "Context",
                 ),
             ],
         )
@@ -2977,42 +3015,51 @@ def create_switch_procedures(
                         AndThen(
                             Not(Constrained("Ctx")),
                             Not(Constrained("Seq_Ctx")),
-                            Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
                             Call(
-                                prefix * message.identifier * "Valid_Next",
+                                const.PREFIX_ID * message.identifier * "Has_Buffer",
+                                [Variable("Ctx")],
+                            ),
+                            Call(
+                                const.PREFIX_ID * message.identifier * "Valid_Next",
                                 [
                                     Variable("Ctx"),
-                                    Variable(prefix * message.identifier * f.affixed_name),
+                                    Variable(
+                                        const.PREFIX_ID * message.identifier * f.affixed_name,
+                                    ),
                                 ],
                             ),
                             Greater(
                                 Call(
-                                    prefix * message.identifier * "Field_Size",
+                                    const.PREFIX_ID * message.identifier * "Field_Size",
                                     [
                                         Variable("Ctx"),
-                                        Variable(prefix * message.identifier * f.affixed_name),
+                                        Variable(
+                                            const.PREFIX_ID * message.identifier * f.affixed_name,
+                                        ),
                                     ],
                                 ),
                                 Number(0),
                             ),
-                            common.byte_aligned_field(prefix, message, f),
+                            common.byte_aligned_field(message, f),
                             common.sufficient_space_for_field_condition(
-                                prefix * message.identifier,
-                                Variable(prefix * message.identifier * f.affixed_name),
+                                const.PREFIX_ID * message.identifier,
+                                Variable(const.PREFIX_ID * message.identifier * f.affixed_name),
                             ),
-                            common.field_condition_call(prefix, message, f),
+                            common.field_condition_call(message, f),
                         ),
                     ),
                     Postcondition(
                         And(
-                            *_switch_update_conditions(prefix, message, f),
+                            *_switch_update_conditions(message, f),
                             Call(
-                                prefix * common.sequence_name(message, f) * "Valid",
+                                const.PREFIX_ID * common.sequence_name(message, f) * "Valid",
                                 [Variable("Seq_Ctx")],
                             ),
                             Equal(
                                 Call(
-                                    prefix * common.sequence_name(message, f) * "Sequence_Last",
+                                    const.PREFIX_ID
+                                    * common.sequence_name(message, f)
+                                    * "Sequence_Last",
                                     [Variable("Seq_Ctx")],
                                 ),
                                 Sub(Variable("Seq_Ctx.First"), Number(1)),
@@ -3048,7 +3095,7 @@ def create_switch_procedures(
                         (
                             Variable("others"),
                             And(
-                                *common.valid_path_to_next_field_condition(message, f, prefix),
+                                *common.valid_path_to_next_field_condition(message, f),
                                 *[
                                     Call(
                                         "Invalid",
@@ -3091,7 +3138,7 @@ def create_switch_procedures(
                         [Variable("Off"), String.escaped('unused assignment to "Buffer"')],
                     ),
                     CallStatement(
-                        prefix * common.sequence_name(message, f) * "Initialize",
+                        const.PREFIX_ID * common.sequence_name(message, f) * "Initialize",
                         [
                             Variable("Seq_Ctx"),
                             Variable("Buffer"),
@@ -3111,7 +3158,6 @@ def create_switch_procedures(
 
 
 def create_complete_functions(
-    prefix: str,
     message: Message,
     sequence_fields: abc.Mapping[Field, TypeDecl],
 ) -> UnitPart:
@@ -3121,7 +3167,10 @@ def create_complete_functions(
             "Boolean",
             [
                 Parameter(["Ctx"], "Context"),
-                Parameter(["Seq_Ctx"], prefix * common.sequence_name(message, field) * "Context"),
+                Parameter(
+                    ["Seq_Ctx"],
+                    const.PREFIX_ID * common.sequence_name(message, field) * "Context",
+                ),
             ],
         )
 
@@ -3132,10 +3181,10 @@ def create_complete_functions(
                 [
                     Precondition(
                         Call(
-                            prefix * message.identifier * "Valid_Next",
+                            const.PREFIX_ID * message.identifier * "Valid_Next",
                             [
                                 Variable("Ctx"),
-                                Variable(prefix * message.identifier * f.affixed_name),
+                                Variable(const.PREFIX_ID * message.identifier * f.affixed_name),
                             ],
                         ),
                     ),
@@ -3148,12 +3197,12 @@ def create_complete_functions(
                 specification(f),
                 And(
                     Call(
-                        prefix * common.sequence_name(message, f) * "Valid",
+                        const.PREFIX_ID * common.sequence_name(message, f) * "Valid",
                         [Variable("Seq_Ctx")],
                     ),
                     Equal(
                         Call(
-                            prefix * common.sequence_name(message, f) * "Size",
+                            const.PREFIX_ID * common.sequence_name(message, f) * "Size",
                             [Variable("Seq_Ctx")],
                         ),
                         Call(
@@ -3169,7 +3218,6 @@ def create_complete_functions(
 
 
 def create_update_procedures(
-    prefix: str,
     message: Message,
     sequence_fields: abc.Mapping[Field, TypeDecl],
 ) -> UnitPart:
@@ -3180,7 +3228,7 @@ def create_update_procedures(
                 InOutParameter(["Ctx"], "Context"),
                 InOutParameter(
                     ["Seq_Ctx"],
-                    prefix * common.sequence_name(message, field) * "Context",
+                    const.PREFIX_ID * common.sequence_name(message, field) * "Context",
                 ),
             ],
         )
@@ -3204,20 +3252,22 @@ def create_update_procedures(
                     Precondition(
                         AndThen(
                             Call(
-                                prefix * message.identifier * "Present",
+                                const.PREFIX_ID * message.identifier * "Present",
                                 [
                                     Variable("Ctx"),
-                                    Variable(prefix * message.identifier * f.affixed_name),
+                                    Variable(
+                                        const.PREFIX_ID * message.identifier * f.affixed_name,
+                                    ),
                                 ],
                             ),
-                            *_switch_update_conditions(prefix, message, f),
+                            *_switch_update_conditions(message, f),
                         ),
                     ),
                     Postcondition(
                         And(
                             IfThenElse(
                                 Call(
-                                    prefix * message.identifier * f"Complete_{f.name}",
+                                    const.PREFIX_ID * message.identifier * f"Complete_{f.name}",
                                     [Variable("Ctx"), Variable("Seq_Ctx")],
                                 ),
                                 And(
@@ -3255,7 +3305,9 @@ def create_update_procedures(
                             Call("Has_Buffer", [Variable("Ctx")]),
                             Not(
                                 Call(
-                                    prefix * common.sequence_name(message, f) * "Has_Buffer",
+                                    const.PREFIX_ID
+                                    * common.sequence_name(message, f)
+                                    * "Has_Buffer",
                                     [Variable("Seq_Ctx")],
                                 ),
                             ),
@@ -3266,11 +3318,13 @@ def create_update_procedures(
                                     Variable("Seq_Ctx.First"),
                                     Variable("Seq_Ctx.Last"),
                                     Call(
-                                        prefix * common.sequence_name(message, f) * "Valid",
+                                        const.PREFIX_ID
+                                        * common.sequence_name(message, f)
+                                        * "Valid",
                                         [Variable("Seq_Ctx")],
                                     ),
                                     Call(
-                                        prefix * common.sequence_name(message, f) * "Size",
+                                        const.PREFIX_ID * common.sequence_name(message, f) * "Size",
                                         [Variable("Seq_Ctx")],
                                     ),
                                     Call(
@@ -3314,7 +3368,7 @@ def create_update_procedures(
                         ["Valid_Sequence"],
                         "Boolean",
                         Call(
-                            prefix * message.identifier * f"Complete_{f.name}",
+                            const.PREFIX_ID * message.identifier * f"Complete_{f.name}",
                             [Variable("Ctx"), Variable("Seq_Ctx")],
                         ),
                         constant=True,
@@ -3323,7 +3377,7 @@ def create_update_procedures(
                 ],
                 [
                     CallStatement(
-                        prefix * common.sequence_name(message, f) * "Take_Buffer",
+                        const.PREFIX_ID * common.sequence_name(message, f) * "Take_Buffer",
                         take_buffer_arguments(f),
                     ),
                     Assignment("Ctx.Buffer", Variable("Buffer")),
@@ -3452,22 +3506,22 @@ def create_cursors_index_function() -> UnitPart:
     )
 
 
-def create_structure(prefix: str, message: Message) -> UnitPart:
+def create_structure(message: Message) -> UnitPart:
     if not message.is_definite:
         return UnitPart()
 
     unit = UnitPart()
-    unit += _create_structure_type(prefix, message)
-    unit += _create_valid_structure_function(prefix, message)
-    unit += _create_to_structure_procedure(prefix, message)
-    unit += _create_sufficient_buffer_length_function(prefix, message)
-    unit += _create_to_context_procedure(prefix, message)
+    unit += _create_structure_type(message)
+    unit += _create_valid_structure_function(message)
+    unit += _create_to_structure_procedure(message)
+    unit += _create_sufficient_buffer_length_function(message)
+    unit += _create_to_context_procedure(message)
     for field in message.fields:
         unit += _create_structure_field_size_function(message, field)
     return unit
 
 
-def _create_structure_type(prefix: str, message: Message) -> UnitPart:
+def _create_structure_type(message: Message) -> UnitPart:
     assert len(message.paths(FINAL)) == 1
 
     components = []
@@ -3485,7 +3539,7 @@ def _create_structure_type(prefix: str, message: Message) -> UnitPart:
             component_type: ID | Expr
 
             if isinstance(type_, Scalar):
-                component_type = common.prefixed_type_identifier(type_.identifier, prefix)
+                component_type = common.prefixed_type_identifier(type_.identifier)
             elif isinstance(type_, Opaque):
                 component_type = Indexed(
                     Variable(const.TYPES_BYTES),
@@ -3514,12 +3568,12 @@ def _create_structure_type(prefix: str, message: Message) -> UnitPart:
     )
 
 
-def _create_valid_structure_function(prefix: str, message: Message) -> UnitPart:
+def _create_valid_structure_function(message: Message) -> UnitPart:
     assert len(message.paths(FINAL)) == 1
 
     valid_values = [
         Call(
-            prefix * t.package * f"Valid_{t.name}",
+            const.PREFIX_ID * t.package * f"Valid_{t.name}",
             [
                 Variable("Struct" * f.identifier),
             ],
@@ -3540,7 +3594,7 @@ def _create_valid_structure_function(prefix: str, message: Message) -> UnitPart:
                     ),
                 )
                 .substituted(_struct_substitution(message))
-                .substituted(common.substitution(message, prefix))
+                .substituted(common.substitution(message))
                 .simplified(),
             ),
         ]
@@ -3574,7 +3628,7 @@ def _create_valid_structure_function(prefix: str, message: Message) -> UnitPart:
     )
 
 
-def _create_sufficient_buffer_length_function(prefix: str, message: Message) -> UnitPart:
+def _create_sufficient_buffer_length_function(message: Message) -> UnitPart:
     assert len(message.paths(FINAL)) == 1
 
     specification = FunctionSpecification(
@@ -3616,7 +3670,7 @@ def _create_sufficient_buffer_length_function(prefix: str, message: Message) -> 
                     ),
                     expr_conv.to_ada(
                         message_size.substituted(_struct_substitution(message))
-                        .substituted(common.substitution(message, prefix))
+                        .substituted(common.substitution(message))
                         .simplified(),
                     ),
                 ),
@@ -3625,7 +3679,7 @@ def _create_sufficient_buffer_length_function(prefix: str, message: Message) -> 
     )
 
 
-def _create_to_structure_procedure(prefix: str, message: Message) -> UnitPart:
+def _create_to_structure_procedure(message: Message) -> UnitPart:
     assert len(message.paths(FINAL)) == 1
 
     statements: list[Statement] = []
@@ -3709,9 +3763,12 @@ def _create_to_structure_procedure(prefix: str, message: Message) -> UnitPart:
                 [
                     Precondition(
                         AndThen(
-                            Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
                             Call(
-                                prefix * message.identifier * "Well_Formed_Message",
+                                const.PREFIX_ID * message.identifier * "Has_Buffer",
+                                [Variable("Ctx")],
+                            ),
+                            Call(
+                                const.PREFIX_ID * message.identifier * "Well_Formed_Message",
                                 [Variable("Ctx")],
                             ),
                         ),
@@ -3766,7 +3823,7 @@ def _struct_substitution(
     return func
 
 
-def _create_to_context_procedure(prefix: str, message: Message) -> UnitPart:
+def _create_to_context_procedure(message: Message) -> UnitPart:
     assert len(message.paths(FINAL)) == 1
 
     body: list[Statement] = [CallStatement("Reset", [Variable("Ctx")])]
@@ -3850,13 +3907,16 @@ def _create_to_context_procedure(prefix: str, message: Message) -> UnitPart:
                     Precondition(
                         AndThen(
                             Not(Constrained("Ctx")),
-                            Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
                             Call(
-                                prefix * message.identifier * "Valid_Structure",
+                                const.PREFIX_ID * message.identifier * "Has_Buffer",
+                                [Variable("Ctx")],
+                            ),
+                            Call(
+                                const.PREFIX_ID * message.identifier * "Valid_Structure",
                                 [Variable("Struct")],
                             ),
                             Call(
-                                prefix * message.identifier * "Sufficient_Buffer_Length",
+                                const.PREFIX_ID * message.identifier * "Sufficient_Buffer_Length",
                                 [Variable("Ctx"), Variable("Struct")],
                             ),
                         ),
@@ -3943,10 +4003,13 @@ def _create_structure_field_size_function(message: Message, field: Field) -> Uni
     )
 
 
-def _switch_update_conditions(prefix: str, message: Message, field: Field) -> abc.Sequence[Expr]:
+def _switch_update_conditions(message: Message, field: Field) -> abc.Sequence[Expr]:
     return [
-        Not(Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")])),
-        Call(prefix * common.sequence_name(message, field) * "Has_Buffer", [Variable("Seq_Ctx")]),
+        Not(Call(const.PREFIX_ID * message.identifier * "Has_Buffer", [Variable("Ctx")])),
+        Call(
+            const.PREFIX_ID * common.sequence_name(message, field) * "Has_Buffer",
+            [Variable("Seq_Ctx")],
+        ),
         Equal(Variable("Ctx.Buffer_First"), Variable("Seq_Ctx.Buffer_First")),
         Equal(Variable("Ctx.Buffer_Last"), Variable("Seq_Ctx.Buffer_Last")),
         Equal(

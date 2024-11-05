@@ -78,9 +78,6 @@ from . import common, const
 
 
 class SerializerGenerator:
-    def __init__(self, prefix: str = "") -> None:
-        self.prefix = prefix
-
     def create_valid_size_function(self, message: Message) -> UnitPart:
         specification = FunctionSpecification(
             "Valid_Size",
@@ -120,7 +117,6 @@ class SerializerGenerator:
                                                     l.condition.substituted(
                                                         common.substitution(
                                                             message,
-                                                            self.prefix,
                                                             target_type=ty.BIT_LENGTH,
                                                         ),
                                                     ).simplified(),
@@ -145,7 +141,7 @@ class SerializerGenerator:
                         Precondition(
                             And(
                                 Call(
-                                    self.prefix * message.identifier * "Valid_Next",
+                                    const.PREFIX_ID * message.identifier * "Valid_Next",
                                     [Variable("Ctx"), Variable("Fld")],
                                 ),
                             ),
@@ -179,7 +175,7 @@ class SerializerGenerator:
                         Precondition(
                             And(
                                 Call(
-                                    self.prefix * message.identifier * "Valid_Next",
+                                    const.PREFIX_ID * message.identifier * "Valid_Next",
                                     [Variable("Ctx"), Variable("Fld")],
                                 ),
                             ),
@@ -343,25 +339,25 @@ class SerializerGenerator:
                         Precondition(
                             AndThen(
                                 Call(
-                                    self.prefix * message.identifier * "Has_Buffer",
+                                    const.PREFIX_ID * message.identifier * "Has_Buffer",
                                     [Variable("Ctx")],
                                 ),
                                 Call(
-                                    self.prefix * message.identifier * "Valid_Next",
+                                    const.PREFIX_ID * message.identifier * "Valid_Next",
                                     [Variable("Ctx"), Variable("Fld")],
                                 ),
                                 Call(
-                                    self.prefix * message.identifier * "Valid_Value",
+                                    const.PREFIX_ID * message.identifier * "Valid_Value",
                                     [Variable("Fld"), Variable("Val")],
                                 ),
                                 Call(
-                                    self.prefix * message.identifier * "Valid_Size",
+                                    const.PREFIX_ID * message.identifier * "Valid_Size",
                                     [Variable("Ctx"), Variable("Fld"), Variable("Size")],
                                 ),
                                 LessEqual(
                                     Variable("Size"),
                                     Call(
-                                        self.prefix * message.identifier * "Available_Space",
+                                        const.PREFIX_ID * message.identifier * "Available_Space",
                                         [Variable("Ctx"), Variable("Fld")],
                                     ),
                                 ),
@@ -369,7 +365,7 @@ class SerializerGenerator:
                                     [
                                         IfThenElse(
                                             Call(
-                                                self.prefix
+                                                const.PREFIX_ID
                                                 * message.identifier
                                                 * "Composite_Field",
                                                 [Variable("Fld")],
@@ -524,15 +520,9 @@ class SerializerGenerator:
                 and field_type.always_valid
                 and not use_enum_records_directly
             ):
-                type_identifier = common.prefixed_type_identifier(
-                    common.full_enum_name(field_type),
-                    self.prefix,
-                )
+                type_identifier = common.prefixed_type_identifier(common.full_enum_name(field_type))
             else:
-                type_identifier = common.prefixed_type_identifier(
-                    field_type.identifier,
-                    self.prefix,
-                )
+                type_identifier = common.prefixed_type_identifier(field_type.identifier)
 
             return ProcedureSpecification(
                 f"Set_{field.name}",
@@ -548,35 +538,34 @@ class SerializerGenerator:
                 AndThen(
                     *self.setter_preconditions(
                         message,
-                        self.prefix * message.identifier * field.affixed_name,
+                        const.PREFIX_ID * message.identifier * field.affixed_name,
                     ),
                     Call(
                         (
                             f"Valid_{field_type.name}"
                             if is_builtin_type(field_type.identifier)
-                            else self.prefix * field_type.package * f"Valid_{field_type.name}"
+                            else const.PREFIX_ID * field_type.package * f"Valid_{field_type.name}"
                         ),
                         [
                             (
                                 Variable("Val")
                                 if use_enum_records_directly
                                 else Call(
-                                    common.to_base_integer(self.prefix, field_type.package),
+                                    common.to_base_integer(field_type.package),
                                     [Variable("Val")],
                                 )
                             ),
                         ],
                     ),
                     common.sufficient_space_for_field_condition(
-                        self.prefix * message.identifier,
-                        Variable(self.prefix * message.identifier * field.affixed_name),
+                        const.PREFIX_ID * message.identifier,
+                        Variable(const.PREFIX_ID * message.identifier * field.affixed_name),
                     ),
                     common.field_condition_call(
-                        self.prefix,
                         message,
                         field,
                         value=Call(
-                            common.to_base_integer(self.prefix, field_type.package),
+                            common.to_base_integer(field_type.package),
                             [Variable("Val")],
                         ),
                     ),
@@ -631,7 +620,7 @@ class SerializerGenerator:
                             Variable("Ctx"),
                             Variable(field.affixed_name),
                             Call(
-                                common.to_base_integer(self.prefix, field_type.package),
+                                common.to_base_integer(field_type.package),
                                 [Variable("Val")],
                             ),
                         ],
@@ -764,27 +753,27 @@ class SerializerGenerator:
                                     ChoiceList(*[Variable(f.affixed_name) for f in scalar_fields]),
                                 ),
                                 Call(
-                                    self.prefix * message.identifier * "Valid_Value",
+                                    const.PREFIX_ID * message.identifier * "Valid_Value",
                                     [Variable("Fld"), Variable("Val")],
                                 ),
                                 Call(
-                                    self.prefix * message.identifier * "Valid_Size",
+                                    const.PREFIX_ID * message.identifier * "Valid_Size",
                                     [
                                         Variable("Ctx"),
                                         Variable("Fld"),
                                         Call(
-                                            self.prefix * message.identifier * "Field_Size",
+                                            const.PREFIX_ID * message.identifier * "Field_Size",
                                             [Variable("Ctx"), Variable("Fld")],
                                         ),
                                     ],
                                 ),
                                 common.sufficient_space_for_field_condition(
-                                    self.prefix * message.identifier,
+                                    const.PREFIX_ID * message.identifier,
                                     Variable("Fld"),
                                 ),
                                 In(
                                     Call(
-                                        self.prefix * message.identifier * "Field_Size",
+                                        const.PREFIX_ID * message.identifier * "Field_Size",
                                         [Variable("Ctx"), Variable("Fld")],
                                     ),
                                     ValueRange(Number(1), Size(const.TYPES_BASE_INT)),
@@ -797,7 +786,9 @@ class SerializerGenerator:
                                             "Natural",
                                             [
                                                 Call(
-                                                    self.prefix * message.identifier * "Field_Size",
+                                                    const.PREFIX_ID
+                                                    * message.identifier
+                                                    * "Field_Size",
                                                     [Variable("Ctx"), Variable("Fld")],
                                                 ),
                                             ],
@@ -873,7 +864,7 @@ class SerializerGenerator:
                                 AndThen(
                                     *self.setter_preconditions(
                                         message,
-                                        self.prefix * message.identifier * f.affixed_name,
+                                        const.PREFIX_ID * message.identifier * f.affixed_name,
                                     ),
                                     *self.composite_setter_preconditions(message, f),
                                     *self.composite_setter_field_condition_precondition(
@@ -883,11 +874,11 @@ class SerializerGenerator:
                                     ),
                                     Equal(
                                         Call(
-                                            self.prefix * message.identifier * "Field_Size",
+                                            const.PREFIX_ID * message.identifier * "Field_Size",
                                             [
                                                 Variable("Ctx"),
                                                 Variable(
-                                                    self.prefix
+                                                    const.PREFIX_ID
                                                     * message.identifier
                                                     * f.affixed_name,
                                                 ),
@@ -952,7 +943,7 @@ class SerializerGenerator:
                     InOutParameter(["Ctx"], "Context"),
                     Parameter(
                         ["Seq_Ctx"],
-                        self.prefix * common.sequence_name(message, field) * "Context",
+                        const.PREFIX_ID * common.sequence_name(message, field) * "Context",
                     ),
                 ],
             )
@@ -966,7 +957,7 @@ class SerializerGenerator:
                             AndThen(
                                 *self.setter_preconditions(
                                     message,
-                                    self.prefix * message.identifier * f.affixed_name,
+                                    const.PREFIX_ID * message.identifier * f.affixed_name,
                                 ),
                                 *self.composite_setter_preconditions(message, f),
                                 *self.composite_setter_field_condition_precondition(
@@ -975,12 +966,14 @@ class SerializerGenerator:
                                     empty=True,
                                 ),
                                 Call(
-                                    self.prefix * message.identifier * "Valid_Length",
+                                    const.PREFIX_ID * message.identifier * "Valid_Length",
                                     [
                                         Variable("Ctx"),
-                                        Variable(self.prefix * message.identifier * f.affixed_name),
+                                        Variable(
+                                            const.PREFIX_ID * message.identifier * f.affixed_name,
+                                        ),
                                         Call(
-                                            self.prefix
+                                            const.PREFIX_ID
                                             * common.sequence_name(message, f)
                                             * "Byte_Size",
                                             [Variable("Seq_Ctx")],
@@ -988,11 +981,13 @@ class SerializerGenerator:
                                     ],
                                 ),
                                 Call(
-                                    self.prefix * common.sequence_name(message, f) * "Has_Buffer",
+                                    const.PREFIX_ID
+                                    * common.sequence_name(message, f)
+                                    * "Has_Buffer",
                                     [Variable("Seq_Ctx")],
                                 ),
                                 Call(
-                                    self.prefix * common.sequence_name(message, f) * "Valid",
+                                    const.PREFIX_ID * common.sequence_name(message, f) * "Valid",
                                     [Variable("Seq_Ctx")],
                                 ),
                             ),
@@ -1031,7 +1026,7 @@ class SerializerGenerator:
                                 const.TYPES_TO_BIT_LENGTH,
                                 [
                                     Call(
-                                        self.prefix
+                                        const.PREFIX_ID
                                         * common.sequence_name(message, f)
                                         * "Byte_Size",
                                         [Variable("Seq_Ctx")],
@@ -1059,7 +1054,7 @@ class SerializerGenerator:
                             ],
                         ),
                         CallStatement(
-                            self.prefix * common.sequence_name(message, f) * "Copy",
+                            const.PREFIX_ID * common.sequence_name(message, f) * "Copy",
                             [
                                 Variable("Seq_Ctx"),
                                 Indexed(
@@ -1090,20 +1085,24 @@ class SerializerGenerator:
                             AndThen(
                                 *self.setter_preconditions(
                                     message,
-                                    self.prefix * message.identifier * f.affixed_name,
+                                    const.PREFIX_ID * message.identifier * f.affixed_name,
                                 ),
                                 *self.composite_setter_preconditions(message, f),
                                 Call(
-                                    self.prefix * message.identifier * "Valid_Length",
+                                    const.PREFIX_ID * message.identifier * "Valid_Length",
                                     [
                                         Variable("Ctx"),
-                                        Variable(self.prefix * message.identifier * f.affixed_name),
+                                        Variable(
+                                            const.PREFIX_ID * message.identifier * f.affixed_name,
+                                        ),
                                         Length("Data"),
                                     ],
                                 ),
                                 common.sufficient_space_for_field_condition(
-                                    self.prefix * message.identifier,
-                                    Variable(self.prefix * message.identifier * f.affixed_name),
+                                    const.PREFIX_ID * message.identifier,
+                                    Variable(
+                                        const.PREFIX_ID * message.identifier * f.affixed_name,
+                                    ),
                                     Mul(Length("Data"), Size(const.TYPES_BYTE)),
                                 ),
                                 *self.composite_setter_field_condition_precondition(message, f),
@@ -1250,14 +1249,16 @@ class SerializerGenerator:
                             AndThen(
                                 *self.setter_preconditions(
                                     message,
-                                    self.prefix * message.identifier * f.affixed_name,
+                                    const.PREFIX_ID * message.identifier * f.affixed_name,
                                 ),
                                 *self.composite_setter_preconditions(message, f),
                                 Call(
-                                    self.prefix * message.identifier * "Valid_Length",
+                                    const.PREFIX_ID * message.identifier * "Valid_Length",
                                     [
                                         Variable("Ctx"),
-                                        Variable(self.prefix * message.identifier * f.affixed_name),
+                                        Variable(
+                                            const.PREFIX_ID * message.identifier * f.affixed_name,
+                                        ),
                                         Variable("Length"),
                                     ],
                                 ),
@@ -1266,13 +1267,13 @@ class SerializerGenerator:
                                         const.TYPES_TO_LENGTH,
                                         [
                                             Call(
-                                                self.prefix
+                                                const.PREFIX_ID
                                                 * message.identifier
                                                 * "Available_Space",
                                                 [
                                                     Variable("Ctx"),
                                                     Variable(
-                                                        self.prefix
+                                                        const.PREFIX_ID
                                                         * message.identifier
                                                         * f.affixed_name,
                                                     ),
@@ -1348,10 +1349,12 @@ class SerializerGenerator:
                             "Assert",
                             [
                                 Call(
-                                    self.prefix * message.identifier * "Valid_Length",
+                                    const.PREFIX_ID * message.identifier * "Valid_Length",
                                     [
                                         Variable("Ctx"),
-                                        Variable(self.prefix * message.identifier * f.affixed_name),
+                                        Variable(
+                                            const.PREFIX_ID * message.identifier * f.affixed_name,
+                                        ),
                                         Variable("Length"),
                                     ],
                                 ),
@@ -1410,7 +1413,9 @@ class SerializerGenerator:
                                         AndThen(
                                             *self.setter_preconditions(
                                                 message,
-                                                self.prefix * message.identifier * f.affixed_name,
+                                                const.PREFIX_ID
+                                                * message.identifier
+                                                * f.affixed_name,
                                             ),
                                             *self.composite_setter_preconditions(message, f),
                                         ),
@@ -1436,14 +1441,18 @@ class SerializerGenerator:
                                         AndThen(
                                             *self.setter_preconditions(
                                                 message,
-                                                self.prefix * message.identifier * f.affixed_name,
+                                                const.PREFIX_ID
+                                                * message.identifier
+                                                * f.affixed_name,
                                             ),
                                             Call(
-                                                self.prefix * message.identifier * "Valid_Length",
+                                                const.PREFIX_ID
+                                                * message.identifier
+                                                * "Valid_Length",
                                                 [
                                                     Variable("Ctx"),
                                                     Variable(
-                                                        self.prefix
+                                                        const.PREFIX_ID
                                                         * message.identifier
                                                         * f.affixed_name,
                                                     ),
@@ -1528,14 +1537,16 @@ class SerializerGenerator:
                                 AndThen(
                                     *self.setter_preconditions(
                                         message,
-                                        self.prefix * message.identifier * f.affixed_name,
+                                        const.PREFIX_ID * message.identifier * f.affixed_name,
                                     ),
                                     Call(
-                                        self.prefix * message.identifier * "Valid_Length",
+                                        const.PREFIX_ID * message.identifier * "Valid_Length",
                                         [
                                             Variable("Ctx"),
                                             Variable(
-                                                self.prefix * message.identifier * f.affixed_name,
+                                                const.PREFIX_ID
+                                                * message.identifier
+                                                * f.affixed_name,
                                             ),
                                             Variable("Length"),
                                         ],
@@ -1545,13 +1556,13 @@ class SerializerGenerator:
                                             const.TYPES_TO_LENGTH,
                                             [
                                                 Call(
-                                                    self.prefix
+                                                    const.PREFIX_ID
                                                     * message.identifier
                                                     * "Available_Space",
                                                     [
                                                         Variable("Ctx"),
                                                         Variable(
-                                                            self.prefix
+                                                            const.PREFIX_ID
                                                             * message.identifier
                                                             * f.affixed_name,
                                                         ),
@@ -1628,9 +1639,9 @@ class SerializerGenerator:
     def setter_preconditions(self, message: Message, field_name: StrID) -> list[Expr]:
         return [
             Not(Constrained("Ctx")),
-            Call(self.prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
+            Call(const.PREFIX_ID * message.identifier * "Has_Buffer", [Variable("Ctx")]),
             Call(
-                self.prefix * message.identifier * "Valid_Next",
+                const.PREFIX_ID * message.identifier * "Valid_Next",
                 [Variable("Ctx"), Variable(field_name)],
             ),
         ]
@@ -1675,7 +1686,7 @@ class SerializerGenerator:
                 for p in message.successors(field)
                 if p != FINAL
             ],
-            *common.valid_path_to_next_field_condition(message, field, self.prefix),
+            *common.valid_path_to_next_field_condition(message, field),
             *common.context_invariant(message),
             *[
                 Equal(e, Old(e))
@@ -1710,7 +1721,6 @@ class SerializerGenerator:
     ) -> list[Expr]:
         return [
             common.field_condition_call(
-                self.prefix,
                 message,
                 field,
                 aggregate=None if empty else Variable("Data"),
@@ -1726,8 +1736,8 @@ class SerializerGenerator:
     ) -> list[Expr]:
         return [
             common.sufficient_space_for_field_condition(
-                self.prefix * message.identifier,
-                Variable(self.prefix * message.identifier * field.affixed_name),
+                const.PREFIX_ID * message.identifier,
+                Variable(const.PREFIX_ID * message.identifier * field.affixed_name),
                 size,
             ),
         ]

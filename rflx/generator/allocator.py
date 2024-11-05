@@ -66,10 +66,8 @@ class AllocatorGenerator:
         self,
         state_machine: ir.StateMachine,
         integration: Integration,
-        prefix: str = "",
     ) -> None:
         self._state_machine = state_machine
-        self._prefix = prefix
         self._declaration_context: list[ContextItem] = []
         self._body_context: list[ContextItem] = []
         self._allocation_slots: dict[Location, int] = {}
@@ -207,13 +205,13 @@ class AllocatorGenerator:
                 for size in sorted({slot.size for slot in slots})
             ],
         )
-        self._declaration_context.append(WithClause(self._prefix * const.TYPES_PACKAGE))
-        self._declaration_context.append(UseTypeClause(self._prefix * const.TYPES_INDEX))
-        self._declaration_context.append(UseTypeClause(self._prefix * const.TYPES_BYTES_PTR))
+        self._declaration_context.append(WithClause(const.PREFIX_ID * const.TYPES_PACKAGE))
+        self._declaration_context.append(UseTypeClause(const.PREFIX_ID * const.TYPES_INDEX))
+        self._declaration_context.append(UseTypeClause(const.PREFIX_ID * const.TYPES_BYTES_PTR))
         return unit
 
     def _create_slots(self, slots: Sequence[NumberedSlotInfo]) -> UnitPart:
-        self._declaration_context.append(WithClause(self._prefix * const.TYPES_PACKAGE))
+        self._declaration_context.append(WithClause(const.PREFIX_ID * const.TYPES_PACKAGE))
 
         return UnitPart(
             [

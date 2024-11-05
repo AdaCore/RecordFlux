@@ -88,7 +88,7 @@ def test_substitution_relation_aggregate(
         expected = equal_call if relation == expr.Equal else expr.Not(equal_call)
 
     assert (
-        relation(left, right).substituted(common.substitution(models.tlv_message(), "", embedded))
+        relation(left, right).substituted(common.substitution(models.tlv_message(), embedded))
         == expected
     )
 
@@ -118,16 +118,16 @@ def test_substitution_relation_scalar(
 ) -> None:
     assert_equal(
         relation(*expressions).substituted(
-            common.substitution(models.tlv_message(), "", public=True),
+            common.substitution(models.tlv_message(), public=True),
         ),
         relation(*expected),
     )
 
 
 def test_prefixed_type_identifier() -> None:
-    assert common.prefixed_type_identifier(ID("Integer"), "P") == ID("P.Integer")
+    assert common.prefixed_type_identifier(ID("Integer")) == const.PREFIX_ID * ID("Integer")
     for t in BUILTIN_TYPES:
-        assert common.prefixed_type_identifier(ID(t), "P") == t.name
+        assert common.prefixed_type_identifier(t) == t.name
 
 
 def test_param_enumeration_condition() -> None:
@@ -168,7 +168,7 @@ def test_param_enumeration_condition() -> None:
         location=Location((1, 1), end=(1, 2)),
     )
     assert_equal(
-        link.condition.substituted(common.substitution(message, "", embedded=True)),
+        link.condition.substituted(common.substitution(message, embedded=True)),
         expr.Equal(
             expr.Call(
                 "RFLX_Types::Base_Integer",
@@ -185,7 +185,7 @@ def test_param_enumeration_condition() -> None:
 
 
 def test_generate_string_substitution() -> None:
-    subst = common.substitution(models.definite_message(), "")
+    subst = common.substitution(models.definite_message())
     assert subst(expr.String("abc")) == expr.Aggregate(
         expr.Number(97),
         expr.Number(98),

@@ -182,7 +182,7 @@ def test_generate_field_size_optimization() -> None:
         },
         location=Location((1, 1), end=(1, 2)),
     )
-    structure = create_structure("", message)
+    structure = create_structure(message)
     assert (
         ada.ExpressionFunctionDeclaration(
             specification=ada.FunctionSpecification(

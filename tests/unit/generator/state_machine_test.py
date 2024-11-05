@@ -68,7 +68,10 @@ def dummy_state_machine() -> ir.StateMachine:
                     specification=ada.ProcedureSpecification(
                         identifier="F",
                         parameters=[
-                            ada.InOutParameter(["State"], "P.S_Environment.State"),
+                            ada.InOutParameter(
+                                ["State"],
+                                const.PREFIX_ID * "P.S_Environment.State",
+                            ),
                             ada.OutParameter(["RFLX_Result"], "Boolean"),
                         ],
                     ),
@@ -98,13 +101,16 @@ def dummy_state_machine() -> ir.StateMachine:
                     specification=ada.ProcedureSpecification(
                         identifier="F",
                         parameters=[
-                            ada.InOutParameter(["State"], "P.S_Environment.State"),
+                            ada.InOutParameter(
+                                ["State"],
+                                const.PREFIX_ID * "P.S_Environment.State",
+                            ),
                             ada.Parameter(["P1"], "Boolean"),
                             ada.Parameter(["P2"], const.TYPES_BYTES),
-                            ada.Parameter(["P3"], "T3"),
-                            ada.Parameter(["P4"], "T4"),
-                            ada.Parameter(["P5"], "T5.Structure"),
-                            ada.OutParameter(["RFLX_Result"], "T.Structure"),
+                            ada.Parameter(["P3"], const.PREFIX_ID * "T3"),
+                            ada.Parameter(["P4"], const.PREFIX_ID * "T4"),
+                            ada.Parameter(["P5"], const.PREFIX_ID * "T5.Structure"),
+                            ada.OutParameter(["RFLX_Result"], const.PREFIX_ID * "T.Structure"),
                         ],
                     ),
                 ),

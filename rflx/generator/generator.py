@@ -129,7 +129,7 @@ class Generator:
         ignore_unsupported_checksum: bool = False,
     ) -> None:
         try:
-            self._prefix = str(ID(prefix)) if prefix else ""
+            self._prefix = ID(prefix) if prefix else None
         except FatalError:
             fail(f'invalid prefix "{prefix}"')
         self._reproducible = reproducible
@@ -286,11 +286,11 @@ class Generator:
             logging.info("Generating {identifier}", identifier=d.identifier)
 
             if d.package not in units:
-                unit = self._create_unit(self._prefix, d.package, terminating=False)
+                unit = self._create_unit(d.package, terminating=False)
                 units[d.package] = unit
 
             if isinstance(d, (Scalar, Composite)):
-                units.update(self._create_type(self._prefix, d, d.package, units))
+                units.update(self._create_type(d, d.package, units))
 
             elif isinstance(d, Message):
                 # Eng/RecordFlux/RecordFlux#276
@@ -306,7 +306,7 @@ class Generator:
                             location=c.location,
                         )
 
-                units.update(self._create_message(self._prefix, d, self._executor))
+                units.update(self._create_message(d, self._executor))
 
             elif isinstance(d, Refinement):
                 units.update(self._create_refinement(d, units))
@@ -325,11 +325,10 @@ class Generator:
         integration: Integration,
     ) -> dict[ID, Unit]:
         units: dict[ID, Unit] = {}
-        allocator_generator = AllocatorGenerator(state_machine.to_ir(), integration, self._prefix)
+        allocator_generator = AllocatorGenerator(state_machine.to_ir(), integration)
 
         if allocator_generator.required:
             unit = self._create_unit(
-                self._prefix,
                 allocator_generator.unit_identifier,
                 allocator_generator.declaration_context,
                 allocator_generator.body_context,
@@ -341,11 +340,9 @@ class Generator:
             state_machine.to_ir(),
             integration,
             allocator_generator,
-            self._prefix,
             debug=self._debug,
         )
         unit = self._create_unit(
-            self._prefix,
             fsm_generator.unit_identifier,
             fsm_generator.declaration_context,
             fsm_generator.body_context,
@@ -358,10 +355,8 @@ class Generator:
         state_machine_generator = StateMachineGenerator(
             state_machine.to_ir(),
             allocator_generator,
-            self._prefix,
         )
         unit = self._create_unit(
-            self._prefix,
             state_machine_generator.unit_identifier,
             state_machine_generator.declaration_context,
             configuration_pragmas=[Pragma("Restrictions", [Variable("No_Streams")])],
@@ -374,7 +369,6 @@ class Generator:
 
     @staticmethod
     def _create_unit(  # noqa: PLR0913
-        prefix: str,
         identifier: ID,
         declaration_context: abc.Sequence[ContextItem] | None = None,
         body_context: abc.Sequence[ContextItem] | None = None,
@@ -391,7 +385,7 @@ class Generator:
         return PackageUnit(
             [*configuration_pragmas, *const.CONFIGURATION_PRAGMAS, *declaration_context],
             PackageDeclaration(
-                prefix * identifier,
+                const.PREFIX_ID * identifier,
                 formal_parameters=formal_parameters,
                 aspects=[
                     SparkMode(),
@@ -400,7 +394,7 @@ class Generator:
                 ],
             ),
             [*configuration_pragmas, *const.CONFIGURATION_PRAGMAS, *body_context],
-            PackageBody(prefix * identifier, aspects=[SparkMode()]),
+            PackageBody(const.PREFIX_ID * identifier, aspects=[SparkMode()]),
         )
 
     @staticmethod
@@ -416,7 +410,6 @@ class Generator:
     @classmethod
     def _create_message(  # noqa: PLR0912
         cls,
-        prefix: str,
         message: Message,
         executor: ProcessPoolExecutor,
     ) -> dict[ID, Unit]:
@@ -425,19 +418,19 @@ class Generator:
         if not message.fields:
             return units
 
-        context: list[ContextItem] = [WithClause(prefix * const.TYPES_PACKAGE)]
+        context: list[ContextItem] = [WithClause(const.PREFIX_ID * const.TYPES_PACKAGE)]
         body_context: list[ContextItem] = []
 
         if any(t.package == BUILTINS_PACKAGE for t in message.field_types.values()):
             context.extend(
                 [
-                    WithClause(prefix * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
-                    UsePackageClause(prefix * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
+                    WithClause(const.PREFIX_ID * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
+                    UsePackageClause(const.PREFIX_ID * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
                 ],
             )
 
         if any(isinstance(field_type, Scalar) for field_type in message.field_types.values()):
-            body_context.append(WithClause(prefix * const.TYPES_OPERATIONS_PACKAGE))
+            body_context.append(WithClause(const.PREFIX_ID * const.TYPES_OPERATIONS_PACKAGE))
 
         for field_type in message.types.values():
             if field_type.package in [BUILTINS_PACKAGE, INTERNAL_PACKAGE]:
@@ -446,15 +439,15 @@ class Generator:
             if isinstance(field_type, Scalar) and field_type.package != message.package:
                 context.extend(
                     [
-                        WithClause(prefix * field_type.package),
-                        UsePackageClause(prefix * field_type.package),
+                        WithClause(const.PREFIX_ID * field_type.package),
+                        UsePackageClause(const.PREFIX_ID * field_type.package),
                     ],
                 )
 
             elif isinstance(field_type, Sequence):
-                context.append(WithClause(prefix * field_type.identifier))
+                context.append(WithClause(const.PREFIX_ID * field_type.identifier))
 
-        unit = cls._create_unit(prefix, message.identifier, context, body_context=body_context)
+        unit = cls._create_unit(message.identifier, context, body_context=body_context)
         units[message.identifier] = unit
 
         scalar_fields = {}
@@ -478,8 +471,8 @@ class Generator:
                 else:
                     fields_with_explicit_size.append(f)
 
-        parser_generator = ParserGenerator(prefix)
-        serializer_generator = SerializerGenerator(prefix)
+        parser_generator = ParserGenerator()
+        serializer_generator = SerializerGenerator()
 
         futures = [
             executor.submit(
@@ -499,28 +492,23 @@ class Generator:
                 message_generator.create_valid_predecessors_invariant_function,
                 message,
                 composite_fields,
-                prefix,
             ),
             executor.submit(
                 message_generator.create_valid_next_internal_function,
                 message,
                 composite_fields,
-                prefix,
             ),
             executor.submit(
                 message_generator.create_field_size_internal_function,
                 message,
-                prefix,
             ),
             executor.submit(
                 message_generator.create_field_first_internal_function,
                 message,
-                prefix,
             ),
             executor.submit(
                 message_generator.create_valid_context_function,
                 message,
-                prefix,
             ),
             executor.submit(message_generator.create_context_type, message),
             executor.submit(message_generator.create_initialize_procedure, message),
@@ -530,74 +518,62 @@ class Generator:
             ),
             executor.submit(
                 message_generator.create_initialized_function,
-                prefix,
                 message,
             ),
-            executor.submit(message_generator.create_reset_procedure, prefix, message),
+            executor.submit(message_generator.create_reset_procedure, message),
             executor.submit(
                 message_generator.create_restricted_reset_procedure,
-                prefix,
                 message,
             ),
             executor.submit(
                 message_generator.create_take_buffer_procedure,
-                prefix,
                 message,
             ),
-            executor.submit(message_generator.create_copy_procedure, prefix, message),
-            executor.submit(message_generator.create_read_function, prefix, message),
+            executor.submit(message_generator.create_copy_procedure, message),
+            executor.submit(message_generator.create_read_function, message),
             executor.submit(
                 message_generator.create_generic_read_procedure,
-                prefix,
                 message,
             ),
             executor.submit(
                 message_generator.create_generic_write_procedure,
-                prefix,
                 message,
             ),
             executor.submit(message_generator.create_has_buffer_function),
             executor.submit(
                 message_generator.create_buffer_length_function,
-                prefix,
                 message,
             ),
             executor.submit(
                 message_generator.create_buffer_size_function,
-                prefix,
                 message,
             ),
             executor.submit(message_generator.create_size_function),
             executor.submit(message_generator.create_byte_size_function),
             executor.submit(message_generator.create_message_last_function),
             executor.submit(message_generator.create_written_last_function),
-            executor.submit(message_generator.create_data_procedure, prefix, message),
+            executor.submit(message_generator.create_data_procedure, message),
             executor.submit(
                 message_generator.create_valid_value_function,
-                prefix,
                 message,
                 scalar_fields,
             ),
             executor.submit(
                 message_generator.create_field_condition_function,
-                prefix,
                 message,
             ),
             executor.submit(
                 message_generator.create_field_size_function,
-                prefix,
                 message,
                 scalar_fields,
                 composite_fields,
             ),
             executor.submit(
                 message_generator.create_field_first_function,
-                prefix,
                 message,
             ),
             executor.submit(
                 message_generator.create_field_last_function,
-                prefix,
                 message,
                 scalar_fields,
                 composite_fields,
@@ -610,29 +586,24 @@ class Generator:
             executor.submit(message_generator.create_valid_next_function, message),
             executor.submit(
                 message_generator.create_available_space_function,
-                prefix,
                 message,
             ),
             executor.submit(
                 message_generator.create_sufficient_space_function,
-                prefix,
                 message,
             ),
             executor.submit(
                 message_generator.create_sufficient_buffer_length_function,
-                prefix,
                 message,
             ),
             executor.submit(
                 message_generator.create_equal_function,
-                prefix,
                 message,
                 scalar_fields,
                 composite_fields,
             ),
             executor.submit(
                 message_generator.create_reset_dependent_fields_procedure,
-                prefix,
                 message,
             ),
             *(
@@ -726,26 +697,23 @@ class Generator:
             ),
             executor.submit(
                 message_generator.create_switch_procedures,
-                prefix,
                 message,
                 sequence_fields,
             ),
             executor.submit(
                 message_generator.create_complete_functions,
-                prefix,
                 message,
                 sequence_fields,
             ),
             executor.submit(
                 message_generator.create_update_procedures,
-                prefix,
                 message,
                 sequence_fields,
             ),
             executor.submit(message_generator.create_cursor_function),
             executor.submit(message_generator.create_cursors_function),
             executor.submit(message_generator.create_cursors_index_function),
-            executor.submit(message_generator.create_structure, prefix, message),
+            executor.submit(message_generator.create_structure, message),
         ]
 
         for future in futures:
@@ -779,9 +747,8 @@ class Generator:
             unit = units[identifier]
         else:
             unit = self._create_unit(
-                self._prefix,
                 identifier,
-                [WithClause(self._prefix * const.TYPES_PACKAGE)] if not null_sdu else [],
+                [WithClause(const.PREFIX_ID * const.TYPES_PACKAGE)] if not null_sdu else [],
             )
             result[identifier] = unit
 
@@ -800,8 +767,8 @@ class Generator:
             if len(l.identifier.parts) == 2 and l.identifier.parent != refinement.package:
                 unit.declaration_context.extend(
                     [
-                        WithClause(self._prefix * l.identifier.parent),
-                        UsePackageClause(self._prefix * l.identifier.parent),
+                        WithClause(const.PREFIX_ID * l.identifier.parent),
+                        UsePackageClause(const.PREFIX_ID * l.identifier.parent),
                     ],
                 )
 
@@ -819,13 +786,13 @@ class Generator:
 
             unit.declaration_context.extend(
                 [
-                    WithClause(self._prefix * pdu_package),
-                    UsePackageClause(self._prefix * pdu_package),
+                    WithClause(const.PREFIX_ID * pdu_package),
+                    UsePackageClause(const.PREFIX_ID * pdu_package),
                 ],
             )
 
-        pdu_identifier = self._prefix * refinement.pdu.identifier
-        sdu_identifier = self._prefix * refinement.sdu.identifier
+        pdu_identifier = const.PREFIX_ID * refinement.pdu.identifier
+        sdu_identifier = const.PREFIX_ID * refinement.sdu.identifier
 
         unit.declaration_context.append(WithClause(pdu_identifier))
 
@@ -852,7 +819,6 @@ class Generator:
     @classmethod
     def _create_type(
         cls,
-        prefix: str,
         field_type: TypeDecl,
         message_package: ID,
         units: abc.Mapping[ID, Unit],
@@ -866,24 +832,24 @@ class Generator:
         assert isinstance(unit, PackageUnit)
 
         if isinstance(field_type, (Integer, Enumeration)):
-            unit.declaration_context.append(WithClause(prefix * const.TYPES))
+            unit.declaration_context.append(WithClause(const.PREFIX_ID * const.TYPES))
 
         if isinstance(field_type, Integer):
             unit += UnitPart(integer_types(field_type))
-            unit += cls._integer_functions(prefix, field_type)
+            unit += cls._integer_functions(field_type)
         elif isinstance(field_type, Enumeration):
             unit += UnitPart(enumeration_types(field_type))
-            unit += cls._enumeration_functions(prefix, field_type)
+            unit += cls._enumeration_functions(field_type)
         elif isinstance(field_type, Sequence):
-            result.update(cls._create_sequence(prefix, field_type))
+            result.update(cls._create_sequence(field_type))
         else:
             assert False, f'unexpected type "{type(field_type).__name__}"'
 
         return result
 
     @classmethod
-    def _create_sequence(cls, prefix: str, sequence_type: Sequence) -> dict[ID, Unit]:
-        context, package = common.create_sequence_instantiation(sequence_type, prefix)
+    def _create_sequence(cls, sequence_type: Sequence) -> dict[ID, Unit]:
+        context, package = common.create_sequence_instantiation(sequence_type)
         return {
             package.identifier: cls._create_instantiation_unit(
                 [
@@ -897,7 +863,7 @@ class Generator:
                         "Warnings",
                         [Variable("Off"), String.escaped('unit "*RFLX_Types" is not referenced')],
                     ),
-                    WithClause(prefix * const.TYPES_PACKAGE),
+                    WithClause(const.PREFIX_ID * const.TYPES_PACKAGE),
                     Pragma(
                         "Warnings",
                         [Variable("On"), String.escaped('unit "*RFLX_Types" is not referenced')],
@@ -908,7 +874,7 @@ class Generator:
         }
 
     @classmethod
-    def _integer_functions(cls, prefix: str, integer: Integer) -> UnitPart:
+    def _integer_functions(cls, integer: Integer) -> UnitPart:
         specification: list[Declaration] = []
 
         constraints = (
@@ -942,11 +908,10 @@ class Generator:
                 ],
             )
         else:
-            specification.append(UseTypeClause(prefix * const.TYPES_BASE_INT))
+            specification.append(UseTypeClause(const.PREFIX_ID * const.TYPES_BASE_INT))
 
         specification.append(
             cls._type_validation_function(
-                prefix,
                 integer.name,
                 "Val",
                 expr_conv.to_ada(constraints),
@@ -967,12 +932,12 @@ class Generator:
                 ],
             )
 
-        specification.extend(cls._integer_conversion_functions(prefix, integer))
+        specification.extend(cls._integer_conversion_functions(integer))
 
         return UnitPart(specification)
 
     @classmethod
-    def _enumeration_functions(cls, prefix: str, enum: Enumeration) -> UnitPart:
+    def _enumeration_functions(cls, enum: Enumeration) -> UnitPart:
         incomplete = len(enum.literals) < 2**MAX_SCALAR_SIZE
 
         specification: list[Declaration] = []
@@ -991,11 +956,10 @@ class Generator:
         )
 
         if validation_expression != TRUE:
-            specification.append(UseTypeClause(prefix * const.TYPES_BASE_INT))
+            specification.append(UseTypeClause(const.PREFIX_ID * const.TYPES_BASE_INT))
 
         specification.append(
             cls._type_validation_function(
-                prefix,
                 enum.name,
                 "Val" if validation_expression != TRUE else "Unused_Val",
                 validation_expression,
@@ -1029,11 +993,11 @@ class Generator:
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "To_Base_Integer",
-                    prefix * const.TYPES_BASE_INT,
+                    const.PREFIX_ID * const.TYPES_BASE_INT,
                     [
                         Parameter(
                             ["Enum"],
-                            prefix
+                            const.PREFIX_ID
                             * (
                                 common.full_enum_name(enum)
                                 if enum.always_valid
@@ -1054,8 +1018,8 @@ class Generator:
 
         conversion_function = FunctionSpecification(
             "To_Actual",
-            prefix * enum.identifier,
-            [Parameter(["Val"], prefix * const.TYPES_BASE_INT)],
+            const.PREFIX_ID * enum.identifier,
+            [Parameter(["Val"], const.PREFIX_ID * const.TYPES_BASE_INT)],
         )
         precondition = Precondition(Call(f"Valid_{enum.name}", [Variable("Val")]))
         conversion_cases: list[tuple[Expr, Expr]] = []
@@ -1065,7 +1029,7 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
                         "To_Actual",
-                        prefix * enum.identifier,
+                        const.PREFIX_ID * enum.identifier,
                         [Parameter(["Enum"], common.enum_name(enum))],
                     ),
                     Aggregate(TRUE, Variable("Enum")),
@@ -1092,8 +1056,8 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
                         "To_Base_Integer",
-                        prefix * const.TYPES_BASE_INT,
-                        [Parameter(["Val"], prefix * enum.identifier)],
+                        const.PREFIX_ID * const.TYPES_BASE_INT,
+                        [Parameter(["Val"], const.PREFIX_ID * enum.identifier)],
                     ),
                     If(
                         [(Variable("Val.Known"), Call("To_Base_Integer", [Variable("Val.Enum")]))],
@@ -1108,7 +1072,11 @@ class Generator:
                         (expr_conv.to_ada(value), Variable(key))
                         for key, value in enum.literals.items()
                     ],
-                    *([(Variable("others"), Last(prefix * enum.identifier))] if incomplete else []),
+                    *(
+                        [(Variable("others"), Last(const.PREFIX_ID * enum.identifier))]
+                        if incomplete
+                        else []
+                    ),
                 ],
             )
 
@@ -1131,7 +1099,7 @@ class Generator:
         refinement: Refinement,
         null_sdu: bool,
     ) -> SubprogramUnitPart:
-        pdu_identifier = self._prefix * refinement.pdu.identifier
+        pdu_identifier = const.PREFIX_ID * refinement.pdu.identifier
         condition = refinement.condition
         condition_fields = {
             f: t for f, t in refinement.pdu.types.items() if expr.Variable(f.name) in condition
@@ -1175,7 +1143,7 @@ class Generator:
             )
             .substituted(
                 lambda e: (
-                    e.copy(identifier=self._prefix * e.identifier)
+                    e.copy(identifier=const.PREFIX_ID * e.identifier)
                     if isinstance(e, expr.Literal) and e.identifier not in BOOLEAN.literals
                     else e
                 ),
@@ -1212,8 +1180,8 @@ class Generator:
         self,
         refinement: Refinement,
     ) -> UnitPart:
-        pdu_identifier = self._prefix * refinement.pdu.identifier
-        sdu_identifier = self._prefix * refinement.sdu.identifier
+        pdu_identifier = const.PREFIX_ID * refinement.pdu.identifier
+        sdu_identifier = const.PREFIX_ID * refinement.sdu.identifier
         pdu_context = f"{refinement.pdu.identifier.flat}_PDU_Context"
         sdu_context = f"{refinement.sdu.identifier.flat}_SDU_Context"
         refined_field_affixed_name = pdu_identifier * refinement.field.affixed_name
@@ -1236,7 +1204,7 @@ class Generator:
                                 Not(Constrained(pdu_context)),
                                 Not(Constrained(sdu_context)),
                                 Call(
-                                    self._prefix
+                                    const.PREFIX_ID
                                     * refinement.package
                                     * const.REFINEMENT_PACKAGE
                                     * contains_function_name(refinement),
@@ -1356,8 +1324,8 @@ class Generator:
         self,
         refinement: Refinement,
     ) -> UnitPart:
-        pdu_identifier = self._prefix * refinement.pdu.identifier
-        sdu_identifier = self._prefix * refinement.sdu.identifier
+        pdu_identifier = const.PREFIX_ID * refinement.pdu.identifier
+        sdu_identifier = const.PREFIX_ID * refinement.sdu.identifier
         pdu_context = ID(refinement.pdu.identifier.flat + "_PDU_Context")
         sdu_context = ID(refinement.sdu.identifier.flat + "_SDU_Context")
         refined_field_affixed_name = pdu_identifier * refinement.field.affixed_name
@@ -1409,7 +1377,7 @@ class Generator:
                             AndThen(
                                 Call(sdu_identifier * "Has_Buffer", [Variable(sdu_context)]),
                                 Call(
-                                    self._prefix
+                                    const.PREFIX_ID
                                     * refinement.package
                                     * const.REFINEMENT_PACKAGE
                                     * contains_function_name(refinement),
@@ -1426,8 +1394,8 @@ class Generator:
         self,
         refinement: Refinement,
     ) -> UnitPart:
-        pdu_identifier = self._prefix * refinement.pdu.identifier
-        sdu_identifier = self._prefix * refinement.sdu.identifier
+        pdu_identifier = const.PREFIX_ID * refinement.pdu.identifier
+        sdu_identifier = const.PREFIX_ID * refinement.sdu.identifier
         pdu_context = ID(refinement.pdu.identifier.flat + "_PDU_Context")
         sdu_context = ID(refinement.sdu.identifier.flat + "_SDU_Context")
         refined_field_affixed_name = pdu_identifier * refinement.field.affixed_name
@@ -1450,7 +1418,7 @@ class Generator:
                                 Not(Constrained(sdu_context)),
                                 Call(sdu_identifier * "Has_Buffer", [Variable(sdu_context)]),
                                 Call(
-                                    self._prefix
+                                    const.PREFIX_ID
                                     * refinement.package
                                     * const.REFINEMENT_PACKAGE
                                     * contains_function_name(refinement),
@@ -1618,7 +1586,6 @@ class Generator:
 
     @staticmethod
     def _type_validation_function(
-        prefix: str,
         type_name: str,
         enum_value: str,
         validation_expression: Expr,
@@ -1627,29 +1594,29 @@ class Generator:
             FunctionSpecification(
                 f"Valid_{type_name}",
                 "Boolean",
-                [Parameter([enum_value], prefix * const.TYPES_BASE_INT)],
+                [Parameter([enum_value], const.PREFIX_ID * const.TYPES_BASE_INT)],
             ),
             validation_expression,
         )
 
     @staticmethod
-    def _integer_conversion_functions(prefix: str, integer: Integer) -> list[SubprogramDeclaration]:
+    def _integer_conversion_functions(integer: Integer) -> list[SubprogramDeclaration]:
         return [
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "To_Base_Integer",
-                    prefix * const.TYPES_BASE_INT,
-                    [Parameter(["Val"], prefix * integer.identifier)],
+                    const.PREFIX_ID * const.TYPES_BASE_INT,
+                    [Parameter(["Val"], const.PREFIX_ID * integer.identifier)],
                 ),
-                Call(prefix * const.TYPES_BASE_INT, [Variable("Val")]),
+                Call(const.PREFIX_ID * const.TYPES_BASE_INT, [Variable("Val")]),
             ),
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "To_Actual",
-                    prefix * integer.identifier,
-                    [Parameter(["Val"], prefix * const.TYPES_BASE_INT)],
+                    const.PREFIX_ID * integer.identifier,
+                    [Parameter(["Val"], const.PREFIX_ID * const.TYPES_BASE_INT)],
                 ),
-                Call(prefix * integer.identifier, [Variable("Val")]),
+                Call(const.PREFIX_ID * integer.identifier, [Variable("Val")]),
                 [Precondition(Call(f"Valid_{integer.name}", [Variable("Val")]))],
             ),
         ]
@@ -1661,7 +1628,7 @@ class Generator:
         condition_fields: abc.Mapping[Field, TypeDecl],
         null_sdu: bool,
     ) -> list[expr.Expr]:
-        pdu_identifier = self._prefix * refinement.pdu.identifier
+        pdu_identifier = const.PREFIX_ID * refinement.pdu.identifier
 
         conditions: list[expr.Expr] = [
             expr.Call(pdu_identifier * "Has_Buffer", ty.BOOLEAN, [expr.Variable(pdu_context)]),

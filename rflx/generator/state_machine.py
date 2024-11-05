@@ -171,11 +171,9 @@ class StateMachineGenerator:
         self,
         state_machine: ir.StateMachine,
         allocator: AllocatorGenerator,
-        prefix: str = "",
     ) -> None:
         self._state_machine = state_machine
         self._allocator = allocator
-        self._prefix = prefix
 
         self._state_machine_context = StateMachineContext()
         self._declaration_context: list[ContextItem] = []
@@ -237,7 +235,7 @@ class StateMachineGenerator:
         procedure_parameters: list[Parameter] = [
             InOutParameter(
                 ["State"],
-                environment_package(self._prefix, self._state_machine.identifier) * "State",
+                environment_package(self._state_machine.identifier) * "State",
             ),
         ]
 
@@ -291,9 +289,9 @@ class StateMachineGenerator:
                             ID("Boolean")
                             if a.type_ == ty.BOOLEAN
                             else (
-                                self._prefix * a.type_identifier * "Structure"
+                                const.PREFIX_ID * a.type_identifier * "Structure"
                                 if isinstance(a.type_, ty.Message)
-                                else self._prefix * a.type_identifier
+                                else const.PREFIX_ID * a.type_identifier
                             )
                         )
                     ),
@@ -308,12 +306,12 @@ class StateMachineGenerator:
             OutParameter(
                 [ID("RFLX_Result")],
                 (
-                    self._prefix * function.return_type * "Structure"
+                    const.PREFIX_ID * function.return_type * "Structure"
                     if isinstance(function.type_, ty.Message)
                     else (
                         ID("Boolean")
                         if function.type_ == ty.BOOLEAN
-                        else self._prefix * function.return_type
+                        else const.PREFIX_ID * function.return_type
                     )
                 ),
             ),
@@ -341,14 +339,14 @@ class StateMachineGenerator:
 
         if functions:
             declaration_context.append(
-                WithClause(environment_package(self._prefix, self._state_machine.identifier)),
+                WithClause(environment_package(self._state_machine.identifier)),
             )
 
         if any(
             t.parent in [INTERNAL_PACKAGE, const.TYPES]
             for t in self._state_machine_context.referenced_types
         ):
-            declaration_context.append(WithClause(self._prefix * const.TYPES_PACKAGE))
+            declaration_context.append(WithClause(const.PREFIX_ID * const.TYPES_PACKAGE))
 
         for referenced_types, context in [
             (self._state_machine_context.referenced_types, declaration_context),
@@ -360,13 +358,13 @@ class StateMachineGenerator:
                 context.extend(
                     [
                         *(
-                            [WithClause(self._prefix * type_.package)]
+                            [WithClause(const.PREFIX_ID * type_.package)]
                             if type_.package != self._state_machine.identifier.parent
                             else []
                         ),
                         *(
                             [
-                                WithClause(self._prefix * type_.identifier),
+                                WithClause(const.PREFIX_ID * type_.identifier),
                             ]
                             if isinstance(type_, (model.Message, model.Sequence))
                             else []
@@ -388,7 +386,6 @@ class FSMGenerator:
         state_machine: ir.StateMachine,
         integration: Integration,
         allocator: AllocatorGenerator,
-        prefix: str = "",
         debug: common.Debug = common.Debug.NONE,
     ) -> None:
         self._state_machine = state_machine
@@ -398,7 +395,6 @@ class FSMGenerator:
             if integration.use_external_io_buffers(state_machine.identifier)
             else []
         )
-        self._prefix = prefix
         self._debug = debug
 
         self._state_machine_context = StateMachineContext()
@@ -429,7 +425,7 @@ class FSMGenerator:
             return identifier.name
 
         if len(identifier.parts) > 1 and identifier.parent == BUILTINS_PACKAGE:
-            return self._prefix * const.TYPES_PACKAGE * identifier.name
+            return const.PREFIX_ID * const.TYPES_PACKAGE * identifier.name
 
         return model.internal_type_identifier(identifier, self._state_machine.package)
 
@@ -447,16 +443,18 @@ class FSMGenerator:
         declaration_context: list[ContextItem] = []
 
         if self._allocator.required:
-            declaration_context.append(WithClause(self._prefix * self._allocator.unit_identifier))
+            declaration_context.append(
+                WithClause(const.PREFIX_ID * self._allocator.unit_identifier),
+            )
 
         if any(t.parent == const.TYPES for t in self._state_machine_context.used_types):
-            declaration_context.append(WithClause(self._prefix * const.TYPES_PACKAGE))
+            declaration_context.append(WithClause(const.PREFIX_ID * const.TYPES_PACKAGE))
 
         body_context: list[ContextItem] = [
             *(
                 [
                     (
-                        WithClause(self._prefix * ID("RFLX_Debug"))
+                        WithClause(const.PREFIX_ID * ID("RFLX_Debug"))
                         if self._debug == common.Debug.EXTERNAL
                         else WithClause("Ada.Text_IO")
                     ),
@@ -477,13 +475,13 @@ class FSMGenerator:
                 context.extend(
                     [
                         *(
-                            [WithClause(self._prefix * type_.package)]
+                            [WithClause(const.PREFIX_ID * type_.package)]
                             if type_.package != self._state_machine.identifier.parent
                             else []
                         ),
                         *(
                             [
-                                WithClause(self._prefix * type_.identifier),
+                                WithClause(const.PREFIX_ID * type_.identifier),
                             ]
                             if isinstance(type_, (model.Message, model.Sequence))
                             else []
@@ -494,11 +492,11 @@ class FSMGenerator:
         body_context = [
             *body_context,
             *[
-                WithClause(self._prefix * p)
+                WithClause(const.PREFIX_ID * p)
                 for p in self._state_machine_context.referenced_packages_body
             ],
             *[
-                WithClause(self._prefix * identifier)
+                WithClause(const.PREFIX_ID * identifier)
                 for identifier in self._state_machine_context.used_packages_body
             ],
         ]
@@ -510,7 +508,7 @@ class FSMGenerator:
                 - set(self._state_machine_context.used_types)
             )
         ):
-            body_context.append(WithClause(self._prefix * const.TYPES_PACKAGE))
+            body_context.append(WithClause(const.PREFIX_ID * const.TYPES_PACKAGE))
 
         for type_identifier in self._state_machine_context.used_types_body:
             if type_identifier.parent in [INTERNAL_PACKAGE, BUILTINS_PACKAGE]:
@@ -523,7 +521,7 @@ class FSMGenerator:
                 const.TYPES_BIT_LENGTH,
             ]:
                 body_context.append(
-                    WithClause(self._prefix * const.TYPES_PACKAGE),
+                    WithClause(const.PREFIX_ID * const.TYPES_PACKAGE),
                 )
 
         body_context = [
@@ -535,11 +533,11 @@ class FSMGenerator:
     def _create_use_clauses_body(self) -> list[Declaration]:
         return [
             *[
-                UsePackageClause(self._prefix * type_identifier)
+                UsePackageClause(const.PREFIX_ID * type_identifier)
                 for type_identifier in self._state_machine_context.used_packages_body
             ],
             *[
-                UseTypeClause(self._prefix * type_identifier)
+                UseTypeClause(const.PREFIX_ID * type_identifier)
                 for type_identifier in self._state_machine_context.used_types_body
                 if type_identifier.parent
                 not in [INTERNAL_PACKAGE, BUILTINS_PACKAGE, self._state_machine.identifier.parent]
@@ -564,7 +562,7 @@ class FSMGenerator:
                             String.escaped('use clause for type "*" defined at * has no effect'),
                         ],
                     ),
-                    UseTypeClause(self._prefix * const.TYPES_BASE_INT),
+                    UseTypeClause(const.PREFIX_ID * const.TYPES_BASE_INT),
                     Pragma(
                         "Warnings",
                         [
@@ -750,7 +748,7 @@ class FSMGenerator:
     ) -> UnitPart:
         return UnitPart(
             [
-                UseTypeClause(self._prefix * t)
+                UseTypeClause(const.PREFIX_ID * t)
                 for t in used_types
                 if not model.is_builtin_type(t) and not model.is_internal_type(t)
             ],
@@ -811,11 +809,7 @@ class FSMGenerator:
                             [
                                 Component(
                                     "E",
-                                    environment_package(
-                                        self._prefix,
-                                        self._state_machine.identifier,
-                                    )
-                                    * "State",
+                                    environment_package(self._state_machine.identifier) * "State",
                                 ),
                             ]
                             if has_functions
@@ -1134,14 +1128,14 @@ class FSMGenerator:
                             Call(type_identifier * "Has_Buffer", [Variable(identifier)]),
                             Equal(
                                 Variable(identifier * "Buffer_First"),
-                                First(self._prefix * const.TYPES_INDEX),
+                                First(const.PREFIX_ID * const.TYPES_INDEX),
                             ),
                             # Due to the reuse of allocation slots, `Buffer_Last` can be greater
                             # then the actual required size.
                             GreaterEqual(
                                 Variable(identifier * "Buffer_Last"),
                                 Add(
-                                    First(self._prefix * const.TYPES_INDEX),
+                                    First(const.PREFIX_ID * const.TYPES_INDEX),
                                     QualifiedExpr(
                                         const.TYPES_LENGTH,
                                         Number(
@@ -3636,7 +3630,7 @@ class FSMGenerator:
                         ),
                         ObjectDeclaration(
                             [target_buffer],
-                            self._prefix * const.TYPES_BYTES_PTR,
+                            const.PREFIX_ID * const.TYPES_BYTES_PTR,
                         ),
                     ],
                     [
@@ -5202,7 +5196,6 @@ class FSMGenerator:
                         self._raise_exception_if(
                             Not(
                                 common.field_condition_call(
-                                    self._prefix,
                                     message_model,
                                     model.Field(field),
                                     value=(
@@ -5252,7 +5245,6 @@ class FSMGenerator:
                     self._raise_exception_if(
                         Not(
                             common.field_condition_call(
-                                self._prefix,
                                 message_model,
                                 model.Field(field),
                                 size=Call(
@@ -6481,7 +6473,7 @@ class FSMGenerator:
             [
                 CallStatement(
                     (
-                        self._prefix * ID("RFLX_Debug.Print")
+                        const.PREFIX_ID * ID("RFLX_Debug.Print")
                         if self._debug == common.Debug.EXTERNAL
                         else "Ada.Text_IO.Put_Line"
                     ),
@@ -6526,8 +6518,8 @@ def state_id(identifier: ID) -> ID:
     return "S_" + identifier
 
 
-def environment_package(prefix: str, state_machine_id: ID) -> ID:
-    return prefix * state_machine_id + "_Environment"
+def environment_package(state_machine_id: ID) -> ID:
+    return const.PREFIX_ID * state_machine_id + "_Environment"
 
 
 def _unexpected_expression(expression: ir.Expr, context: str) -> NoReturn:
