@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from pathlib import Path
+from typing import Final
 
 import pytest
 
@@ -67,6 +68,11 @@ def test_unexpected_declaration(tmp_path: Path) -> None:
         Generator().generate(Model([TestType("P::T")]), Integration(), tmp_path)
 
 
+LIBRARY_FILES: Final[set[str]] = {file_name(str(f)) + ".ads" for f in const.LIBRARY_SPECS} | {
+    file_name(str(f)) + ".adb" for f in const.LIBRARY_BODIES
+}
+
+
 @pytest.mark.parametrize(
     ("debug", "debug_expected"),
     [
@@ -78,12 +84,12 @@ def test_unexpected_declaration(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("prefix", "library_files", "top_level_package", "expected"),
     [
-        ("RFLX", True, True, {"rflx.ads"} | {f"rflx-{f}" for f in const.LIBRARY_FILES}),
-        ("RFLX", True, False, {f"rflx-{f}" for f in const.LIBRARY_FILES}),
+        ("RFLX", True, True, {"rflx.ads"} | {f"rflx-{f}" for f in LIBRARY_FILES}),
+        ("RFLX", True, False, {f"rflx-{f}" for f in LIBRARY_FILES}),
         ("RFLX", False, True, {"rflx.ads"}),
         ("RFLX", False, False, set()),
-        ("", True, True, set(const.LIBRARY_FILES)),
-        ("", True, False, set(const.LIBRARY_FILES)),
+        ("", True, True, LIBRARY_FILES),
+        ("", True, False, LIBRARY_FILES),
         ("", False, True, set()),
         ("", False, False, set()),
     ],

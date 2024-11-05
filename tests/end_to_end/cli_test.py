@@ -171,20 +171,20 @@ def test_generate(tmp_path: Path) -> None:
         info: Creating {tmp_path}/rflx-ethernet-frame.ads
         info: Creating {tmp_path}/rflx-ethernet-frame.adb
         info: Creating {tmp_path}/rflx-rflx_arithmetic.ads
+        info: Creating {tmp_path}/rflx-rflx_arithmetic.adb
         info: Creating {tmp_path}/rflx-rflx_builtin_types-conversions.ads
         info: Creating {tmp_path}/rflx-rflx_builtin_types.ads
         info: Creating {tmp_path}/rflx-rflx_generic_types.ads
         info: Creating {tmp_path}/rflx-rflx_generic_types-generic_operators.ads
         info: Creating {tmp_path}/rflx-rflx_generic_types-generic_operations.ads
+        info: Creating {tmp_path}/rflx-rflx_generic_types-generic_operations.adb
         info: Creating {tmp_path}/rflx-rflx_message_sequence.ads
+        info: Creating {tmp_path}/rflx-rflx_message_sequence.adb
         info: Creating {tmp_path}/rflx-rflx_scalar_sequence.ads
+        info: Creating {tmp_path}/rflx-rflx_scalar_sequence.adb
         info: Creating {tmp_path}/rflx-rflx_types.ads
         info: Creating {tmp_path}/rflx-rflx_types-operators.ads
         info: Creating {tmp_path}/rflx-rflx_types-operations.ads
-        info: Creating {tmp_path}/rflx-rflx_arithmetic.adb
-        info: Creating {tmp_path}/rflx-rflx_generic_types-generic_operations.adb
-        info: Creating {tmp_path}/rflx-rflx_message_sequence.adb
-        info: Creating {tmp_path}/rflx-rflx_scalar_sequence.adb
         info: Creating {tmp_path}/rflx.ads
         """,
     )

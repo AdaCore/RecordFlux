@@ -76,6 +76,8 @@ from rflx.ada import (
     VariantPart,
     WithClause,
 )
+from rflx.ada_parser import parse_file
+from rflx.ada_prefix import change_prefix
 from rflx.common import file_name
 from rflx.const import BUILTINS_PACKAGE, INTERNAL_PACKAGE, MAX_SCALAR_SIZE, MP_CONTEXT
 from rflx.error import fail, warn
@@ -157,13 +159,19 @@ class Generator:
         library_files: bool = True,
         top_level_package: bool = True,
     ) -> None:
-        files = self._create_units(units, directory)
+
+        all_units = units
 
         if library_files:
-            files.extend(self._create_library_files(directory))
+            all_units.update(self._create_library_units())
         if top_level_package:
-            files.extend(self._create_top_level_package(directory))
+            all_units.update(self._create_top_level_package())
 
+        all_units = {
+            k: change_prefix(v, const.PREFIX_ID, self._prefix) for k, v in all_units.items()
+        }
+
+        files = self._create_units(all_units, directory)
         non_updated_files = sorted(set(directory.glob("*.ad[sb]")) - {f.name for f in files})
 
         if non_updated_files:
@@ -192,76 +200,60 @@ class Generator:
                 logging.info("Creating {name}", name=f.name)
                 f.name.write_text(f.content)
 
-    def _create_library_files(self, directory: Path) -> list[File]:
-        files = []
+    def _create_library_units(self) -> dict[ID, PackageUnit]:
+        units: dict[ID, PackageUnit] = {}
 
-        for template_filename in const.LIBRARY_FILES:
-            self._check_template_file(template_filename)
+        for template_unit in const.LIBRARY_SPECS:
+            template_spec = Path(file_name(str(const.PREFIX_ID * template_unit)) + ".ads")
 
-            prefix = f"{self._prefix}." if self._prefix else ""
-            filename = Path(f"{file_name(prefix)}{template_filename}")
+            self._check_template_file(template_spec)
+            if template_unit in const.LIBRARY_BODIES:
+                self._check_template_file(template_spec.with_suffix(".adb"))
 
-            template_file = (self._template_dir / template_filename).read_text()
-            files.append(
-                File(
-                    directory / filename,
-                    self._license_header
-                    + "\n".join(
-                        [
-                            l.format(prefix=prefix)
-                            for l in template_file.split("\n")
-                            if "/Workarounds#" not in l
-                        ],
-                    ),
-                ),
+            units[template_unit] = parse_file(
+                self._template_dir / Path(template_spec),
             )
 
         if self._debug == common.Debug.EXTERNAL:
-            debug_package_id = self._prefix * ID("RFLX_Debug")
-            files.append(
-                File(
-                    directory / f"{file_name(str(debug_package_id))}.ads",
-                    self._license_header
-                    + PackageUnit(
-                        [],
-                        PackageDeclaration(
-                            debug_package_id,
-                            [
-                                SubprogramDeclaration(
-                                    ProcedureSpecification(
-                                        "Print",
-                                        [
-                                            Parameter(["Message"], "String"),
-                                        ],
-                                    ),
-                                ),
-                            ],
-                            aspects=[
-                                SparkMode(),
-                            ],
+            debug_package_id = const.PREFIX_ID * "RFLX_Debug"
+            units[debug_package_id] = PackageUnit(
+                [],
+                PackageDeclaration(
+                    debug_package_id,
+                    [
+                        SubprogramDeclaration(
+                            ProcedureSpecification(
+                                "Print",
+                                [
+                                    Parameter(["Message"], "String"),
+                                ],
+                            ),
                         ),
-                        [],
-                        PackageBody(debug_package_id),
-                    ).ads,
+                    ],
+                    aspects=[
+                        SparkMode(),
+                    ],
                 ),
+                [],
+                PackageBody(debug_package_id),
             )
 
-        return files
+        return units
 
-    def _create_top_level_package(self, directory: Path) -> list[File]:
-        files = []
+    def _create_top_level_package(self) -> dict[ID, PackageUnit]:
+        units: dict[ID, PackageUnit] = {}
 
         if self._prefix:
-            files.append(
-                File(
-                    Path(directory) / Path(file_name(self._prefix) + ".ads"),
-                    self._license_header + f"package {self._prefix} is\n\nend {self._prefix};",
-                ),
+            units[const.PREFIX_ID] = PackageUnit(
+                [],
+                PackageDeclaration(const.PREFIX_ID, [], aspects=[]),
+                [],
+                PackageBody(const.PREFIX_ID),
             )
 
-        return files
+        return units
 
-    def _create_units(self, units: dict[ID, Unit], directory: Path) -> list[File]:
+    def _create_units(self, units: abc.Mapping[ID, Unit], directory: Path) -> list[File]:
         files = []
 
         for unit in units.values():
@@ -1545,10 +1537,8 @@ class Generator:
             ],
         )
 
-    def _check_template_file(self, filename: str) -> None:
-        assert self._template_dir.joinpath(
-            filename,
-        ).is_file(), f'template file not found: "{filename}"'
+    def _check_template_file(self, filename: Path) -> None:
+        assert (self._template_dir / filename).is_file(), f'template file not found: "{filename}"'
 
     @cached_property
     def _license_header(self) -> str:
