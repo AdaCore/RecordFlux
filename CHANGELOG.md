@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for SPARK Pro 25.0 (eng/recordflux/RecordFlux#1823)
 - Support for GNAT Pro 25.0 (eng/recordflux/RecordFlux#1823)
 
+### Fixed
+
+- Keyword highlighting in GNAT Studio and VS Code (eng/recordflux/RecordFlux#1815)
+
 ## [0.25.0] - 2024-11-05
 
 ### Added

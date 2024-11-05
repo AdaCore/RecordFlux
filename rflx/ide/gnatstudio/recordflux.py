@@ -152,28 +152,89 @@ end %(name);</text>
 GPS.parse_xml(XML)
 
 # Highlighting
+
+recordflux_types = [
+    "Channel",
+]
+
+recordflux_attributes = [
+    "Append",
+    "Extend",
+    "First",
+    "Has_Data",
+    "Last",
+    "Present",
+    "Read",
+    "Reset",
+    "Size",
+    "Valid",
+    "Valid_Checksum",
+    "Write",
+]
+
+recordflux_attribute_expressions = [
+    "Head",
+    "Opaque",
+]
+
+recordflux_simple_aspects = [
+    "Always_Valid",
+    "Readable",
+    "Writable",
+]
+
+recordflux_value_aspects = [
+    "Byte_Order",
+    "Checksum",
+    "Desc",
+    "First",
+    "Size",
+]
+
 recordflux_keywords = [
+    "all",
     "and",
-    "sequence of",
+    "begin",
+    "case",
     "end",
+    "exception",
     "for",
+    "function",
+    "generic",
+    "goto",
     "if",
+    "in",
     "is",
+    "machine",
     "message",
     "mod",
     "new",
+    "not",
     "null",
+    "of",
     "or",
     "package",
     "range",
+    "renames",
+    "return",
+    "sequence",
+    "session",
+    "some",
+    "state",
     "then",
+    "transition",
     "type",
+    "unsigned",
     "use",
+    "when",
+    "where",
     "with",
 ]
 
 recordflux_literals = [
     "False",
+    "High_Order_First",
+    "Low_Order_First",
     "True",
 ]
 
@@ -188,19 +249,15 @@ hl.register_highlighter(
     spec=(
         hl.simple(r"--[^\n]*", tag=hl.tag_comment),
         type_region,
-        hl.simple(r"\b'First", tag=tag_aspect),
-        hl.simple(r"\b'Last", tag=tag_aspect),
-        hl.simple(r"\b'Length", tag=tag_aspect),
-        hl.simple(r"\b'Size", tag=tag_aspect),
-        hl.simple(r"\bFirst\s+=>", tag=tag_aspect),
-        hl.simple(r"\bLast\s+=>", tag=tag_aspect),
-        hl.simple(r"\bLength\s+=>", tag=tag_aspect),
-        hl.simple(r"\bSize\s+=>", tag=tag_aspect),
+        hl.words(recordflux_types, tag=hl.tag_keyword),
+        hl.words([rf"\b'{w}" for w in recordflux_attributes], tag=tag_aspect),
+        hl.words([rf"\b'{w}" for w in recordflux_attribute_expressions], tag=tag_aspect),
+        hl.words(recordflux_simple_aspects, tag=tag_aspect),
+        *[hl.simple(rf"\b{w}\s+=>", tag=tag_aspect) for w in recordflux_value_aspects],
         hl.words(recordflux_keywords, tag=hl.tag_keyword),
         hl.words(recordflux_literals, tag=hl.tag_keyword),
         hl.simple(r"16#[_A-Fa-f0-9]+#", tag=hl.tag_number),
         hl.simple(r"\b[_0-9]+\b", tag=hl.tag_number),
-        hl.words(("Always_Valid"), tag=tag_aspect),
         string_literal,
     ),
 )

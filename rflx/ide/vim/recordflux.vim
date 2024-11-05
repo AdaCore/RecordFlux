@@ -16,6 +16,7 @@ syntax keyword rflxKeyword when
 syntax keyword rflxKeyword First
 syntax keyword rflxKeyword Size
 syntax keyword rflxKeyword Last
+syntax match rflxKeyword "'Opaque"
 syntax match rflxKeyword "[.]\\{2,\\}"
 syntax match rflxKeyword "Always_Valid"
 syntax keyword rflxKeyword end
@@ -30,7 +31,6 @@ syntax keyword rflxKeyword of
 syntax keyword rflxKeyword generic
 syntax keyword rflxKeyword function
 syntax keyword rflxKeyword return
-syntax keyword rflxKeyword Channel
 syntax keyword rflxKeyword Readable
 syntax keyword rflxKeyword Writable
 syntax keyword rflxKeyword machine
@@ -103,8 +103,8 @@ syntax keyword rflxBoolean False
 hi link rflxBoolean Boolean
 
 " Builtin types
+syntax keyword rflxType Channel
 syntax keyword rflxType Opaque
-syntax keyword rflxType Boolean
 hi link rflxType Type
 
 " Match number literal such as `1` or in an explicit base `#16#FF#`

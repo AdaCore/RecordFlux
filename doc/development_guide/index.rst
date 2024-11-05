@@ -68,7 +68,7 @@ Make targets for common development tasks are:
 - ``install`` Install project in editable mode
 - ``doc`` Generate HTML documentation
 - ``dist`` Create Python package
-- ``vscode`` Build the VS Code extension (which can be then installed via `rflx install vscode`)
+- ``vscode`` Build the VS Code extension (which can be then installed via ``rflx install vscode``)
 - ``clean`` Remove build directories and generated files
 - ``clean_all`` Bring the repository to a completely clean state
 
@@ -529,7 +529,7 @@ Default Annotations
 ^^^^^^^^^^^^^^^^^^^
 
 It is often useful to show a piece of user's code along with a message concerning the code.
-The simplest way to do that is by using the default annotation mechanism implemented in the `ErrorEntry` class which can be used to construct messages of all the severity categories defined above.
+The simplest way to do that is by using the default annotation mechanism implemented in the ``ErrorEntry`` class which can be used to construct messages of all the severity categories defined above.
 
 For instance, the following error message:
 
@@ -547,7 +547,7 @@ is by default automatically augmented by the tool with a default annotation like
    4 |    session S is
      |    ^^^^^^^
 
-However, if an explicit `help` annotation has been provided in the message constructor, then having it together with the default annotation leads to a duplicate underline under the highlighted code section:
+However, if an explicit ``help`` annotation has been provided in the message constructor, then having it together with the default annotation leads to a duplicate underline under the highlighted code section:
 
 .. code:: console
 
@@ -558,7 +558,7 @@ However, if an explicit `help` annotation has been provided in the message const
      |    ^^^^^^^
      |    ------- help: use "machine" instead
 
-To avoid this set the `generate_default_annotation` parameter to `False` when constructing an instance of `ErrorEntry` class.
+To avoid this set the ``generate_default_annotation`` parameter to ``False`` when constructing an instance of ``ErrorEntry`` class.
 This yields a more optimal message like the one below:
 
 .. code:: console
@@ -630,13 +630,13 @@ General
 -------
 
 The primary specification for the RecordFlux language is the `Language Reference <../../doc/language_reference/language_reference.rst>`_ document which formally specifies its syntax and documents also the intended semantics.
-The grammar specification in that document is machine-readable and `tools/check_grammar.py` can be used to validate whether the contents of a given `.rflx` file is compatible with that syntax definition.
+The grammar specification in that document is machine-readable and ``tools/check_grammar.py`` can be used to validate whether the contents of a given ``.rflx`` file is compatible with that syntax definition.
 
-A parser for the RecordFlux language is implemented in the `rflx` tool using the `Langkit <https://github.com/AdaCore/langkit>`_ framework.
+A parser for the RecordFlux language is implemented in the ``rflx`` tool using the `Langkit <https://github.com/AdaCore/langkit>`_ framework.
 
-Syntax highlighting of `.rflx` files has been provided for the following IDEs and editors: VS Code, GNAT Studio, Vim and Neovim.
-These can be installed using the `rflx install` command.
-A prerequisite for installing the RecordFlux VS Code extension is to build it locally with the command `make vscode`.
+Syntax highlighting of ``.rflx`` files has been provided for the following IDEs and editors: VS Code, GNAT Studio, Vim and Neovim.
+These can be installed using the ``rflx install`` command.
+A prerequisite for installing the RecordFlux VS Code extension is to build it locally with the command ``make vscode``.
 
 Making changes to the syntax
 ----------------------------
@@ -660,4 +660,4 @@ Backwards compatibility
 
 When the RecordFlux syntax is changed in a backwards incompatible manner, for instance, a construct is removed or a keyword is changed, then the old construct must still be preserved in the parser and a dedicated syntax check must be implemented.
 This is more helpful to the user since generic parsing errors are difficult to interpret.
-For instance, you can have a look at how the syntax check for modular type definitions of the form `type T is mod 8` is implemented in `parser.py <../../rflx/specification/parser.py>`_.
+For instance, you can have a look at how the syntax check for modular type definitions of the form ``type T is mod 8`` is implemented in `parser.py <../../rflx/specification/parser.py>`_.

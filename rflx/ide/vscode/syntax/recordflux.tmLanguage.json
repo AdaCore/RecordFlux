@@ -38,7 +38,7 @@
         },
         "operators": {
             "name": "entity.name.operator.recordflux",
-            "match": "=>|=|\\*|\\+|\\-|/=|\\.\\.|<|<=|>|>=|:=|\\b(or|and|range|sequence|unsigned|'First|'Size|'Last|'Valid_Checksum|'Valid|'Write|'Read)\\b"
+            "match": "=>|=|\\*|\\+|\\-|/=|\\.\\.|<|<=|>|>=|:=|\\b(and|mod|or|range|sequence|unsigned|'Append|'Extend|'First|'Has_Data|'Head|'Last|'Opaque|'Present|'Read|'Reset|'Size|'Valid|'Valid_Checksum|'Write)\\b"
         },
         "strings": {
             "name": "string.quoted.double.recordflux",
@@ -62,7 +62,7 @@
                 },
                 {
                     "name": "variable.language.recordflux",
-                    "match": "\\b(Size|Byte_Order|Checksum)\\b"
+                    "match": "\\b(Byte_Order|Checksum|Desc|First|Size)\\b"
                 }
             ]
         },
@@ -70,7 +70,7 @@
             "patterns": [
                 {
                     "name": "entity.name.type.recordflux",
-                    "match": "\\b(Opaque|Channel)"
+                    "match": "\\b(Channel|Opaque)\\b"
                 }
             ]
         }
