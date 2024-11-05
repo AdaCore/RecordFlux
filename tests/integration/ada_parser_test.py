@@ -5,8 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from rflx import ada_parser
+from rflx import ada_parser, ada_prefix
 from rflx.generator import const
+from rflx.identifier import ID
 
 
 def read_spec_and_body(spec_file: Path) -> tuple[str, str]:
@@ -38,5 +39,8 @@ def test_templates(data: tuple[str, str]) -> None:
     spec, body = data
     result = ada_parser.parse(spec + body)
 
+    assert repr(ada_prefix.change_prefix(result, ID("RFLX_Template"), ID("RFLX_Template"))) == repr(
+        result,
+    )
     assert result.ads == spec
     assert result.adb == body
