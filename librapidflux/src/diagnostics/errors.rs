@@ -9,9 +9,8 @@ use annotate_snippets::renderer::{Color, Style};
 use annotate_snippets::Message;
 use serde::{Deserialize, Serialize};
 
-use crate::source_code;
-
 use super::locations::{Location, NO_SOURCE};
+use crate::source_code;
 
 #[cfg(not(test))]
 mod colors {
@@ -454,6 +453,7 @@ mod tests {
     use rstest::rstest;
     use serial_test::{parallel, serial};
 
+    use super::{Annotation, RapidFluxError, Severity};
     use crate::{
         diagnostics::{
             errors::{ErrorEntry, Location},
@@ -461,8 +461,6 @@ mod tests {
         },
         source_code,
     };
-
-    use super::{Annotation, RapidFluxError, Severity};
 
     #[rstest]
     #[case::severity_note(Severity::Note, "note")]

@@ -717,14 +717,13 @@ mod tests {
     use pretty_assertions::assert_eq;
     use rstest::rstest;
 
-    use crate::create_id;
-
     use super::{
         check_type, check_type_instance, common_type, Aggregate, Bounds, Channel, Enumeration,
         FilePosition, Integer, Location, Message, Refinement, Sequence, Structure, Ty,
         TyDiscriminants, UniversalInteger, BASE_INTEGER, BIT_LENGTH_BOUNDS, ID, LENGTH_BOUNDS,
         OPAQUE, UNIVERSAL_INTEGER,
     };
+    use crate::create_id;
 
     lazy_static! {
         static ref A: ID = create_id!(["A"], Location::None);

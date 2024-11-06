@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use bincode::{deserialize, serialize};
 use indexmap::IndexMap;
+use librapidflux::ty as lib;
 use pyo3::{
     exceptions::PyTypeError,
     prelude::*,
@@ -10,8 +11,6 @@ use pyo3::{
     types::{PyBool, PyBytes, PyInt, PyList, PyNotImplemented, PySet, PyTuple, PyType},
 };
 use serde::{Deserialize, Serialize};
-
-use librapidflux::ty as lib;
 
 use crate::{
     diagnostics::{

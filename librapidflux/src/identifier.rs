@@ -230,9 +230,8 @@ mod tests {
     use pretty_assertions::assert_eq;
     use rstest::rstest;
 
-    use crate::diagnostics::locations::{FilePosition, Location};
-
     use super::{IDError, IDRef, ID};
+    use crate::diagnostics::locations::{FilePosition, Location};
 
     #[rstest]
     #[case("A", "A")]

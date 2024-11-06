@@ -4,14 +4,13 @@ use std::{
 };
 
 use bincode::{deserialize, serialize};
+use librapidflux::identifier as lib;
 use pyo3::{
     exceptions::{PyAssertionError, PyTypeError},
     prelude::*,
     types::{PyBool, PyBytes, PyList, PyNotImplemented, PyString},
 };
 use serde::{Deserialize, Serialize};
-
-use librapidflux::identifier as lib;
 
 use crate::{
     diagnostics::{

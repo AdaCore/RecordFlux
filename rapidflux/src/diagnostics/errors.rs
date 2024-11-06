@@ -5,6 +5,8 @@ use std::{
 };
 
 use bincode::{deserialize, serialize};
+use lazy_static::lazy_static;
+use librapidflux::diagnostics::errors as lib;
 use pyo3::{
     basic::CompareOp,
     create_exception,
@@ -12,14 +14,10 @@ use pyo3::{
     prelude::*,
     types::{PyBytes, PyType},
 };
-
-use lazy_static::lazy_static;
-use librapidflux::diagnostics::errors as lib;
 use serde::{Deserialize, Serialize};
 
-use crate::impl_states;
-
 use super::locations::Location;
+use crate::impl_states;
 
 #[pyclass(module = "rflx.rapidflux")]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]

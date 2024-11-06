@@ -1,9 +1,8 @@
+use librapidflux as lib;
 use pyo3::{
     prelude::*,
     types::{PyDict, PyList, PyString},
 };
-
-use librapidflux as lib;
 
 use crate::register_submodule_declarations;
 

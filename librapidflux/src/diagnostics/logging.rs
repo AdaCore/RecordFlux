@@ -147,14 +147,14 @@ pub fn set_quiet(enable: bool) {
 
 #[cfg(test)]
 mod tests {
+    use std::io::{Cursor, Read};
+
     use pretty_assertions::assert_eq;
     use rstest::rstest;
     use serial_test::{parallel, serial};
-    use std::io::{Cursor, Read};
-
-    use crate::diagnostics::{errors::Severity, logging::is_quiet};
 
     use super::set_quiet;
+    use crate::diagnostics::{errors::Severity, logging::is_quiet};
 
     #[rstest]
     #[case::log_error(Severity::Error, "error: Foo bar baz\n")]
