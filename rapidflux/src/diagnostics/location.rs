@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use bincode::{deserialize, serialize};
-use librapidflux::diagnostics::locations as lib;
+use librapidflux::diagnostics::location as lib;
 use pyo3::{
     prelude::*,
     types::{PyBool, PyBytes, PyNone, PyNotImplemented},

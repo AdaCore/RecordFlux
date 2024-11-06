@@ -13,7 +13,7 @@
 //! # Examples
 //!
 //! ```rust
-//!     use librapidflux::{log, diagnostics::Severity};
+//!     use librapidflux::{log, diagnostics::error::Severity};
 //!
 //!     log!(Severity::Error, "Some error");
 //!     log!(Severity::Info, "I have {} apples", 27);
@@ -22,7 +22,7 @@
 //! Shortcuts are available for each severity level:
 //!
 //! ```rust
-//!     use librapidflux::{error, info, help, diagnostics::Severity};
+//!     use librapidflux::{error, info, help, diagnostics::error::Severity};
 //!
 //!     error!("Oh nooo!");
 //!     info!("I have {} apples", 27);
@@ -36,7 +36,7 @@ use std::{
 
 use annotate_snippets::Message;
 
-use crate::diagnostics::errors::RENDERER;
+use crate::diagnostics::error::RENDERER;
 
 #[doc(hidden)]
 pub static IS_QUIET: AtomicBool = AtomicBool::new(false);
@@ -80,50 +80,50 @@ macro_rules! log {
 #[macro_export]
 macro_rules! info {
     ($fmt:literal, $($args:expr),*$(,)?) => {
-        $crate::log!($crate::diagnostics::errors::Severity::Info, $fmt, $($args),*);
+        $crate::log!($crate::diagnostics::error::Severity::Info, $fmt, $($args),*);
     };
     ($fmt:literal) => {
-        $crate::log!($crate::diagnostics::errors::Severity::Info, $fmt);
+        $crate::log!($crate::diagnostics::error::Severity::Info, $fmt);
     };
 }
 
 #[macro_export]
 macro_rules! warning {
     ($fmt:literal, $($args:expr),*$(,)?) => {
-        $crate::log!($crate::diagnostics::errors::Severity::Warning, $fmt, $($args),*);
+        $crate::log!($crate::diagnostics::error::Severity::Warning, $fmt, $($args),*);
     };
     ($fmt:literal) => {
-        $crate::log!($crate::diagnostics::errors::Severity::Warning, $fmt);
+        $crate::log!($crate::diagnostics::error::Severity::Warning, $fmt);
     };
 }
 
 #[macro_export]
 macro_rules! error {
     ($fmt:literal, $($args:expr),*$(,)?) => {
-        $crate::log!($crate::diagnostics::errors::Severity::Error, $fmt, $($args),*);
+        $crate::log!($crate::diagnostics::error::Severity::Error, $fmt, $($args),*);
     };
     ($fmt:literal) => {
-        $crate::log!($crate::diagnostics::errors::Severity::Error, $fmt);
+        $crate::log!($crate::diagnostics::error::Severity::Error, $fmt);
     };
 }
 
 #[macro_export]
 macro_rules! help {
     ($fmt:literal, $($args:expr),*$(,)?) => {
-        $crate::log!($crate::diagnostics::errors::Severity::Help, $fmt, $($args),*);
+        $crate::log!($crate::diagnostics::error::Severity::Help, $fmt, $($args),*);
     };
     ($fmt:literal) => {
-        $crate::log!($crate::diagnostics::errors::Severity::Help, $fmt);
+        $crate::log!($crate::diagnostics::error::Severity::Help, $fmt);
     };
 }
 
 #[macro_export]
 macro_rules! note {
     ($fmt:literal, $($args:expr),*$(,)?) => {
-        $crate::log!($crate::diagnostics::errors::Severity::Note, $fmt, $($args),*);
+        $crate::log!($crate::diagnostics::error::Severity::Note, $fmt, $($args),*);
     };
     ($fmt:literal) => {
-        $crate::log!($crate::diagnostics::errors::Severity::Note, $fmt);
+        $crate::log!($crate::diagnostics::error::Severity::Note, $fmt);
     };
 }
 
@@ -154,7 +154,7 @@ mod tests {
     use serial_test::{parallel, serial};
 
     use super::set_quiet;
-    use crate::diagnostics::{errors::Severity, logging::is_quiet};
+    use crate::diagnostics::{error::Severity, logging::is_quiet};
 
     #[rstest]
     #[case::log_error(Severity::Error, "error: Foo bar baz\n")]

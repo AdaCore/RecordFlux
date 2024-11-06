@@ -19,18 +19,18 @@ mod utils;
 
 #[pymodule]
 fn rapidflux(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
-    // Locations
-    m.add_class::<diagnostics::locations::Location>()?;
-    let _ = m.add("NO_LOCATION", diagnostics::locations::NO_LOCATION);
+    // Location
+    m.add_class::<diagnostics::location::Location>()?;
+    let _ = m.add("NO_LOCATION", diagnostics::location::NO_LOCATION);
 
-    // Errors
-    m.add_class::<diagnostics::errors::Severity>()?;
-    m.add_class::<diagnostics::errors::Annotation>()?;
-    m.add_class::<diagnostics::errors::ErrorEntry>()?;
-    m.add_class::<diagnostics::errors::RapidFluxError>()?;
+    // Error
+    m.add_class::<diagnostics::error::Severity>()?;
+    m.add_class::<diagnostics::error::Annotation>()?;
+    m.add_class::<diagnostics::error::ErrorEntry>()?;
+    m.add_class::<diagnostics::error::RapidFluxError>()?;
     m.add(
         "FatalError",
-        py.get_type_bound::<diagnostics::errors::FatalError>(),
+        py.get_type_bound::<diagnostics::error::FatalError>(),
     )?;
 
     // Constants module

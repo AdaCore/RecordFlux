@@ -3,7 +3,7 @@ use std::{fmt, string::ToString};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::diagnostics::locations::Location;
+use crate::diagnostics::location::Location;
 
 pub const ID_SEP: &str = "::";
 const ALT_ID_SEP: &str = ".";
@@ -208,7 +208,7 @@ pub enum IDError {
 ///
 /// ```rust
 /// use librapidflux::create_id;
-/// use librapidflux::diagnostics::Location;
+/// use librapidflux::diagnostics::location::Location;
 /// use librapidflux::identifier::ID;
 ///
 /// let id = create_id!(["A", "B"], Location::None);
@@ -231,7 +231,7 @@ mod tests {
     use rstest::rstest;
 
     use super::{IDError, IDRef, ID};
-    use crate::diagnostics::locations::{FilePosition, Location};
+    use crate::diagnostics::location::{FilePosition, Location};
 
     #[rstest]
     #[case("A", "A")]

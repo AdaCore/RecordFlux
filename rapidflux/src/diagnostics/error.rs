@@ -6,7 +6,7 @@ use std::{
 
 use bincode::{deserialize, serialize};
 use lazy_static::lazy_static;
-use librapidflux::diagnostics::errors as lib;
+use librapidflux::diagnostics::error as lib;
 use pyo3::{
     basic::CompareOp,
     create_exception,
@@ -16,7 +16,7 @@ use pyo3::{
 };
 use serde::{Deserialize, Serialize};
 
-use super::locations::Location;
+use super::location::Location;
 use crate::impl_states;
 
 #[pyclass(module = "rflx.rapidflux")]
@@ -204,6 +204,7 @@ impl Annotation {
     }
 }
 
+#[allow(clippy::module_name_repetitions)]
 #[pyclass(module = "rflx.rapidflux")]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ErrorEntry(lib::ErrorEntry);
@@ -314,6 +315,7 @@ impl ErrorEntry {
     }
 }
 
+#[allow(clippy::module_name_repetitions)]
 #[pyclass(module = "rflx.rapidflux", extends = PyException, subclass)]
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[pyo3(name = "RecordFluxError")]

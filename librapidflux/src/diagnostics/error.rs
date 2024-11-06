@@ -9,7 +9,7 @@ use annotate_snippets::renderer::{Color, Style};
 use annotate_snippets::Message;
 use serde::{Deserialize, Serialize};
 
-use super::locations::{Location, NO_SOURCE};
+use super::location::{Location, NO_SOURCE};
 use crate::source_code;
 
 #[cfg(not(test))]
@@ -170,6 +170,7 @@ impl Annotation {
     }
 }
 
+#[allow(clippy::module_name_repetitions)]
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
 pub struct ErrorEntry {
     message: String,
@@ -314,6 +315,7 @@ impl ErrorEntry {
     }
 }
 
+#[allow(clippy::module_name_repetitions)]
 #[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct RapidFluxError {
     entries: Vec<ErrorEntry>,
@@ -456,8 +458,8 @@ mod tests {
     use super::{Annotation, RapidFluxError, Severity};
     use crate::{
         diagnostics::{
-            errors::{ErrorEntry, Location},
-            locations::FilePosition,
+            error::{ErrorEntry, Location},
+            location::FilePosition,
         },
         source_code,
     };
@@ -801,7 +803,7 @@ mod tests {
         #[case] source_code: &str,
         #[case] expected_str: &str,
     ) {
-        use crate::diagnostics::errors::RENDERER;
+        use crate::diagnostics::error::RENDERER;
 
         match entry.to_message_mut(source_code) {
             Some(msg) => {

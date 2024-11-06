@@ -8,8 +8,8 @@ use strum::EnumDiscriminants;
 use crate::{
     consts, create_id,
     diagnostics::{
-        errors::{Annotation, ErrorEntry, RapidFluxError, Severity},
-        locations::{FilePosition, Location},
+        error::{Annotation, ErrorEntry, RapidFluxError, Severity},
+        location::{FilePosition, Location},
     },
     identifier::ID,
 };

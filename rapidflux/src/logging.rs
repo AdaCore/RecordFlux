@@ -40,7 +40,7 @@ fn log_if_necessary(
     py: Python<'_>,
     format_str: Bound<'_, PyString>,
     kwargs: Option<Bound<'_, PyDict>>,
-    severity: lib::diagnostics::errors::Severity,
+    severity: lib::diagnostics::error::Severity,
 ) -> PyResult<()> {
     if lib::diagnostics::logging::is_quiet() {
         return Ok(());
@@ -66,7 +66,7 @@ fn info(
         py,
         format_str,
         kwargs,
-        lib::diagnostics::errors::Severity::Info,
+        lib::diagnostics::error::Severity::Info,
     )
 }
 
@@ -81,7 +81,7 @@ fn warning(
         py,
         format_str,
         kwargs,
-        lib::diagnostics::errors::Severity::Warning,
+        lib::diagnostics::error::Severity::Warning,
     )
 }
 
@@ -96,7 +96,7 @@ fn error(
         py,
         format_str,
         kwargs,
-        lib::diagnostics::errors::Severity::Error,
+        lib::diagnostics::error::Severity::Error,
     )
 }
 
@@ -111,7 +111,7 @@ fn help(
         py,
         format_str,
         kwargs,
-        lib::diagnostics::errors::Severity::Help,
+        lib::diagnostics::error::Severity::Help,
     )
 }
 
@@ -126,7 +126,7 @@ fn note(
         py,
         format_str,
         kwargs,
-        lib::diagnostics::errors::Severity::Note,
+        lib::diagnostics::error::Severity::Note,
     )
 }
 

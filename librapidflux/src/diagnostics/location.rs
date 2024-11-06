@@ -236,7 +236,7 @@ mod tests {
     use bincode::{deserialize, serialize};
     use rstest::rstest;
 
-    use crate::diagnostics::locations::{FilePosition, Location};
+    use crate::diagnostics::location::{FilePosition, Location};
 
     #[test]
     #[should_panic(

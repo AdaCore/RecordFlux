@@ -14,8 +14,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     diagnostics::{
-        errors::FatalError,
-        locations::{Location, NO_LOCATION},
+        error::FatalError,
+        location::{Location, NO_LOCATION},
     },
     impl_states,
 };
@@ -225,9 +225,7 @@ impl ID {
 fn _new(identifier: &str, location: Option<Location>) -> Result<ID, IDError> {
     Ok(ID(lib::ID::new(
         identifier,
-        location.map_or(librapidflux::diagnostics::locations::Location::None, |l| {
-            l.0
-        }),
+        location.map_or(librapidflux::diagnostics::location::Location::None, |l| l.0),
     )?))
 }
 
@@ -247,7 +245,7 @@ impl From<lib::IDError> for IDError {
 
 pub(crate) fn to_id(obj: &Bound<'_, PyAny>) -> Result<lib::ID, IDError> {
     if let Ok(s) = obj.extract::<String>() {
-        lib::ID::new(&s, librapidflux::diagnostics::locations::Location::None).map_err(IDError)
+        lib::ID::new(&s, librapidflux::diagnostics::location::Location::None).map_err(IDError)
     } else if let Ok(id) = obj.extract::<ID>() {
         Ok(id.0)
     } else {

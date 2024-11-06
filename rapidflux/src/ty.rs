@@ -14,8 +14,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     diagnostics::{
-        errors::{Annotation, RapidFluxError},
-        locations::{Location, NO_LOCATION},
+        error::{Annotation, RapidFluxError},
+        location::{Location, NO_LOCATION},
     },
     identifier::{to_id, ID},
     impl_states, register_submodule_declarations,
