@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     diagnostics::{
-        error::{Annotation, RapidFluxError},
+        error::{Annotation, Error},
         location::{Location, NO_LOCATION},
     },
     identifier::{to_id, ID},
@@ -1069,7 +1069,7 @@ fn check_type(
     expected: &Bound<'_, PyAny>,
     location: &Location,
     description: &str,
-) -> RapidFluxError {
+) -> Error {
     let expected = if let Ok(tuple) = expected.extract::<Vec<Bound<'_, PyAny>>>() {
         tuple
     } else if let Ok(ty) = expected.extract::<Bound<'_, PyAny>>() {
@@ -1077,7 +1077,7 @@ fn check_type(
     } else {
         panic!("unexpected argument type for expected: {expected}")
     };
-    RapidFluxError(lib::check_type(
+    Error(lib::check_type(
         &to_ty(actual),
         &expected.iter().map(|e| to_ty(e)).collect::<Vec<_>>(),
         &location.0,
@@ -1094,7 +1094,7 @@ fn check_type_instance(
     description: &str,
     additional_annotations: Option<Vec<Annotation>>,
     py: Python<'_>,
-) -> PyResult<RapidFluxError> {
+) -> PyResult<Error> {
     let mut exp = vec![];
     let expected = if let Ok(tuple) = expected.extract::<Vec<Bound<'_, PyType>>>() {
         tuple
@@ -1134,7 +1134,7 @@ fn check_type_instance(
             panic!("unexpected type {e}")
         }
     }
-    Ok(RapidFluxError(lib::check_type_instance(
+    Ok(Error(lib::check_type_instance(
         &to_ty(actual),
         &exp,
         &location.0,

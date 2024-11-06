@@ -204,13 +204,13 @@ impl Annotation {
     }
 }
 
-#[allow(clippy::module_name_repetitions)]
 #[pyclass(module = "rflx.rapidflux")]
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ErrorEntry(lib::ErrorEntry);
+#[pyo3(name = "ErrorEntry")]
+pub struct Entry(lib::Entry);
 
 #[pymethods]
-impl ErrorEntry {
+impl Entry {
     #[new]
     #[pyo3(signature = (
             message,
@@ -227,7 +227,7 @@ impl ErrorEntry {
         annotations: Vec<Annotation>,
         generate_default_annotation: bool,
     ) -> Self {
-        Self(lib::ErrorEntry::new(
+        Self(lib::Entry::new(
             message,
             severity.into(),
             location.0,
@@ -315,22 +315,21 @@ impl ErrorEntry {
     }
 }
 
-#[allow(clippy::module_name_repetitions)]
 #[pyclass(module = "rflx.rapidflux", extends = PyException, subclass)]
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[pyo3(name = "RecordFluxError")]
-pub struct RapidFluxError(pub lib::RapidFluxError);
+pub struct Error(pub lib::Error);
 
 #[pymethods]
-impl RapidFluxError {
+impl Error {
     #[new]
     #[pyo3(signature = (entries=Vec::new()))]
-    fn new(entries: Vec<ErrorEntry>) -> Self {
+    fn new(entries: Vec<Entry>) -> Self {
         Self(
             entries
                 .into_iter()
                 .map(|e| e.0)
-                .collect::<Vec<lib::ErrorEntry>>()
+                .collect::<Vec<lib::Entry>>()
                 .into(),
         )
     }
@@ -343,7 +342,7 @@ impl RapidFluxError {
         format!("{:?}", self.0)
     }
 
-    fn __getnewargs__(&self) -> (Vec<ErrorEntry>,) {
+    fn __getnewargs__(&self) -> (Vec<Entry>,) {
         (self.entries(),)
     }
 
@@ -359,25 +358,25 @@ impl RapidFluxError {
 
     #[classmethod]
     pub fn set_max_error(_cls: &Bound<'_, PyType>, max_value: u64) {
-        lib::RapidFluxError::set_max_error(max_value);
+        lib::Error::set_max_error(max_value);
     }
 
     #[cfg(debug_assertions)]
     #[classmethod]
     pub fn reset_errors(_cls: &Bound<'_, PyType>) {
-        lib::RapidFluxError::reset_counts();
+        lib::Error::reset_counts();
     }
 
     #[getter]
-    fn entries(&self) -> Vec<ErrorEntry> {
-        self.0.entries().iter().cloned().map(ErrorEntry).collect()
+    fn entries(&self) -> Vec<Entry> {
+        self.0.entries().iter().cloned().map(Entry).collect()
     }
 
     fn has_errors(&self) -> bool {
         self.0.has_errors()
     }
 
-    pub fn push(&mut self, entry: ErrorEntry) -> PyResult<()> {
+    pub fn push(&mut self, entry: Entry) -> PyResult<()> {
         if self.0.push(entry.0) {
             Ok(())
         } else {
@@ -385,7 +384,7 @@ impl RapidFluxError {
         }
     }
 
-    pub fn extend(&mut self, entries: Vec<ErrorEntry>) -> PyResult<()> {
+    pub fn extend(&mut self, entries: Vec<Entry>) -> PyResult<()> {
         if self.0.extend(entries.into_iter().map(|e| e.0)) {
             Ok(())
         } else {
@@ -415,7 +414,7 @@ impl RapidFluxError {
     }
 }
 
-impl IntoPy<Py<PyAny>> for RapidFluxError {
+impl IntoPy<Py<PyAny>> for Error {
     fn into_py(self, py: Python<'_>) -> Py<PyAny> {
         Py::new(py, self)
             .expect("Failed to create python object")
@@ -423,9 +422,9 @@ impl IntoPy<Py<PyAny>> for RapidFluxError {
     }
 }
 
-impl From<RapidFluxError> for PyErr {
-    fn from(value: RapidFluxError) -> Self {
-        PyErr::new::<RapidFluxError, RapidFluxError>(value)
+impl From<Error> for PyErr {
+    fn from(value: Error) -> Self {
+        PyErr::new::<Error, Error>(value)
     }
 }
 
@@ -436,4 +435,4 @@ create_exception!(
     "Error indicating a bug."
 );
 
-impl_states!(Annotation, ErrorEntry, Severity, RapidFluxError);
+impl_states!(Annotation, Entry, Severity, Error);

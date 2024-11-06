@@ -170,9 +170,8 @@ impl Annotation {
     }
 }
 
-#[allow(clippy::module_name_repetitions)]
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
-pub struct ErrorEntry {
+pub struct Entry {
     message: String,
     severity: Severity,
     location: Location,
@@ -180,7 +179,7 @@ pub struct ErrorEntry {
     generate_default: bool,
 }
 
-impl Display for ErrorEntry {
+impl Display for Entry {
     #[cfg(test)]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -235,7 +234,7 @@ impl Display for ErrorEntry {
     }
 }
 
-impl ErrorEntry {
+impl Entry {
     pub fn new(
         message: String,
         severity: Severity,
@@ -315,19 +314,18 @@ impl ErrorEntry {
     }
 }
 
-#[allow(clippy::module_name_repetitions)]
 #[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
-pub struct RapidFluxError {
-    entries: Vec<ErrorEntry>,
+pub struct Error {
+    entries: Vec<Entry>,
 }
 
-impl Debug for RapidFluxError {
+impl Debug for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self.entries)
     }
 }
 
-impl Display for RapidFluxError {
+impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -341,19 +339,19 @@ impl Display for RapidFluxError {
     }
 }
 
-impl From<Vec<ErrorEntry>> for RapidFluxError {
-    fn from(entries: Vec<ErrorEntry>) -> Self {
+impl From<Vec<Entry>> for Error {
+    fn from(entries: Vec<Entry>) -> Self {
         Self { entries }
     }
 }
 
-impl RapidFluxError {
+impl Error {
     /// Push a new error entry.
     ///
     /// Return true if the push succeeded or false otherwise.
     /// A failed push indicates that we've reached the maximum number of error messages
     /// and we should stop the execution.
-    pub fn push(&mut self, entry: ErrorEntry) -> bool {
+    pub fn push(&mut self, entry: Entry) -> bool {
         self.entries.push(entry);
         ERROR_COUNT.fetch_add(1, Ordering::Relaxed);
 
@@ -363,7 +361,7 @@ impl RapidFluxError {
     /// Extend error collection from an iterator. Takes the entries' ownership.
     ///
     /// Return value is the same as for the `push` method.
-    pub fn extend<T: IntoIterator<Item = ErrorEntry>>(&mut self, entries: T) -> bool {
+    pub fn extend<T: IntoIterator<Item = Entry>>(&mut self, entries: T) -> bool {
         let entries_count = self.entries.len();
         self.entries.extend(entries);
 
@@ -377,7 +375,7 @@ impl RapidFluxError {
         self.entries.clear();
     }
 
-    pub fn entries(&self) -> &[ErrorEntry] {
+    pub fn entries(&self) -> &[Entry] {
         &self.entries
     }
 
@@ -455,10 +453,10 @@ mod tests {
     use rstest::rstest;
     use serial_test::{parallel, serial};
 
-    use super::{Annotation, RapidFluxError, Severity};
+    use super::{Annotation, Error, Severity};
     use crate::{
         diagnostics::{
-            error::{ErrorEntry, Location},
+            error::{Entry, Location},
             location::FilePosition,
         },
         source_code,
@@ -577,7 +575,7 @@ mod tests {
 
     #[test]
     fn test_error_entry_creation() {
-        let error_entry = ErrorEntry::new(
+        let error_entry = Entry::new(
             "Some terrible error".to_string(),
             Severity::Error,
             Location::None,
@@ -611,7 +609,7 @@ mod tests {
 
     #[test]
     fn test_error_entry_extend_one() {
-        let mut entry = ErrorEntry::new(
+        let mut entry = Entry::new(
             "entry".to_string(),
             Severity::Error,
             Location::None,
@@ -626,7 +624,7 @@ mod tests {
 
     #[test]
     fn test_error_entry_extend_empty() {
-        let mut entry = ErrorEntry::new(
+        let mut entry = Entry::new(
             "entry".to_string(),
             Severity::Error,
             Location::None,
@@ -640,7 +638,7 @@ mod tests {
 
     #[test]
     fn test_error_entry_extend_multiple() {
-        let mut entry = ErrorEntry::new(
+        let mut entry = Entry::new(
             "entry".to_string(),
             Severity::Error,
             Location::None,
@@ -657,7 +655,7 @@ mod tests {
     #[case::error_entry_default_annotation(true)]
     #[case::error_entry_default_annotation(false)]
     fn test_error_entry_generate_default_annotation(#[case] generate_default: bool) {
-        let entry = ErrorEntry {
+        let entry = Entry {
             generate_default,
             ..Default::default()
         };
@@ -666,7 +664,7 @@ mod tests {
 
     #[rstest]
     #[case::error_entry_no_location(
-        ErrorEntry::new(
+        Entry::new(
             "Some terrible error".to_string(),
             Severity::Error,
             Location::None,
@@ -677,7 +675,7 @@ mod tests {
         "error: Some terrible error",
     )]
     #[case::error_entry_severity_info(
-        ErrorEntry::new(
+        Entry::new(
             "info".to_string(),
             Severity::Info,
             Location::None,
@@ -688,7 +686,7 @@ mod tests {
         "info: info",
     )]
     #[case::error_entry_severity_help(
-        ErrorEntry::new(
+        Entry::new(
             "help".to_string(),
             Severity::Help,
             Location::None,
@@ -699,7 +697,7 @@ mod tests {
         "help: help",
     )]
     #[case::error_entry_severity_warning(
-        ErrorEntry::new(
+        Entry::new(
             "warning".to_string(),
             Severity::Warning,
             Location::None,
@@ -710,7 +708,7 @@ mod tests {
         "warning: warning",
     )]
     #[case::error_entry_severity_note(
-        ErrorEntry::new(
+        Entry::new(
             "note".to_string(),
             Severity::Note,
             Location::None,
@@ -721,7 +719,7 @@ mod tests {
         "note: note",
     )]
     #[case::error_entry_with_source_file(
-        ErrorEntry::new(
+        Entry::new(
             "Some terrible error".to_string(),
             Severity::Error,
             Location::Stdin {
@@ -741,7 +739,7 @@ mod tests {
         },
     )]
     #[case::error_entry_with_location_and_source_file(
-        ErrorEntry::new(
+        Entry::new(
             "Some terrible error".to_string(),
             Severity::Error,
             Location::File {
@@ -763,7 +761,7 @@ mod tests {
         },
     )]
     #[case::error_entry_with_location_and_source_file(
-        ErrorEntry::new(
+        Entry::new(
             "Some terrible error".to_string(),
             Severity::Error,
             Location::File {
@@ -799,7 +797,7 @@ mod tests {
         },
     )]
     fn test_error_entry_to_message(
-        #[case] mut entry: ErrorEntry,
+        #[case] mut entry: Entry,
         #[case] source_code: &str,
         #[case] expected_str: &str,
     ) {
@@ -816,7 +814,7 @@ mod tests {
 
     #[rstest]
     #[case::error_entry_with_location_no_source(
-        ErrorEntry::new(
+        Entry::new(
             "Some terrible error".to_string(),
             Severity::Error,
             Location::Stdin {
@@ -829,7 +827,7 @@ mod tests {
         "<stdin>:1:1: error: Some terrible error"
     )]
     #[case::error_entry_with_location_and_source(
-        ErrorEntry::new(
+        Entry::new(
             "Some terrible error".to_string(),
             Severity::Error,
             Location::File {
@@ -843,7 +841,7 @@ mod tests {
         "foo.rflx:1:1: error: Some terrible error"
     )]
     #[case::error_entry_with_annotations(
-        ErrorEntry::new(
+        Entry::new(
             "Some terrible error".to_string(),
             Severity::Error,
             Location::File {
@@ -869,14 +867,14 @@ mod tests {
               foo.rflx:1:1: info: some label"
         }
     )]
-    fn test_error_entry_display(#[case] error_entry: ErrorEntry, #[case] expected_str: &str) {
+    fn test_error_entry_display(#[case] error_entry: Entry, #[case] expected_str: &str) {
         assert_eq!(error_entry.to_string().as_str(), expected_str);
     }
 
     #[test]
-    fn test_rapid_flux_error_entries() {
-        let error = RapidFluxError {
-            entries: vec![ErrorEntry::new(
+    fn test_error_entries() {
+        let error = Error {
+            entries: vec![Entry::new(
                 "first".to_string(),
                 Severity::Error,
                 Location::None,
@@ -886,7 +884,7 @@ mod tests {
         };
         assert_eq!(
             error.entries(),
-            vec![ErrorEntry::new(
+            vec![Entry::new(
                 "first".to_string(),
                 Severity::Error,
                 Location::None,
@@ -899,37 +897,37 @@ mod tests {
     #[rstest]
     #[case::errors(
         vec![
-            ErrorEntry::new("okay".to_string(), Severity::Info, Location::None, Vec::new(), true),
-            ErrorEntry::new("ooof".to_string(), Severity::Error, Location::None, Vec::new(), true),
+            Entry::new("okay".to_string(), Severity::Info, Location::None, Vec::new(), true),
+            Entry::new("ooof".to_string(), Severity::Error, Location::None, Vec::new(), true),
         ],
         true,
     )]
     #[case::no_errors(
         vec![
-            ErrorEntry::new("okay".to_string(), Severity::Info, Location::None, Vec::new(), true),
+            Entry::new("okay".to_string(), Severity::Info, Location::None, Vec::new(), true),
         ],
         false,
     )]
     #[parallel]
-    fn test_rapid_flux_error_has_error(#[case] entries: Vec<ErrorEntry>, #[case] expected: bool) {
-        let mut error = RapidFluxError::default();
+    fn test_error_has_error(#[case] entries: Vec<Entry>, #[case] expected: bool) {
+        let mut error = Error::default();
         assert!(!error.has_errors());
         error.extend(entries);
         assert_eq!(error.has_errors(), expected);
     }
 
     #[test]
-    fn test_rapid_flux_error_display() {
-        let error = RapidFluxError {
+    fn test_error_display() {
+        let error = Error {
             entries: vec![
-                ErrorEntry::new(
+                Entry::new(
                     "first".to_string(),
                     Severity::Error,
                     Location::None,
                     Vec::new(),
                     true,
                 ),
-                ErrorEntry::new(
+                Entry::new(
                     "second".to_string(),
                     Severity::Warning,
                     Location::None,
@@ -943,17 +941,17 @@ mod tests {
     }
 
     #[test]
-    fn test_rapid_flux_error_debug() {
-        let error = RapidFluxError {
+    fn test_error_debug() {
+        let error = Error {
             entries: vec![
-                ErrorEntry::new(
+                Entry::new(
                     "first".to_string(),
                     Severity::Error,
                     Location::None,
                     vec![Annotation::new(None, Severity::Error, location())],
                     true,
                 ),
-                ErrorEntry::new(
+                Entry::new(
                     "second".to_string(),
                     Severity::Warning,
                     Location::None,
@@ -965,31 +963,31 @@ mod tests {
 
         assert_eq!(
             format!("{error:?}").as_str(),
-            "[ErrorEntry { message: \"first\", severity: Error, location: None, annotations: \
+            "[Entry { message: \"first\", severity: Error, location: None, annotations: \
             [Annotation { label: None, severity: Error, location: File { start: \
             FilePosition(1, 1), end: FilePosition(2, 2), source: \"file\" } }], generate_default: true }, \
-            ErrorEntry { message: \"second\", severity: Warning, location: None, \
+            Entry { message: \"second\", severity: Warning, location: None, \
             annotations: [], generate_default: true }]"
         );
     }
 
     #[test]
-    fn test_rapid_flux_error_from_vec() {
-        let vector = vec![ErrorEntry {
+    fn test_error_from_vec() {
+        let vector = vec![Entry {
             message: "dummy".to_string(),
             severity: Severity::Error,
-            ..ErrorEntry::default()
+            ..Entry::default()
         }];
 
-        let error: RapidFluxError = vector.clone().into();
+        let error: Error = vector.clone().into();
         assert_eq!(error.entries, vector);
     }
 
     #[test]
     #[parallel]
-    fn test_rapid_flux_error_push() {
-        RapidFluxError::reset_counts();
-        let entry = ErrorEntry {
+    fn test_error_push() {
+        Error::reset_counts();
+        let entry = Entry {
             message: "dummy".to_string(),
             severity: Severity::Error,
             annotations: vec![Annotation::new(None, Severity::Error, location())],
@@ -997,7 +995,7 @@ mod tests {
             generate_default: true,
         };
 
-        let mut error: RapidFluxError = RapidFluxError::default();
+        let mut error: Error = Error::default();
         assert!(error.push(entry.clone()));
         assert_eq!(error.entries, vec![entry.clone()]);
         assert!(error.push(entry.clone()));
@@ -1006,10 +1004,10 @@ mod tests {
 
     #[test]
     #[serial]
-    fn test_rapid_flux_error_push_with_limit() {
-        RapidFluxError::reset_counts();
-        RapidFluxError::set_max_error(2);
-        let entry = ErrorEntry {
+    fn test_error_push_with_limit() {
+        Error::reset_counts();
+        Error::set_max_error(2);
+        let entry = Entry {
             message: "dummy".to_string(),
             severity: Severity::Error,
             annotations: vec![Annotation::new(None, Severity::Error, location())],
@@ -1017,25 +1015,25 @@ mod tests {
             generate_default: true,
         };
 
-        let mut error: RapidFluxError = RapidFluxError::default();
+        let mut error: Error = Error::default();
         assert!(error.push(entry.clone()));
         assert_eq!(error.entries, vec![entry.clone()]);
         assert!(!error.push(entry.clone()));
-        RapidFluxError::set_max_error(0);
+        Error::set_max_error(0);
     }
 
     #[test]
     #[parallel]
-    fn test_rapid_flux_extend() {
-        RapidFluxError::reset_counts();
-        let entry = ErrorEntry {
+    fn test_error_extend() {
+        Error::reset_counts();
+        let entry = Entry {
             message: "dummy".to_string(),
             severity: Severity::Error,
             annotations: vec![Annotation::new(None, Severity::Error, location())],
             location: location(),
             generate_default: true,
         };
-        let second_entry = ErrorEntry {
+        let second_entry = Entry {
             message: "other dummy".to_string(),
             severity: Severity::Error,
             annotations: vec![Annotation::new(None, Severity::Error, location())],
@@ -1043,24 +1041,24 @@ mod tests {
             generate_default: true,
         };
 
-        let mut error: RapidFluxError = RapidFluxError::default();
+        let mut error: Error = Error::default();
         assert!(error.extend([entry, second_entry]));
     }
 
     #[test]
     #[serial]
-    fn test_rapid_flux_error_extend_with_limit() {
-        RapidFluxError::reset_counts();
-        RapidFluxError::set_max_error(3);
+    fn test_error_extend_with_limit() {
+        Error::reset_counts();
+        Error::set_max_error(3);
         let entries = vec![
-            ErrorEntry {
+            Entry {
                 message: "dummy".to_string(),
                 severity: Severity::Error,
                 annotations: vec![Annotation::new(None, Severity::Error, location())],
                 location: location(),
                 generate_default: true,
             },
-            ErrorEntry {
+            Entry {
                 message: "other dummy".to_string(),
                 severity: Severity::Error,
                 annotations: vec![Annotation::new(None, Severity::Error, location())],
@@ -1069,29 +1067,29 @@ mod tests {
             },
         ];
 
-        let mut error: RapidFluxError = RapidFluxError::default();
+        let mut error: Error = Error::default();
         assert!(error.extend(entries.clone()));
         assert!(!error.extend(entries.clone()));
         assert!(!error.extend(entries.clone()));
-        RapidFluxError::set_max_error(0);
+        Error::set_max_error(0);
     }
 
     #[test]
     #[parallel]
-    fn test_rapid_flux_error_clear() {
+    fn test_error_clear() {
         let vector = vec![
-            ErrorEntry {
+            Entry {
                 message: "dummy".to_string(),
                 severity: Severity::Error,
-                ..ErrorEntry::default()
+                ..Entry::default()
             },
-            ErrorEntry {
+            Entry {
                 message: "other".to_string(),
                 severity: Severity::Error,
-                ..ErrorEntry::default()
+                ..Entry::default()
             },
         ];
-        let mut error = RapidFluxError::default();
+        let mut error = Error::default();
         error.extend(vector.clone());
         assert_eq!(error.entries, vector);
         error.clear();
@@ -1099,29 +1097,29 @@ mod tests {
     }
 
     #[rstest]
-    #[case::rapidfluxerror_oneline_error(
-        vec![ErrorEntry::new("Simple error".to_string(), Severity::Error, Location::None, Vec::new(), true)].into(),
+    #[case::error_oneline_error(
+        vec![Entry::new("Simple error".to_string(), Severity::Error, Location::None, Vec::new(), true)].into(),
         "error: Simple error\n",
     )]
-    #[case::rapidfluxerror_oneline_warning(
-        vec![ErrorEntry::new("Simple warning".to_string(), Severity::Warning, Location::None, Vec::new(), true)].into(),
+    #[case::error_oneline_warning(
+        vec![Entry::new("Simple warning".to_string(), Severity::Warning, Location::None, Vec::new(), true)].into(),
         "warning: Simple warning\n",
     )]
-    #[case::rapidfluxerror_oneline_note(
-        vec![ErrorEntry::new("Simple note".to_string(), Severity::Note, Location::None, Vec::new(), true)].into(),
+    #[case::error_oneline_note(
+        vec![Entry::new("Simple note".to_string(), Severity::Note, Location::None, Vec::new(), true)].into(),
         "note: Simple note\n",
     )]
-    #[case::rapidfluxerror_oneline_help(
-        vec![ErrorEntry::new("Simple help".to_string(), Severity::Help, Location::None, Vec::new(), true)].into(),
+    #[case::error_oneline_help(
+        vec![Entry::new("Simple help".to_string(), Severity::Help, Location::None, Vec::new(), true)].into(),
         "help: Simple help\n",
     )]
-    #[case::rapidfluxerror_oneline_info(
-        vec![ErrorEntry::new("Simple info".to_string(), Severity::Info, Location::None, Vec::new(), true)].into(),
+    #[case::error_oneline_info(
+        vec![Entry::new("Simple info".to_string(), Severity::Info, Location::None, Vec::new(), true)].into(),
         "info: Simple info\n",
     )]
-    #[case::rapidfluxerror_location_from_stdin(
+    #[case::error_location_from_stdin(
         vec![
-            ErrorEntry::new(
+            Entry::new(
                 "Annotated error".to_string(),
                 Severity::Error,
                 Location::File {
@@ -1135,10 +1133,7 @@ mod tests {
         ].into(),
         "<stdin>:1:1: error: Annotated error\n",
     )]
-    fn test_rapid_flux_error_print_messages(
-        #[case] mut errors: RapidFluxError,
-        #[case] expected_str: &str,
-    ) {
+    fn test_error_print_messages(#[case] mut errors: Error, #[case] expected_str: &str) {
         use std::io::{Read, Seek};
 
         let mut memory_stream = io::Cursor::new(Vec::new());
@@ -1160,9 +1155,9 @@ mod tests {
     #[test]
     #[allow(clippy::items_after_statements)]
     #[serial]
-    fn test_rapid_flux_error_print_message_default_annotation() {
+    fn test_error_print_message_default_annotation() {
         let file_path = PathBuf::from("tests/data/sample.rflx");
-        let mut error: RapidFluxError = vec![ErrorEntry::new(
+        let mut error: Error = vec![Entry::new(
             "Annotated error".to_string(),
             Severity::Error,
             Location::File {
@@ -1205,9 +1200,9 @@ mod tests {
     }
 
     #[test]
-    fn test_rapid_flux_error_serde() {
-        let errors = RapidFluxError::from(vec![
-            ErrorEntry {
+    fn test_error_serde() {
+        let errors = Error::from(vec![
+            Entry {
                 message: "some error".to_string(),
                 severity: Severity::Error,
                 annotations: vec![Annotation {
@@ -1218,22 +1213,22 @@ mod tests {
                 location: Location::None,
                 generate_default: true,
             },
-            ErrorEntry {
+            Entry {
                 message: "some other".to_string(),
                 severity: Severity::Error,
-                ..ErrorEntry::default()
+                ..Entry::default()
             },
         ]);
         let bytes = bincode::serialize(&errors).expect("failed to serialize");
-        let deser: RapidFluxError = bincode::deserialize(&bytes).expect("failed to deserialize");
+        let deser: Error = bincode::deserialize(&bytes).expect("failed to deserialize");
         assert_eq!(errors, deser);
     }
 
     #[allow(clippy::redundant_clone)]
     #[test]
-    fn test_rapid_flux_error_clone() {
+    fn test_error_clone() {
         use std::ptr::addr_of;
-        let error = RapidFluxError::default();
+        let error = Error::default();
         let cloned = error.clone();
 
         assert_ne!(addr_of!(error), addr_of!(cloned));

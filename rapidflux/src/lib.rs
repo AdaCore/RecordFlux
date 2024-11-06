@@ -26,8 +26,8 @@ fn rapidflux(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     // Error
     m.add_class::<diagnostics::error::Severity>()?;
     m.add_class::<diagnostics::error::Annotation>()?;
-    m.add_class::<diagnostics::error::ErrorEntry>()?;
-    m.add_class::<diagnostics::error::RapidFluxError>()?;
+    m.add_class::<diagnostics::error::Entry>()?;
+    m.add_class::<diagnostics::error::Error>()?;
     m.add(
         "FatalError",
         py.get_type_bound::<diagnostics::error::FatalError>(),

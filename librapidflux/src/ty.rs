@@ -8,7 +8,7 @@ use strum::EnumDiscriminants;
 use crate::{
     consts, create_id,
     diagnostics::{
-        error::{Annotation, ErrorEntry, RapidFluxError, Severity},
+        error::{Annotation, Entry, Error, Severity},
         location::{FilePosition, Location},
     },
     identifier::ID,
@@ -260,18 +260,13 @@ pub fn common_type(types: &[Ty]) -> Ty {
 /// # Panics
 ///
 /// Will panic if `expected` is empty or location is `None`.
-pub fn check_type(
-    actual: &Ty,
-    expected: &[Ty],
-    location: &Location,
-    description: &str,
-) -> RapidFluxError {
+pub fn check_type(actual: &Ty, expected: &[Ty], location: &Location, description: &str) -> Error {
     assert!(!expected.is_empty());
 
     if *actual == Ty::Undefined {
         return undefined_type(location, description);
     }
-    let mut error = RapidFluxError::default();
+    let mut error = Error::default();
 
     if !expected.contains(&Ty::Undefined) && !expected.iter().any(|e| actual.is_compatible(e)) {
         let desc = expected
@@ -279,7 +274,7 @@ pub fn check_type(
             .map(std::string::ToString::to_string)
             .collect::<Vec<_>>()
             .join(" or ");
-        error.push(ErrorEntry::new(
+        error.push(Entry::new(
             format!("expected {desc}"),
             Severity::Error,
             location.clone(),
@@ -306,13 +301,13 @@ pub fn check_type_instance(
     location: &Location,
     description: &str,
     additional_annotations: &[Annotation],
-) -> RapidFluxError {
+) -> Error {
     assert!(!expected.is_empty());
 
     if *actual == Ty::Undefined {
         return undefined_type(location, description);
     }
-    let mut error = RapidFluxError::default();
+    let mut error = Error::default();
 
     if !expected
         .iter()
@@ -330,7 +325,7 @@ pub fn check_type_instance(
             location.clone(),
         ));
         annotations.extend(additional_annotations.iter().cloned());
-        error.push(ErrorEntry::new(
+        error.push(Entry::new(
             format!("expected {desc}"),
             Severity::Error,
             location.clone(),
@@ -342,13 +337,13 @@ pub fn check_type_instance(
     error
 }
 
-fn undefined_type(location: &Location, description: &str) -> RapidFluxError {
+fn undefined_type(location: &Location, description: &str) -> Error {
     let description = if description.is_empty() {
         String::new()
     } else {
         format!(" {description}")
     };
-    RapidFluxError::from(vec![ErrorEntry::new(
+    Error::from(vec![Entry::new(
         format!("undefined{description}"),
         Severity::Error,
         location.clone(),
