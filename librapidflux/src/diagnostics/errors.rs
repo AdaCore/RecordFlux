@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::source_code;
 
-use super::{Location, NO_SOURCE};
+use super::locations::{Location, NO_SOURCE};
 
 #[cfg(not(test))]
 mod colors {
@@ -455,7 +455,10 @@ mod tests {
     use serial_test::{parallel, serial};
 
     use crate::{
-        diagnostics::{ErrorEntry, FilePosition, Location},
+        diagnostics::{
+            errors::{ErrorEntry, Location},
+            locations::FilePosition,
+        },
         source_code,
     };
 

@@ -7,7 +7,10 @@ use strum::EnumDiscriminants;
 
 use crate::{
     consts, create_id,
-    diagnostics::{Annotation, ErrorEntry, FilePosition, Location, RapidFluxError, Severity},
+    diagnostics::{
+        errors::{Annotation, ErrorEntry, RapidFluxError, Severity},
+        locations::{FilePosition, Location},
+    },
     identifier::ID,
 };
 

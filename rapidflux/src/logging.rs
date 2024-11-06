@@ -41,7 +41,7 @@ fn log_if_necessary(
     py: Python<'_>,
     format_str: Bound<'_, PyString>,
     kwargs: Option<Bound<'_, PyDict>>,
-    severity: lib::diagnostics::Severity,
+    severity: lib::diagnostics::errors::Severity,
 ) -> PyResult<()> {
     if lib::diagnostics::logging::is_quiet() {
         return Ok(());
@@ -63,7 +63,12 @@ fn info(
     format_str: Bound<'_, PyString>,
     kwargs: Option<Bound<'_, PyDict>>,
 ) -> PyResult<()> {
-    log_if_necessary(py, format_str, kwargs, lib::diagnostics::Severity::Info)
+    log_if_necessary(
+        py,
+        format_str,
+        kwargs,
+        lib::diagnostics::errors::Severity::Info,
+    )
 }
 
 #[pyfunction]
@@ -73,7 +78,12 @@ fn warning(
     format_str: Bound<'_, PyString>,
     kwargs: Option<Bound<'_, PyDict>>,
 ) -> PyResult<()> {
-    log_if_necessary(py, format_str, kwargs, lib::diagnostics::Severity::Warning)
+    log_if_necessary(
+        py,
+        format_str,
+        kwargs,
+        lib::diagnostics::errors::Severity::Warning,
+    )
 }
 
 #[pyfunction]
@@ -83,7 +93,12 @@ fn error(
     format_str: Bound<'_, PyString>,
     kwargs: Option<Bound<'_, PyDict>>,
 ) -> PyResult<()> {
-    log_if_necessary(py, format_str, kwargs, lib::diagnostics::Severity::Error)
+    log_if_necessary(
+        py,
+        format_str,
+        kwargs,
+        lib::diagnostics::errors::Severity::Error,
+    )
 }
 
 #[pyfunction]
@@ -93,7 +108,12 @@ fn help(
     format_str: Bound<'_, PyString>,
     kwargs: Option<Bound<'_, PyDict>>,
 ) -> PyResult<()> {
-    log_if_necessary(py, format_str, kwargs, lib::diagnostics::Severity::Help)
+    log_if_necessary(
+        py,
+        format_str,
+        kwargs,
+        lib::diagnostics::errors::Severity::Help,
+    )
 }
 
 #[pyfunction]
@@ -103,7 +123,12 @@ fn note(
     format_str: Bound<'_, PyString>,
     kwargs: Option<Bound<'_, PyDict>>,
 ) -> PyResult<()> {
-    log_if_necessary(py, format_str, kwargs, lib::diagnostics::Severity::Note)
+    log_if_necessary(
+        py,
+        format_str,
+        kwargs,
+        lib::diagnostics::errors::Severity::Note,
+    )
 }
 
 #[pyfunction]

@@ -14,7 +14,10 @@ use serde::{Deserialize, Serialize};
 use librapidflux::ty as lib;
 
 use crate::{
-    diagnostics::{Annotation, Location, RapidFluxError, NO_LOCATION},
+    diagnostics::{
+        errors::{Annotation, RapidFluxError},
+        locations::{Location, NO_LOCATION},
+    },
     identifier::{to_id, ID},
     impl_states, register_submodule_declarations,
 };

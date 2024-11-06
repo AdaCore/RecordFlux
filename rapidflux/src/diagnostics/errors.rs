@@ -14,12 +14,12 @@ use pyo3::{
 };
 
 use lazy_static::lazy_static;
-use librapidflux::diagnostics as lib;
+use librapidflux::diagnostics::errors as lib;
 use serde::{Deserialize, Serialize};
 
 use crate::impl_states;
 
-use super::Location;
+use super::locations::Location;
 
 #[pyclass(module = "rflx.rapidflux")]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]

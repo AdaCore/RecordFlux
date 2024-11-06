@@ -152,7 +152,7 @@ mod tests {
     use serial_test::{parallel, serial};
     use std::io::{Cursor, Read};
 
-    use crate::diagnostics::{logging::is_quiet, Severity};
+    use crate::diagnostics::{errors::Severity, logging::is_quiet};
 
     use super::set_quiet;
 

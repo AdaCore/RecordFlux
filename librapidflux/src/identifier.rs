@@ -3,7 +3,7 @@ use std::{fmt, string::ToString};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::diagnostics::Location;
+use crate::diagnostics::locations::Location;
 
 pub const ID_SEP: &str = "::";
 const ALT_ID_SEP: &str = ".";
@@ -230,7 +230,7 @@ mod tests {
     use pretty_assertions::assert_eq;
     use rstest::rstest;
 
-    use crate::diagnostics::{FilePosition, Location};
+    use crate::diagnostics::locations::{FilePosition, Location};
 
     use super::{IDError, IDRef, ID};
 
