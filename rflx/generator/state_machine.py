@@ -22,7 +22,7 @@ from rflx.ada import (
     Case,
     CaseStatement,
     ChoiceList,
-    CommentStatement,
+    Comment,
     Component,
     Constrained,
     ContextItem,
@@ -3009,7 +3009,7 @@ class FSMGenerator:
             )
 
         return [
-            *([CommentStatement(str(action.location))] if action.location != NO_LOCATION else []),
+            *([Comment(" " + str(action.location))] if action.location != NO_LOCATION else []),
             *result,
         ]
 

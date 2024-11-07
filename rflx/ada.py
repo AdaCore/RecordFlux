@@ -2084,13 +2084,13 @@ class Label(Statement):
         return f"<<{self.identifier.ada_str}>>"
 
 
-class CommentStatement(Statement):
+class Comment(ContextItem, Statement):
     def __init__(self, comment: str) -> None:
         assert "\n" not in comment
         self.comment = comment
 
     def __str__(self) -> str:
-        return f"-- {self.comment}"
+        return f"--{self.comment}"
 
 
 class IfStatement(Statement):
