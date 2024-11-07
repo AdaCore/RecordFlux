@@ -2093,6 +2093,14 @@ class Comment(ContextItem, Statement):
         return f"--{self.comment}"
 
 
+class VerticalSpace(ContextItem, Statement):
+    def __init__(self) -> None:
+        pass
+
+    def __str__(self) -> str:
+        return ""
+
+
 class IfStatement(Statement):
     def __init__(
         self,
