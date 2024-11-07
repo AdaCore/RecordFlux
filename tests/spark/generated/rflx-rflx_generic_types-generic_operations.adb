@@ -14,39 +14,6 @@ with RFLX.RFLX_Arithmetic;
 package body RFLX.RFLX_Generic_Types.Generic_Operations with
   SPARK_Mode
 is
-   --
-   -- Terminology
-   --
-   -- -----XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX----   Data
-   --
-   --    |-------|-------|-------|-------|-------|       Value Bytes
-   --    3  LMB  11      19      27      35 RMB  43
-   --
-   -- |----|                                     |----|
-   -- LME_Offset                               RME_Offset
-   --
-   --      |--|                               |--|
-   --    LME_Size                          RME_Size
-   --
-   -- |-------|-------|-------|-------|-------|-------|  Data Bytes
-   -- 0       8       16      24      32      40
-   --    LME                                     RME
-   --
-   -- LME: Leftmost Element of Data
-   -- RME: Rightmost Element of Data
-   --
-   -- LSB: Leftmost Byte of Value
-   -- RMB: Rightmost Byte of Value
-   --
-   -- LME_Offset: Bits the LME is shifted right relative to first of LME
-   -- RME_Offset: Bits the RME is shifted left relative to last of RME
-   --
-   -- LME_Size: Number of bits of LME contained in LMB
-   -- RME_Size: Number of bits of RME contained in RMB
-   --
-   -- LME_Index: Index pointing to LME
-   -- RME_Index: Index pointing to RME
-   --
 
    use RFLX.RFLX_Arithmetic;
 
@@ -87,16 +54,6 @@ is
       LME_Offset : Natural;
       Result : U64 := 0;
    begin
-      -- This function simply iterates over all data bytes that contain
-      -- relevant data, from most significant to least significant, and adds
-      -- them up in Result, shifting the Result before the addition as needed
-      -- (see helper function Shift_Add).
-      -- We track the number of bits that are contained in Result to bound the
-      -- current value of Result by 2 ** (number of bits). At the end of the
-      -- function, the number of bits should be Value_Size.
-      -- We start with the most significant byte. In network-byte order this
-      -- is the rightmost byte. We need to take into account the case where
-      -- this is the only byte.
       Get_Index_Offset (Long_Integer (Data'First), Long_Integer (Data'Last), Off, Value_Size, RME_Index, LME_Index, RME_Size, LME_Size);
       LME_Offset := Byte'Size - LME_Size;
       declare
@@ -107,18 +64,15 @@ is
          end if;
          Result := Result + Tmp;
       end;
-      -- If it was the only byte, we are done.
       if RME_Index = LME_Index then
          pragma Assert (Result < 2**(LME_Size - RME_Offset));
          return Result;
       end if;
       pragma Assert (Fits_Into (Result, LME_Size));
-      -- We now iterate over the "inner bytes" excluding the two extreme bytes.
       for I in LME_Index + 1 .. RME_Index - 1 loop
          Result := Shift_Add (Result, Byte'Pos (Data (I)), Byte'Size, Natural (I - LME_Index) * Byte'Size - LME_Offset);
          pragma Loop_Invariant (Fits_Into (Result, Natural (I - LME_Index + 1) * Byte'Size - LME_Offset));
       end loop;
-      -- We now add the relevant bits from the last byte.
       pragma Assert (RME_Size in 1 .. U64'Size);
       pragma Assert (if
                          LME_Index + 1 <= RME_Index - 1
@@ -154,9 +108,6 @@ is
       LME_Size : Natural;
       Result : U64 := 0;
    begin
-      -- This function is identical in structure to the U64_Extract function.
-      -- See the comments there for more details. However, in little endian we
-      -- traverse the relevant bytes in the opposite order.
       Get_Index_Offset (Long_Integer (Data'First), Long_Integer (Data'Last), Off, Value_Size, RME_Index, LME_Index, RME_Size, LME_Size);
       declare
          Tmp : U64 := Byte'Pos (Data (RME_Index));

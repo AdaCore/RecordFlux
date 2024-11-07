@@ -168,7 +168,8 @@ class Generator:
             all_units.update(self._create_top_level_package())
 
         all_units = {
-            k: change_prefix(v, const.PREFIX_ID, self._prefix) for k, v in all_units.items()
+            k: change_prefix(v.with_header(self._license_header), const.PREFIX_ID, self._prefix)
+            for k, v in all_units.items()
         }
 
         files = self._create_units(all_units, directory)
@@ -258,12 +259,12 @@ class Generator:
 
         for unit in units.values():
             files.append(
-                File(directory / Path(unit.name + ".ads"), self._license_header + unit.ads),
+                File(directory / Path(unit.name + ".ads"), unit.ads),
             )
 
             if unit.adb:
                 files.append(
-                    File(directory / Path(unit.name + ".adb"), self._license_header + unit.adb),
+                    File(directory / Path(unit.name + ".adb"), unit.adb),
                 )
 
         return files
@@ -439,7 +440,11 @@ class Generator:
             elif isinstance(field_type, Sequence):
                 context.append(WithClause(const.PREFIX_ID * field_type.identifier))
 
-        unit = cls._create_unit(message.identifier, context, body_context=body_context)
+        unit = cls._create_unit(
+            message.identifier,
+            context,
+            body_context=body_context,
+        )
         units[message.identifier] = unit
 
         scalar_fields = {}
@@ -1541,37 +1546,31 @@ class Generator:
         assert (self._template_dir / filename).is_file(), f'template file not found: "{filename}"'
 
     @cached_property
-    def _license_header(self) -> str:
+    def _license_header(self) -> abc.Sequence[ContextItem]:
         if self._reproducible:
-            return (
-                common.comment_box(
-                    [
-                        "",
-                        const.GENERATED_BY_RECORDFLUX,
-                        "",
-                        "Copyright (C) AdaCore",
-                        "",
-                        "SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception",
-                        "",
-                    ],
-                )
-                + "\n"
-            )
-
-        today = date.today()  # noqa: DTZ011
-        return (
-            common.comment_box(
+            return common.comment_box(
                 [
                     "",
-                    f"{const.GENERATED_BY_RECORDFLUX} {__version__} on {today}",
+                    const.GENERATED_BY_RECORDFLUX,
                     "",
-                    f"Copyright (C) 2018-{today.year} AdaCore",
+                    "Copyright (C) AdaCore",
                     "",
                     "SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception",
                     "",
                 ],
             )
-            + "\n"
+
+        today = date.today()  # noqa: DTZ011
+        return common.comment_box(
+            [
+                "",
+                f"{const.GENERATED_BY_RECORDFLUX} {__version__} on {today}",
+                "",
+                f"Copyright (C) 2018-{today.year} AdaCore",
+                "",
+                "SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception",
+                "",
+            ],
         )
 
     @staticmethod

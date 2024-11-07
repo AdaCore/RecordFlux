@@ -2612,6 +2612,10 @@ class Unit(Base):
     def name(self) -> str:
         raise NotImplementedError
 
+    @abstractmethod
+    def with_header(self, license_header: Sequence[ContextItem]) -> Unit:
+        raise NotImplementedError
+
 
 class PackageUnit(Unit):
     def __init__(
@@ -2660,6 +2664,27 @@ class PackageUnit(Unit):
     def name(self) -> str:
         return file_name(str(self.declaration.identifier))
 
+    def with_header(self, license_header: Sequence[ContextItem]) -> PackageUnit:
+        declaration_context = [
+            *license_header,
+            *(
+                [VerticalSpace(), *unique(self.declaration_context)]
+                if self.declaration_context
+                else []
+            ),
+        ]
+        body_context = [
+            *license_header,
+            *([VerticalSpace(), *unique(self.body_context)] if self.body_context else []),
+        ]
+        return PackageUnit(
+            declaration_context,
+            self.declaration,
+            body_context,
+            self.body,
+            self.formal_parameters,
+        )
+
 
 class InstantiationUnit(Unit):
     def __init__(
@@ -2684,6 +2709,13 @@ class InstantiationUnit(Unit):
     @property
     def name(self) -> str:
         return file_name(str(self.declaration.identifier))
+
+    def with_header(self, license_header: Sequence[ContextItem]) -> InstantiationUnit:
+        context = [
+            *license_header,
+            *([VerticalSpace(), *unique(self.context)] if self.context else []),
+        ]
+        return InstantiationUnit(context, self.declaration)
 
 
 @dataclass
@@ -2744,7 +2776,7 @@ def aspect_specification(aspects: Sequence[Aspect] | None) -> str:
 
 
 def context_clause(context: Sequence[ContextItem]) -> str:
-    return ("\n".join(map(str, unique(context))) + "\n\n") if context else ""
+    return ("\n".join(map(str, context)) + "\n\n") if context else ""
 
 
 def aggregate(elements: Sequence[str]) -> str:

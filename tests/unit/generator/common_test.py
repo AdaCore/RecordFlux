@@ -235,4 +235,4 @@ def test_generate_string_substitution() -> None:
     ],
 )
 def test_comment_box(lines: list[str], width: int, result: str) -> None:
-    assert common.comment_box(lines, width) == result
+    assert "\n".join(str(c) for c in common.comment_box(lines, width)) + "\n" == result

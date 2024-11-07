@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 import math
 import textwrap
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
 from rflx import expr, expr_conv, ir, model, ty
@@ -15,6 +15,7 @@ from rflx.ada import (
     Assignment,
     Call,
     CallStatement,
+    Comment,
     ContextItem,
     Declaration,
     Equal,
@@ -1082,22 +1083,22 @@ def suppress_warnings_stmt(warnings: list[str], statements: list[Statement]) -> 
     ]
 
 
-def comment_box(lines: list[str], width: int = 78) -> str:
-    result = f"{'-' * width}\n"
+def comment_box(lines: list[str], width: int = 78) -> Sequence[ContextItem]:
+    result: list[ContextItem] = [Comment("-" * (width - 2))]
     for line in lines:
         if len(line) == 0:
-            result += f"--{' ' * (width - 5)} --\n"
+            result.append(Comment(f" {' ' * (width - 5)}--"))
 
         elif len(line) <= width - 6:
             space = width - 6 - len(line)
             left_space = " " * math.floor(space / 2)
             right_space = " " * math.ceil(space / 2)
-            result += f"-- {left_space}{line}{right_space} --\n"
+            result.append(Comment(f" {left_space}{line}{right_space} --"))
 
         else:
             for l in textwrap.wrap(line, width=width - 6):
                 space = width - 6 - len(l)
-                result += f"-- {l}{' ' * space} --\n"
+                result.append(Comment(f" {l}{' ' * space} --"))
 
-    result += f"{'-' * width}\n"
+    result.append(Comment("-" * (width - 2)))
     return result
