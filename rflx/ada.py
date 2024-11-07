@@ -1323,9 +1323,9 @@ class Ghost(Aspect):
 
 
 class AbstractState(Aspect):
-    def __init__(self, *identifiers: ID) -> None:
+    def __init__(self, *identifiers: StrID) -> None:
         assert len(identifiers) > 0
-        self.identifiers = identifiers
+        self.identifiers = [ID(i) for i in identifiers]
 
     @property
     def mark(self) -> str:
@@ -1338,9 +1338,9 @@ class AbstractState(Aspect):
 
 
 class Initializes(Aspect):
-    def __init__(self, *identifiers: ID) -> None:
+    def __init__(self, *identifiers: StrID) -> None:
         assert len(identifiers) > 0
-        self.identifiers = identifiers
+        self.identifiers = [ID(i) for i in identifiers]
 
     @property
     def mark(self) -> str:
