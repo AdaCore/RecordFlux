@@ -12,7 +12,7 @@ test: $(BIN) test_binary_size
 	../../../devutils/linux/run $(CWD) tests/run
 
 test_binary_size: $(BIN_OPTIMIZED)
-	test $(shell size -A -d obj_optimized/dhcp_client | grep .text | awk '{ print $$2 }') -le 173000
+	test $(shell size -A -d obj_optimized/dhcp_client | grep .text | awk '{ print $$2 }') -le 181000
 
 build: $(BIN)
 

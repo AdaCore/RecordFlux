@@ -5,9 +5,9 @@ variables:
   ADASAT_ORIGIN: https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/eng/libadalang
 
   GNAT_PLATFORM: "x86_64-linux"
-  GNAT_VERSION: "24.2"
+  GNAT_VERSION: "25.0"
   GNAT_BUILD_DATE: "all"
-  SPARK_VERSION: "24.2"
+  SPARK_VERSION: "25.0"
   SPARK_BUILD_DATE: "all"
   PYTHON_VERSION: "3.11"
   NODE_VERSION: "20.5.1"
@@ -364,6 +364,8 @@ gnat_pro_compatibility:
         CLEAN_RECORDFLUX_SETUP: 1
       - GNAT_VERSION: "23.2"
         CLEAN_RECORDFLUX_SETUP: 1
+      - GNAT_VERSION: "24.2"
+        CLEAN_RECORDFLUX_SETUP: 1
   script:
     - git fetch --unshallow
     - *update_timestamps_of_generated_code
@@ -447,8 +449,8 @@ verification_tests:
     matrix:
       - SPARK_VERSION: "24.0"
         SPARK_BUILD_DATE: "all"
-      - SPARK_VERSION: "wave"
-        SPARK_BUILD_DATE: "20240303"
+      - SPARK_VERSION: "25.0"
+        SPARK_BUILD_DATE: "all"
   script:
     - *show_gnatprove_cache_stats
     - *setup_spark
@@ -469,8 +471,8 @@ verification_python_tests:
     matrix:
       - SPARK_VERSION: "24.0"
         SPARK_BUILD_DATE: "all"
-      - SPARK_VERSION: "wave"
-        SPARK_BUILD_DATE: "20240522"
+      - SPARK_VERSION: "25.0"
+        SPARK_BUILD_DATE: "all"
   script:
     - *show_gnatprove_cache_stats
     - *setup_gnat

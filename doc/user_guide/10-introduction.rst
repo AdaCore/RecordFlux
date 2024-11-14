@@ -105,7 +105,7 @@ The software has successfully been used on various other versions of Linux, incl
 For installing RecordFlux itself, a *native* GNAT compiler for the host system must be installed.
 The following versions of GNAT are supported:
 
--  GNAT Pro 22.2, 23.2 or 24.2
+-  GNAT Pro 22.2, 23.2, 24.2 and 25.0
 -  GNAT Community 2021
 -  FSF GNAT 11.2, 12.2, 13.2 or 14.1
 
@@ -120,7 +120,7 @@ The latest release of GNAT Pro for Rust is also supported.
 
 For compiling the generated code, one of the following versions of GNAT is required:
 
--  GNAT Pro 21.2, 22.2, 23.2 or 24.2
+-  GNAT Pro 21.2, 22.2, 23.2, 24.2 and 25.0
 -  GNAT Community 2021
 -  FSF GNAT 11.2, 12.2, 13.2 or 14.1
 
@@ -150,9 +150,9 @@ To run RecordFlux one of the following Python versions is needed:
 In addition, the Python package installer `pip` is needed to install RecordFlux from the Python Package Index (PyPI).
 The tool can be installed using either the system package manager (`python3-pip` on Debian/Ubuntu/Fedora, `python-pip` on Arch Linux) or any other way described in the pip `installation guide <https://pip.pypa.io/en/stable/installation/>`__.
 
-For the formal verification of the generated code, the following SPARK Pro version is required:
+For the formal verification of the generated code, one of the following SPARK Pro versions is required:
 
--  SPARK Pro 24.2
+-  SPARK Pro 24.2 or 25.0
 
 If you plan to use the RecordFlux Modeller, GNAT Studio needs to be installed and set up.
 

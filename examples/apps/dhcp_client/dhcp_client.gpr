@@ -15,7 +15,7 @@ project DHCP_Client is
          for Object_Dir use "obj_optimized";
    end case;
    for Create_Missing_Dirs use "True";
-   for Main use ("dhcp_client");
+   for Main use ("dhcp_client.adb");
 
    package Naming is
       for Spec_Suffix ("RecordFlux") use ".rflx";

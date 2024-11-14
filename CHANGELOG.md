@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Style check for unsigned integer syntax (eng/recordflux/RecordFlux#1775)
+- Support for SPARK Pro 25.0 (eng/recordflux/RecordFlux#1823)
+- Support for GNAT Pro 25.0 (eng/recordflux/RecordFlux#1823)
 
 ## [0.25.0] - 2024-11-05
 
