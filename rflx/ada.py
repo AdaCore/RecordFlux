@@ -2448,7 +2448,8 @@ class SubprogramBody(SubprogramDeclaration):
 
     def __str__(self) -> str:
         return (
-            f"{self.specification}{aspect_specification(self.aspects)} is\n"
+            f"{self.specification}{aspect_specification(self.aspects)}\n"
+            "is\n"
             f"{self._declarations()}"
             f"begin\n"
             f"{self._statements()}\n"

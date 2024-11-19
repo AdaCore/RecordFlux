@@ -843,7 +843,8 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             package body P
             is
 
-               function Mask_Upper (V : U64; Mask : Natural) return U64 is
+               function Mask_Upper (V : U64; Mask : Natural) return U64
+               is
                begin
                   return V
                          and 2**Mask - 1;
@@ -1277,7 +1278,8 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             package body P
             is
 
-               procedure Proc (V : T) is
+               procedure Proc (V : T)
+               is
                begin
                   C (V);
                end Proc;
@@ -1294,7 +1296,8 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             package body P
             is
 
-               procedure Proc (R : out T) is
+               procedure Proc (R : out T)
+               is
                begin
                   R := 42;
                end Proc;
@@ -1311,7 +1314,8 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             package body P
             is
 
-               procedure Proc (R : out T) is
+               procedure Proc (R : out T)
+               is
                begin
                   R := (F1 => 1, F2 => 2, F3 => 3);
                end Proc;
@@ -1328,7 +1332,8 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             package body P
             is
 
-               procedure Proc (R : out T) is
+               procedure Proc (R : out T)
+               is
                begin
                   R := B (1 .. B'Last - 1);
                end Proc;
@@ -1345,7 +1350,8 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             package body P
             is
 
-               procedure Proc (R : out T) is
+               procedure Proc (R : out T)
+               is
                begin
                   declare
                      X : T := 1;
@@ -1366,7 +1372,8 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             package body P
             is
 
-               procedure Proc (R : out T) is
+               procedure Proc (R : out T)
+               is
                   X : T;
                begin
                   for I in 1 .. 10 loop
@@ -1387,7 +1394,8 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             package body P
             is
 
-               procedure Proc (R : out T) is
+               procedure Proc (R : out T)
+               is
                   X : T;
                begin
                   for I in reverse 1 .. 10 loop
@@ -1408,7 +1416,8 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             package body P
             is
 
-               procedure Proc (R : out T; I : Natural) is
+               procedure Proc (R : out T; I : Natural)
+               is
                   X : T;
                begin
                   X (I) := T'Val (R);
@@ -1427,7 +1436,8 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             package body P
             is
 
-               procedure Proc (R : out T; I : Natural) is
+               procedure Proc (R : out T; I : Natural)
+               is
                begin
                   case I is
                      when 1 =>
@@ -1451,7 +1461,8 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             package body P
             is
 
-               function F (I : Natural) return Natural is
+               function F (I : Natural) return Natural
+               is
                begin
                   return I + 1;
                end F;
@@ -1883,13 +1894,14 @@ def test_parse_error(data: str, message: str) -> None:
         "{overriding_indicator}function S return {null_exclusion}T{aspect_specification};",
         '{overriding_indicator}function "+" (L, R : T) return {null_exclusion}T'
         "{aspect_specification};",
-        "{overriding_indicator}function S return {null_exclusion}T{aspect_specification} is"
-        "{declarative_part}"
+        "{overriding_indicator}function S return {null_exclusion}T{aspect_specification}"
+        "\n           is{declarative_part}"
         "\n           begin"
         "\n              return 5;"
         "\n           end S;",
         '{overriding_indicator}function "+" (L, R : T) return {null_exclusion}T'
-        "{aspect_specification} is{declarative_part}"
+        "{aspect_specification}"
+        "\n           is{declarative_part}"
         "\n           begin"
         "\n              return 5;"
         '\n           end "+";',
@@ -1909,11 +1921,13 @@ def test_parse_error(data: str, message: str) -> None:
         "{overriding_indicator}procedure S is new G (A, B){aspect_specification};",
         "{overriding_indicator}procedure S is new G (A, 42){aspect_specification};",
         "{overriding_indicator}procedure S is new G (P1 => A, P2 => 42){aspect_specification};",
-        "{overriding_indicator}procedure S{aspect_specification} is"
+        "{overriding_indicator}procedure S{aspect_specification}"
+        "\n           is"
         "\n           begin"
         "\n              return;"
         "\n           end S;",
-        "{overriding_indicator}procedure S (P : T){aspect_specification} is"
+        "{overriding_indicator}procedure S (P : T){aspect_specification}"
+        "\n           is"
         "\n           begin"
         "\n              return;"
         "\n           end S;",

@@ -31,7 +31,8 @@ is
        RME_Index = Index (Last - Long_Integer (Off) / Byte'Size)
        and then LME_Index = Index (Last - ((Long_Integer (Off) + Long_Integer (Value_Size)) - 1) / Byte'Size)
        and then RME_Size = Byte'Size - Natural (Off)
-       and then LME_Size = ((Natural (Off) + Value_Size + Byte'Size) - 1) mod Byte'Size + 1 is
+       and then LME_Size = ((Natural (Off) + Value_Size + Byte'Size) - 1) mod Byte'Size + 1
+   is
    begin
       RME_Index := Index (Last);
       LME_Index := Index (Last - ((Long_Integer (Off) + Long_Integer (Value_Size)) - 1) / Byte'Size);
@@ -47,7 +48,8 @@ is
        and then Value_Size in 1 .. U64'Size
        and then Long_Integer (((Natural (Off) + Value_Size) - 1) / Byte'Size) < Buffer (First .. Last)'Length,
      Post =>
-       (if Value_Size < U64'Size then U64_Extract'Result < 2**Value_Size) is
+       (if Value_Size < U64'Size then U64_Extract'Result < 2**Value_Size)
+   is
       Data : constant Bytes := Buffer (First .. Last);
       RME_Index : Index;
       LME_Index : Index;
@@ -103,7 +105,8 @@ is
        and then Value_Size in 1 .. U64'Size
        and then Long_Integer (((Natural (Off) + Value_Size) - 1) / Byte'Size) < Buffer (First .. Last)'Length,
      Post =>
-       (if Value_Size < U64'Size then U64_Extract_LE'Result < 2**Value_Size) is
+       (if Value_Size < U64'Size then U64_Extract_LE'Result < 2**Value_Size)
+   is
       Data : constant Bytes := Buffer (First .. Last);
       RME_Index : Index;
       LME_Index : Index;
@@ -157,7 +160,8 @@ is
        and then Long_Integer ((Natural (Off) + Value_Size) - 1) / Byte'Size < Buffer (First .. Last)'Length,
      Post =>
        Buffer'First = Buffer'Old'First
-       and Buffer'Last = Buffer'Old'Last is
+       and Buffer'Last = Buffer'Old'Last
+   is
       RME_Index : Index;
       LME_Index : Index;
       RME_Offset : constant Natural := Natural (Off);
@@ -231,7 +235,8 @@ is
       end if;
    end U64_Insert;
 
-   function Extract (Buffer : Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order) return U64 is
+   function Extract (Buffer : Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order) return U64
+   is
    begin
       if BO = High_Order_First then
          return U64_Extract (Buffer, First, Last, Off, Size);
@@ -240,17 +245,20 @@ is
       end if;
    end Extract;
 
-   function Extract (Buffer : Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order) return Base_Integer is
+   function Extract (Buffer : Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order) return Base_Integer
+   is
    begin
       return Base_Integer (U64'(Extract (Buffer, First, Last, Off, Size, BO)));
    end Extract;
 
-   procedure Insert (Val : U64; Buffer : in out Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order) is
+   procedure Insert (Val : U64; Buffer : in out Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order)
+   is
    begin
       U64_Insert (Val, Buffer, First, Last, Off, Size, BO);
    end Insert;
 
-   procedure Insert (Val : Base_Integer; Buffer : in out Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order) is
+   procedure Insert (Val : Base_Integer; Buffer : in out Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order)
+   is
    begin
       Lemma_Size (Val, Size);
       Insert (U64 (Val), Buffer, First, Last, Off, Size, BO);

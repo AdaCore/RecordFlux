@@ -30,7 +30,8 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx) is
+       Initialized (Ctx)
+   is
       function Start_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
          and Ctx.P.Slots.Slot_Ptr_2 = null
@@ -57,7 +58,8 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx) is
+       Initialized (Ctx)
+   is
       function Copy_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
          and Ctx.P.Slots.Slot_Ptr_2 = null
@@ -135,7 +137,8 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx) is
+       Initialized (Ctx)
+   is
       function Reply_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
          and Ctx.P.Slots.Slot_Ptr_2 = null
@@ -157,7 +160,8 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx) is
+       Initialized (Ctx)
+   is
       function Read2_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
          and Ctx.P.Slots.Slot_Ptr_2 = null
@@ -184,7 +188,8 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx) is
+       Initialized (Ctx)
+   is
       function Copy2_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
          and Ctx.P.Slots.Slot_Ptr_2 = null
@@ -262,7 +267,8 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx) is
+       Initialized (Ctx)
+   is
       function Reply2_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
          and Ctx.P.Slots.Slot_Ptr_2 = null
@@ -279,7 +285,8 @@ is
       pragma Assert (Reply2_Invariant);
    end Reply2;
 
-   procedure Initialize (Ctx : in out Context) is
+   procedure Initialize (Ctx : in out Context)
+   is
       In_Msg_Buffer : RFLX_Types.Bytes_Ptr;
       In_Msg2_Buffer : RFLX_Types.Bytes_Ptr;
       Out_Msg_Buffer : RFLX_Types.Bytes_Ptr;
@@ -309,7 +316,8 @@ is
       Ctx.P.Next_State := S_Start;
    end Initialize;
 
-   procedure Finalize (Ctx : in out Context) is
+   procedure Finalize (Ctx : in out Context)
+   is
       In_Msg_Buffer : RFLX_Types.Bytes_Ptr;
       In_Msg2_Buffer : RFLX_Types.Bytes_Ptr;
       Out_Msg_Buffer : RFLX_Types.Bytes_Ptr;
@@ -352,7 +360,8 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx) is
+       Initialized (Ctx)
+   is
    begin
       case Ctx.P.Next_State is
          when S_Start =>
@@ -366,7 +375,8 @@ is
       end case;
    end Reset_Messages_Before_Write;
 
-   procedure Tick (Ctx : in out Context) is
+   procedure Tick (Ctx : in out Context)
+   is
    begin
       case Ctx.P.Next_State is
          when S_Start =>
@@ -390,7 +400,8 @@ is
    function In_IO_State (Ctx : Context) return Boolean is
      (Ctx.P.Next_State in S_Start | S_Reply | S_Read2 | S_Reply2);
 
-   procedure Run (Ctx : in out Context) is
+   procedure Run (Ctx : in out Context)
+   is
    begin
       Tick (Ctx);
       while
@@ -402,14 +413,16 @@ is
       end loop;
    end Run;
 
-   procedure Read (Ctx : Context; Chan : Channel; Buffer : out RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) is
+   procedure Read (Ctx : Context; Chan : Channel; Buffer : out RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0)
+   is
       function Read_Pre (Message_Buffer : RFLX_Types.Bytes) return Boolean is
         (Buffer'Length > 0
          and then Offset < Message_Buffer'Length);
       procedure Read (Message_Buffer : RFLX_Types.Bytes)
       with
         Pre =>
-          Read_Pre (Message_Buffer) is
+          Read_Pre (Message_Buffer)
+      is
          Length : constant RFLX_Types.Length := RFLX_Types.Length'Min (Buffer'Length, Message_Buffer'Length - Offset);
          Buffer_Last : constant RFLX_Types.Index := Buffer'First + (Length - RFLX_Types.Length'(1));
       begin
@@ -438,7 +451,8 @@ is
       end case;
    end Read;
 
-   procedure Write (Ctx : in out Context; Chan : Channel; Buffer : RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) is
+   procedure Write (Ctx : in out Context; Chan : Channel; Buffer : RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0)
+   is
       Write_Buffer_Length : constant RFLX_Types.Length := Write_Buffer_Size (Ctx, Chan);
       function Write_Pre (Context_Buffer_Length : RFLX_Types.Length; Offset : RFLX_Types.Length) return Boolean is
         (Buffer'Length > 0
@@ -452,7 +466,8 @@ is
           and then Offset <= RFLX_Types.Length'Last - Message_Buffer'Length
           and then Message_Buffer'Length + Offset = Write_Buffer_Length,
         Post =>
-          Length <= Message_Buffer'Length is
+          Length <= Message_Buffer'Length
+      is
       begin
          Length := Buffer'Length;
          Message_Buffer := (others => 0);

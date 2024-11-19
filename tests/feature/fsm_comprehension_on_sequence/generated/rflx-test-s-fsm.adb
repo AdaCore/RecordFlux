@@ -46,7 +46,8 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx) is
+       Initialized (Ctx)
+   is
       function Start_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
          and Ctx.P.Slots.Slot_Ptr_2 = null
@@ -339,7 +340,8 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx) is
+       Initialized (Ctx)
+   is
       Option_Types_Ctx : Universal.Option_Types.Context;
       T_1 : RFLX.RFLX_Types.Base_Integer;
       T_0 : Universal.Option_Type;
@@ -955,7 +957,8 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx) is
+       Initialized (Ctx)
+   is
       function Send_1_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
          and Ctx.P.Slots.Slot_Ptr_2 = null
@@ -981,7 +984,8 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx) is
+       Initialized (Ctx)
+   is
       Message_Options_Ctx : Universal.Options.Context;
       T_3 : RFLX.RFLX_Types.Base_Integer;
       T_2 : Universal.Option_Type;
@@ -1291,7 +1295,8 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx) is
+       Initialized (Ctx)
+   is
       function Send_2_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
          and Ctx.P.Slots.Slot_Ptr_2 = null
@@ -1312,7 +1317,8 @@ is
       pragma Assert (Send_2_Invariant);
    end Send_2;
 
-   procedure Initialize (Ctx : in out Context) is
+   procedure Initialize (Ctx : in out Context)
+   is
       Options_Buffer : RFLX_Types.Bytes_Ptr;
       Message_1_Buffer : RFLX_Types.Bytes_Ptr;
       Message_2_Buffer : RFLX_Types.Bytes_Ptr;
@@ -1336,7 +1342,8 @@ is
       Ctx.P.Next_State := S_Start;
    end Initialize;
 
-   procedure Finalize (Ctx : in out Context) is
+   procedure Finalize (Ctx : in out Context)
+   is
       Options_Buffer : RFLX_Types.Bytes_Ptr;
       Message_1_Buffer : RFLX_Types.Bytes_Ptr;
       Message_2_Buffer : RFLX_Types.Bytes_Ptr;
@@ -1366,7 +1373,8 @@ is
       Ctx.P.Next_State := S_Final;
    end Finalize;
 
-   procedure Tick (Ctx : in out Context) is
+   procedure Tick (Ctx : in out Context)
+   is
    begin
       case Ctx.P.Next_State is
          when S_Start =>
@@ -1387,7 +1395,8 @@ is
    function In_IO_State (Ctx : Context) return Boolean is
      (Ctx.P.Next_State in S_Send_1 | S_Send_2);
 
-   procedure Run (Ctx : in out Context) is
+   procedure Run (Ctx : in out Context)
+   is
    begin
       Tick (Ctx);
       while
@@ -1399,14 +1408,16 @@ is
       end loop;
    end Run;
 
-   procedure Read (Ctx : Context; Chan : Channel; Buffer : out RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) is
+   procedure Read (Ctx : Context; Chan : Channel; Buffer : out RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0)
+   is
       function Read_Pre (Message_Buffer : RFLX_Types.Bytes) return Boolean is
         (Buffer'Length > 0
          and then Offset < Message_Buffer'Length);
       procedure Read (Message_Buffer : RFLX_Types.Bytes)
       with
         Pre =>
-          Read_Pre (Message_Buffer) is
+          Read_Pre (Message_Buffer)
+      is
          Length : constant RFLX_Types.Length := RFLX_Types.Length'Min (Buffer'Length, Message_Buffer'Length - Offset);
          Buffer_Last : constant RFLX_Types.Index := Buffer'First + (Length - RFLX_Types.Length'(1));
       begin

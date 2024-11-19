@@ -17,7 +17,8 @@ with
   SPARK_Mode
 is
 
-   procedure Switch_To_Payload (IPv4_Packet_PDU_Context : in out RFLX.IPv4.Packet.Context; UDP_Datagram_SDU_Context : out RFLX.UDP.Datagram.Context) is
+   procedure Switch_To_Payload (IPv4_Packet_PDU_Context : in out RFLX.IPv4.Packet.Context; UDP_Datagram_SDU_Context : out RFLX.UDP.Datagram.Context)
+   is
       First : constant RFLX_Types.Bit_Index := RFLX.IPv4.Packet.Field_First (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Payload);
       Last : constant RFLX_Types.Bit_Length := RFLX.IPv4.Packet.Field_Last (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Payload);
       Buffer : RFLX_Types.Bytes_Ptr;
@@ -28,7 +29,8 @@ is
       pragma Warnings (On, "unused assignment to ""Buffer""");
    end Switch_To_Payload;
 
-   procedure Copy_Payload (IPv4_Packet_PDU_Context : RFLX.IPv4.Packet.Context; UDP_Datagram_SDU_Context : in out RFLX.UDP.Datagram.Context) is
+   procedure Copy_Payload (IPv4_Packet_PDU_Context : RFLX.IPv4.Packet.Context; UDP_Datagram_SDU_Context : in out RFLX.UDP.Datagram.Context)
+   is
       First : constant RFLX_Types.Bit_Index := RFLX_Types.To_First_Bit_Index (UDP_Datagram_SDU_Context.Buffer_First);
       Size : constant RFLX_Types.Bit_Index := RFLX.IPv4.Packet.Field_Size (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Payload);
       Buffer : RFLX_Types.Bytes_Ptr;
@@ -40,7 +42,8 @@ is
       RFLX.UDP.Datagram.Initialize (UDP_Datagram_SDU_Context, Buffer, First, First + Size - 1, First + Size - 1);
    end Copy_Payload;
 
-   procedure Switch_To_Payload (IPv4_Packet_PDU_Context : in out RFLX.IPv4.Packet.Context; ICMP_Message_SDU_Context : out RFLX.ICMP.Message.Context) is
+   procedure Switch_To_Payload (IPv4_Packet_PDU_Context : in out RFLX.IPv4.Packet.Context; ICMP_Message_SDU_Context : out RFLX.ICMP.Message.Context)
+   is
       First : constant RFLX_Types.Bit_Index := RFLX.IPv4.Packet.Field_First (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Payload);
       Last : constant RFLX_Types.Bit_Length := RFLX.IPv4.Packet.Field_Last (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Payload);
       Buffer : RFLX_Types.Bytes_Ptr;
@@ -51,7 +54,8 @@ is
       pragma Warnings (On, "unused assignment to ""Buffer""");
    end Switch_To_Payload;
 
-   procedure Copy_Payload (IPv4_Packet_PDU_Context : RFLX.IPv4.Packet.Context; ICMP_Message_SDU_Context : in out RFLX.ICMP.Message.Context) is
+   procedure Copy_Payload (IPv4_Packet_PDU_Context : RFLX.IPv4.Packet.Context; ICMP_Message_SDU_Context : in out RFLX.ICMP.Message.Context)
+   is
       First : constant RFLX_Types.Bit_Index := RFLX_Types.To_First_Bit_Index (ICMP_Message_SDU_Context.Buffer_First);
       Size : constant RFLX_Types.Bit_Index := RFLX.IPv4.Packet.Field_Size (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Payload);
       Buffer : RFLX_Types.Bytes_Ptr;

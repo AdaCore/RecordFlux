@@ -20,7 +20,8 @@ is
    procedure Initialize (S : out Slots; M : Memory)
    with
      SPARK_Mode =>
-       Off is
+       Off
+   is
    begin
       S.Slot_Ptr_1 := M.Slot_1'Unrestricted_Access;
    end Initialize;
@@ -28,7 +29,8 @@ is
    procedure Finalize (S : in out Slots)
    with
      SPARK_Mode =>
-       Off is
+       Off
+   is
    begin
       S.Slot_Ptr_1 := null;
    end Finalize;
