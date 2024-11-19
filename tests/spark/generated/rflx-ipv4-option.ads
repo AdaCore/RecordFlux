@@ -15,7 +15,8 @@ with RFLX.RFLX_Types;
 with RFLX.RFLX_Builtin_Types.Conversions;
 use RFLX.RFLX_Builtin_Types.Conversions;
 
-package RFLX.IPv4.Option with
+package RFLX.IPv4.Option
+with
   SPARK_Mode,
   Always_Terminates
 is
@@ -62,7 +63,8 @@ is
 
    type Field_Cursors is private;
 
-   type Context (Buffer_First, Buffer_Last : RFLX_Types.Index := RFLX_Types.Index'First; First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First; Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First) is private with
+   type Context (Buffer_First, Buffer_Last : RFLX_Types.Index := RFLX_Types.Index'First; First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First; Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First) is private
+   with
      Default_Initial_Condition =>
        RFLX_Types.To_Index (First) >= Buffer_First
        and RFLX_Types.To_Index (Last) <= Buffer_Last
@@ -72,7 +74,8 @@ is
        and First rem RFLX_Types.Byte'Size = 1
        and Last rem RFLX_Types.Byte'Size = 0;
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; Written_Last : RFLX_Types.Bit_Length := 0) with
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; Written_Last : RFLX_Types.Bit_Length := 0)
+   with
      Pre =>
        not Ctx'Constrained
        and then Buffer /= null
@@ -93,7 +96,8 @@ is
      Depends =>
        (Ctx => (Buffer, Written_Last), Buffer => null);
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length := 0) with
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length := 0)
+   with
      Pre =>
        not Ctx'Constrained
        and then Buffer /= null
@@ -122,13 +126,15 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Initialized (Ctx : Context) return Boolean with
+   function Initialized (Ctx : Context) return Boolean
+   with
      Post =>
        True;
 
    pragma Warnings (On, "postcondition does not mention function result");
 
-   procedure Reset (Ctx : in out Context) with
+   procedure Reset (Ctx : in out Context)
+   with
      Pre =>
        not Ctx'Constrained
        and RFLX.IPv4.Option.Has_Buffer (Ctx),
@@ -140,7 +146,8 @@ is
        and Ctx.Last = RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last)
        and Initialized (Ctx);
 
-   procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) with
+   procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length)
+   with
      Pre =>
        not Ctx'Constrained
        and RFLX.IPv4.Option.Has_Buffer (Ctx)
@@ -158,7 +165,8 @@ is
        and Ctx.Last = Last
        and Initialized (Ctx);
 
-   procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr) with
+   procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr)
+   with
      Pre =>
        RFLX.IPv4.Option.Has_Buffer (Ctx),
      Post =>
@@ -176,13 +184,15 @@ is
      Depends =>
        (Ctx => Ctx, Buffer => Ctx);
 
-   procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes) with
+   procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes)
+   with
      Pre =>
        RFLX.IPv4.Option.Has_Buffer (Ctx)
        and then RFLX.IPv4.Option.Well_Formed_Message (Ctx)
        and then RFLX.IPv4.Option.Byte_Size (Ctx) = Buffer'Length;
 
-   function Read (Ctx : Context) return RFLX_Types.Bytes with
+   function Read (Ctx : Context) return RFLX_Types.Bytes
+   with
      Ghost,
      Pre =>
        RFLX.IPv4.Option.Has_Buffer (Ctx)
@@ -202,7 +212,8 @@ is
    generic
       with procedure Read (Buffer : RFLX_Types.Bytes);
       with function Pre (Buffer : RFLX_Types.Bytes) return Boolean is Always_Valid;
-   procedure Generic_Read (Ctx : Context) with
+   procedure Generic_Read (Ctx : Context)
+   with
      Pre =>
        RFLX.IPv4.Option.Has_Buffer (Ctx)
        and then RFLX.IPv4.Option.Well_Formed_Message (Ctx)
@@ -222,7 +233,8 @@ is
    generic
       with procedure Write (Buffer : out RFLX_Types.Bytes; Length : out RFLX_Types.Length; Context_Buffer_Length : RFLX_Types.Length; Offset : RFLX_Types.Length);
       with function Pre (Context_Buffer_Length : RFLX_Types.Length; Offset : RFLX_Types.Length) return Boolean is Always_Valid;
-   procedure Generic_Write (Ctx : in out Context; Offset : RFLX_Types.Length := 0) with
+   procedure Generic_Write (Ctx : in out Context; Offset : RFLX_Types.Length := 0)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.IPv4.Option.Has_Buffer (Ctx)
@@ -237,15 +249,18 @@ is
 
    function Has_Buffer (Ctx : Context) return Boolean;
 
-   function Buffer_Length (Ctx : Context) return RFLX_Types.Length with
+   function Buffer_Length (Ctx : Context) return RFLX_Types.Length
+   with
      Pre =>
        RFLX.IPv4.Option.Has_Buffer (Ctx);
 
-   function Buffer_Size (Ctx : Context) return RFLX_Types.Bit_Length with
+   function Buffer_Size (Ctx : Context) return RFLX_Types.Bit_Length
+   with
      Pre =>
        RFLX.IPv4.Option.Has_Buffer (Ctx);
 
-   function Size (Ctx : Context) return RFLX_Types.Bit_Length with
+   function Size (Ctx : Context) return RFLX_Types.Bit_Length
+   with
      Post =>
        Size'Result rem RFLX_Types.Byte'Size = 0;
 
@@ -255,7 +270,8 @@ is
 
    function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length;
 
-   procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes) with
+   procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes)
+   with
      Pre =>
        RFLX.IPv4.Option.Has_Buffer (Ctx)
        and then RFLX.IPv4.Option.Well_Formed_Message (Ctx)
@@ -263,7 +279,8 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Valid_Value (Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean with
+   function Valid_Value (Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean
+   with
      Post =>
        True;
 
@@ -271,7 +288,8 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean with
+   function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean
+   with
      Pre =>
        RFLX.IPv4.Option.Has_Buffer (Ctx)
        and then RFLX.IPv4.Option.Valid_Value (Fld, Val)
@@ -282,7 +300,8 @@ is
 
    pragma Warnings (On, "postcondition does not mention function result");
 
-   function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
+   function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length
+   with
      Pre =>
        RFLX.IPv4.Option.Valid_Next (Ctx, Fld),
      Post =>
@@ -294,7 +313,8 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index with
+   function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index
+   with
      Pre =>
        RFLX.IPv4.Option.Valid_Next (Ctx, Fld),
      Post =>
@@ -302,7 +322,8 @@ is
 
    pragma Warnings (On, "postcondition does not mention function result");
 
-   function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
+   function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length
+   with
      Pre =>
        RFLX.IPv4.Option.Valid_Next (Ctx, Fld)
        and then RFLX.IPv4.Option.Sufficient_Space (Ctx, Fld),
@@ -315,20 +336,24 @@ is
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean;
 
-   function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
+   function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length
+   with
      Pre =>
        RFLX.IPv4.Option.Valid_Next (Ctx, Fld);
 
-   function Sufficient_Space (Ctx : Context; Fld : Field) return Boolean with
+   function Sufficient_Space (Ctx : Context; Fld : Field) return Boolean
+   with
      Pre =>
        RFLX.IPv4.Option.Valid_Next (Ctx, Fld);
 
-   function Equal (Ctx : Context; Fld : Field; Data : RFLX_Types.Bytes) return Boolean with
+   function Equal (Ctx : Context; Fld : Field; Data : RFLX_Types.Bytes) return Boolean
+   with
      Pre =>
        RFLX.IPv4.Option.Has_Buffer (Ctx)
        and RFLX.IPv4.Option.Valid_Next (Ctx, Fld);
 
-   procedure Verify (Ctx : in out Context; Fld : Field) with
+   procedure Verify (Ctx : in out Context; Fld : Field)
+   with
      Pre =>
        RFLX.IPv4.Option.Has_Buffer (Ctx),
      Post =>
@@ -338,7 +363,8 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old;
 
-   procedure Verify_Message (Ctx : in out Context) with
+   procedure Verify_Message (Ctx : in out Context)
+   with
      Pre =>
        RFLX.IPv4.Option.Has_Buffer (Ctx),
      Post =>
@@ -352,7 +378,8 @@ is
 
    function Well_Formed (Ctx : Context; Fld : Field) return Boolean;
 
-   function Valid (Ctx : Context; Fld : Field) return Boolean with
+   function Valid (Ctx : Context; Fld : Field) return Boolean
+   with
      Post =>
        (if Valid'Result then Well_Formed (Ctx, Fld) and Present (Ctx, Fld));
 
@@ -360,17 +387,20 @@ is
 
    function Invalid (Ctx : Context; Fld : Field) return Boolean;
 
-   function Well_Formed_Message (Ctx : Context) return Boolean with
+   function Well_Formed_Message (Ctx : Context) return Boolean
+   with
      Pre =>
        RFLX.IPv4.Option.Has_Buffer (Ctx);
 
-   function Valid_Message (Ctx : Context) return Boolean with
+   function Valid_Message (Ctx : Context) return Boolean
+   with
      Pre =>
        RFLX.IPv4.Option.Has_Buffer (Ctx);
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Incomplete_Message (Ctx : Context) return Boolean with
+   function Incomplete_Message (Ctx : Context) return Boolean
+   with
      Post =>
        True;
 
@@ -378,25 +408,30 @@ is
 
    pragma Warnings (Off, "precondition is always False");
 
-   function Get_Copied (Ctx : Context) return Boolean with
+   function Get_Copied (Ctx : Context) return Boolean
+   with
      Pre =>
        RFLX.IPv4.Option.Valid (Ctx, RFLX.IPv4.Option.F_Copied);
 
-   function Get_Option_Class (Ctx : Context) return RFLX.IPv4.Option_Class with
+   function Get_Option_Class (Ctx : Context) return RFLX.IPv4.Option_Class
+   with
      Pre =>
        RFLX.IPv4.Option.Valid (Ctx, RFLX.IPv4.Option.F_Option_Class);
 
-   function Get_Option_Number (Ctx : Context) return RFLX.IPv4.Option_Number with
+   function Get_Option_Number (Ctx : Context) return RFLX.IPv4.Option_Number
+   with
      Pre =>
        RFLX.IPv4.Option.Valid (Ctx, RFLX.IPv4.Option.F_Option_Number);
 
-   function Get_Option_Length (Ctx : Context) return RFLX.IPv4.Option_Length with
+   function Get_Option_Length (Ctx : Context) return RFLX.IPv4.Option_Length
+   with
      Pre =>
        RFLX.IPv4.Option.Valid (Ctx, RFLX.IPv4.Option.F_Option_Length);
 
    pragma Warnings (On, "precondition is always False");
 
-   function Get_Option_Data (Ctx : Context) return RFLX_Types.Bytes with
+   function Get_Option_Data (Ctx : Context) return RFLX_Types.Bytes
+   with
      Ghost,
      Pre =>
        RFLX.IPv4.Option.Has_Buffer (Ctx)
@@ -405,7 +440,8 @@ is
      Post =>
        Get_Option_Data'Result'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Option_Data));
 
-   procedure Get_Option_Data (Ctx : Context; Data : out RFLX_Types.Bytes) with
+   procedure Get_Option_Data (Ctx : Context; Data : out RFLX_Types.Bytes)
+   with
      Pre =>
        RFLX.IPv4.Option.Has_Buffer (Ctx)
        and then RFLX.IPv4.Option.Well_Formed (Ctx, RFLX.IPv4.Option.F_Option_Data)
@@ -416,14 +452,16 @@ is
 
    generic
       with procedure Process_Option_Data (Option_Data : RFLX_Types.Bytes);
-   procedure Generic_Get_Option_Data (Ctx : Context) with
+   procedure Generic_Get_Option_Data (Ctx : Context)
+   with
      Pre =>
        RFLX.IPv4.Option.Has_Buffer (Ctx)
        and RFLX.IPv4.Option.Present (Ctx, RFLX.IPv4.Option.F_Option_Data);
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean with
+   function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean
+   with
      Pre =>
        RFLX.IPv4.Option.Valid_Next (Ctx, Fld),
      Post =>
@@ -433,7 +471,8 @@ is
 
    pragma Warnings (Off, "aspect ""*"" not enforced on inlined subprogram ""*""");
 
-   procedure Set_Copied (Ctx : in out Context; Val : Boolean) with
+   procedure Set_Copied (Ctx : in out Context; Val : Boolean)
+   with
      Inline_Always,
      Pre =>
        not Ctx'Constrained
@@ -458,7 +497,8 @@ is
        and Valid_Next (Ctx, F_Copied) = Valid_Next (Ctx, F_Copied)'Old
        and Field_First (Ctx, F_Copied) = Field_First (Ctx, F_Copied)'Old;
 
-   procedure Set_Option_Class (Ctx : in out Context; Val : RFLX.IPv4.Option_Class) with
+   procedure Set_Option_Class (Ctx : in out Context; Val : RFLX.IPv4.Option_Class)
+   with
      Inline_Always,
      Pre =>
        not Ctx'Constrained
@@ -485,7 +525,8 @@ is
        and (for all F in Field range F_Copied .. F_Copied =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
-   procedure Set_Option_Number (Ctx : in out Context; Val : RFLX.IPv4.Option_Number) with
+   procedure Set_Option_Number (Ctx : in out Context; Val : RFLX.IPv4.Option_Number)
+   with
      Inline_Always,
      Pre =>
        not Ctx'Constrained
@@ -513,7 +554,8 @@ is
        and (for all F in Field range F_Copied .. F_Option_Class =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
-   procedure Set_Option_Length (Ctx : in out Context; Val : RFLX.IPv4.Option_Length) with
+   procedure Set_Option_Length (Ctx : in out Context; Val : RFLX.IPv4.Option_Length)
+   with
      Inline_Always,
      Pre =>
        not Ctx'Constrained
@@ -556,7 +598,8 @@ is
 
    pragma Warnings (On, "aspect ""*"" not enforced on inlined subprogram ""*""");
 
-   procedure Set_Option_Data_Empty (Ctx : in out Context) with
+   procedure Set_Option_Data_Empty (Ctx : in out Context)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.IPv4.Option.Has_Buffer (Ctx)
@@ -579,7 +622,8 @@ is
        and Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old
        and Field_First (Ctx, F_Option_Data) = Field_First (Ctx, F_Option_Data)'Old;
 
-   procedure Initialize_Option_Data (Ctx : in out Context) with
+   procedure Initialize_Option_Data (Ctx : in out Context)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.IPv4.Option.Has_Buffer (Ctx)
@@ -600,7 +644,8 @@ is
        and then Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old
        and then Field_First (Ctx, F_Option_Data) = Field_First (Ctx, F_Option_Data)'Old;
 
-   procedure Set_Option_Data (Ctx : in out Context; Data : RFLX_Types.Bytes) with
+   procedure Set_Option_Data (Ctx : in out Context; Data : RFLX_Types.Bytes)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.IPv4.Option.Has_Buffer (Ctx)
@@ -628,7 +673,8 @@ is
    generic
       with procedure Process_Option_Data (Option_Data : out RFLX_Types.Bytes);
       with function Process_Data_Pre (Length : RFLX_Types.Length) return Boolean;
-   procedure Generic_Set_Option_Data (Ctx : in out Context; Length : RFLX_Types.Length) with
+   procedure Generic_Set_Option_Data (Ctx : in out Context; Length : RFLX_Types.Length)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.IPv4.Option.Has_Buffer (Ctx)
@@ -652,17 +698,20 @@ is
        and Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old
        and Field_First (Ctx, F_Option_Data) = Field_First (Ctx, F_Option_Data)'Old;
 
-   function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
+   function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor
+   with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
 
-   function Context_Cursors (Ctx : Context) return Field_Cursors with
+   function Context_Cursors (Ctx : Context) return Field_Cursors
+   with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
 
-   function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor with
+   function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor
+   with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
@@ -702,7 +751,8 @@ private
               Cursors (F).First >= First
               and Cursors (F).Last <= Verified_Last
               and Cursors (F).First <= Cursors (F).Last + 1
-              and Valid_Value (F, Cursors (F).Value)))) with
+              and Valid_Value (F, Cursors (F).Value))))
+   with
      Post =>
        True;
 
@@ -738,7 +788,8 @@ private
                                        and then Cursors (F_Option_Number).Value = 2)
                               or else (Cursors (F_Option_Length).Value = 4
                                        and then RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
-                                       and then Cursors (F_Option_Number).Value = 8))))) with
+                                       and then Cursors (F_Option_Number).Value = 8)))))
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last),
      Post =>
@@ -778,7 +829,8 @@ private
                                  and then Cursors (F_Option_Number).Value = 2)
                         or else (Cursors (F_Option_Length).Value = 4
                                  and then RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
-                                 and then Cursors (F_Option_Number).Value = 8)))) with
+                                 and then Cursors (F_Option_Number).Value = 8))))
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last),
@@ -802,7 +854,8 @@ private
           when F_Option_Length =>
              8,
           when F_Option_Data =>
-             (RFLX_Types.Bit_Length (Cursors (F_Option_Length).Value) - 2) * 8) with
+             (RFLX_Types.Bit_Length (Cursors (F_Option_Length).Value) - 2) * 8)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
@@ -821,35 +874,40 @@ private
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
    function Field_First_Copied (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First) with
+     (First)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Copied);
 
    function Field_First_Option_Class (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First + 1) with
+     (First + 1)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Option_Class);
 
    function Field_First_Option_Number (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First + 3) with
+     (First + 3)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Option_Number);
 
    function Field_First_Option_Length (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First + 8) with
+     (First + 8)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Option_Length);
 
    function Field_First_Option_Data (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First + 16) with
+     (First + 16)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
@@ -866,7 +924,8 @@ private
           when F_Option_Length =>
              Field_First_Option_Length (Cursors, First, Verified_Last, Written_Last),
           when F_Option_Data =>
-             Field_First_Option_Data (Cursors, First, Verified_Last, Written_Last)) with
+             Field_First_Option_Data (Cursors, First, Verified_Last, Written_Last))
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
@@ -934,7 +993,8 @@ private
                              Well_Formed (Cursors (F_Option_Data))
                           then
                              (Cursors (F_Option_Data).Last - Cursors (F_Option_Data).First + 1 = (RFLX_Types.Bit_Length (Cursors (F_Option_Length).Value) - 2) * 8
-                              and then Cursors (F_Option_Data).First = Cursors (F_Option_Length).Last + 1)))) with
+                              and then Cursors (F_Option_Data).First = Cursors (F_Option_Length).Last + 1))))
+   with
      Post =>
        True;
 
@@ -948,7 +1008,8 @@ private
          Written_Last : RFLX_Types.Bit_Length := First - 1;
          Buffer : RFLX_Types.Bytes_Ptr := null;
          Cursors : Field_Cursors := (others => <>);
-      end record with
+      end record
+   with
      Dynamic_Predicate =>
        Valid_Context (Context.Buffer_First, Context.Buffer_Last, Context.First, Context.Last, Context.Verified_Last, Context.Written_Last, Context.Buffer, Context.Cursors);
 
@@ -1087,7 +1148,8 @@ private
      (To_Actual (Ctx.Cursors (F_Option_Length).Value));
 
    function Valid_Size (Ctx : Context; Fld : Field; Size : RFLX_Types.Bit_Length) return Boolean is
-     (Size = Field_Size (Ctx, Fld)) with
+     (Size = Field_Size (Ctx, Fld))
+   with
      Pre =>
        RFLX.IPv4.Option.Valid_Next (Ctx, Fld);
 

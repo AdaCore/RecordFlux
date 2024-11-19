@@ -11,13 +11,15 @@
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 with RFLX.RFLX_Arithmetic;
 
-package body RFLX.RFLX_Generic_Types.Generic_Operations with
+package body RFLX.RFLX_Generic_Types.Generic_Operations
+with
   SPARK_Mode
 is
 
    use RFLX.RFLX_Arithmetic;
 
-   procedure Get_Index_Offset (First, Last : Long_Integer; Off : Offset; Value_Size : Positive; RME_Index : out Index; LME_Index : out Index; RME_Size : out Natural; LME_Size : out Natural) with
+   procedure Get_Index_Offset (First, Last : Long_Integer; Off : Offset; Value_Size : Positive; RME_Index : out Index; LME_Index : out Index; RME_Size : out Natural; LME_Size : out Natural)
+   with
      Pre =>
        Value_Size in 1 .. U64'Size
        and then Last >= Long_Integer (Index'First)
@@ -37,7 +39,8 @@ is
       LME_Size := ((Natural (Off) + Value_Size + Byte'Size) - 1) mod Byte'Size + 1;
    end Get_Index_Offset;
 
-   function U64_Extract (Buffer : Bytes; First : Index; Last : Index; Off : Offset; Value_Size : Positive) return U64 with
+   function U64_Extract (Buffer : Bytes; First : Index; Last : Index; Off : Offset; Value_Size : Positive) return U64
+   with
      Pre =>
        First >= Buffer'First
        and then Last <= Buffer'Last
@@ -92,7 +95,8 @@ is
       return Result;
    end U64_Extract;
 
-   function U64_Extract_LE (Buffer : Bytes; First : Index; Last : Index; Off : Offset; Value_Size : Positive) return U64 with
+   function U64_Extract_LE (Buffer : Bytes; First : Index; Last : Index; Off : Offset; Value_Size : Positive) return U64
+   with
      Pre =>
        First >= Buffer'First
        and then Last <= Buffer'Last
@@ -143,7 +147,8 @@ is
       return Result;
    end U64_Extract_LE;
 
-   procedure U64_Insert (Val : U64; Buffer : in out Bytes; First : Index; Last : Index; Off : Offset; Value_Size : Positive; BO : Byte_Order) with
+   procedure U64_Insert (Val : U64; Buffer : in out Bytes; First : Index; Last : Index; Off : Offset; Value_Size : Positive; BO : Byte_Order)
+   with
      Pre =>
        First >= Buffer'First
        and then Last <= Buffer'Last

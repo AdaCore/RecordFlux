@@ -1,7 +1,8 @@
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, """Always_Terminates"" is not a valid aspect identifier");
 
-package RFLX_Template.RFLX_Builtin_Types with
+package RFLX_Template.RFLX_Builtin_Types
+with
   SPARK_Mode,
   Always_Terminates
 is

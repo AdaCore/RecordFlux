@@ -2772,7 +2772,7 @@ def declarative_items(declarations: Sequence[Declaration], private: bool = False
 def aspect_specification(aspects: Sequence[Aspect] | None) -> str:
     if not aspects:
         return ""
-    return " with\n" + ",\n".join(indent(str(aspect), 2) for aspect in aspects)
+    return "\nwith\n" + ",\n".join(indent(str(aspect), 2) for aspect in aspects)
 
 
 def context_clause(context: Sequence[ContextItem]) -> str:

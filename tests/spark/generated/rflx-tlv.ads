@@ -13,11 +13,13 @@ pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types;
 
-package RFLX.TLV with
+package RFLX.TLV
+with
   SPARK_Mode
 is
 
-   type Tag is (Msg_Data, Msg_Error) with
+   type Tag is (Msg_Data, Msg_Error)
+   with
      Size =>
        8;
    for Tag use (Msg_Data => 1, Msg_Error => 3);
@@ -43,13 +45,15 @@ is
           when 3 =>
              Msg_Error,
           when others =>
-             RFLX.TLV.Tag'Last) with
+             RFLX.TLV.Tag'Last)
+   with
      Pre =>
        Valid_Tag (Val);
 
    pragma Warnings (On, "unreachable branch");
 
-   type Length is range 0 .. 2**16 - 1 with
+   type Length is range 0 .. 2**16 - 1
+   with
      Size =>
        16;
 
@@ -60,7 +64,8 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.TLV.Length is
-     (RFLX.TLV.Length (Val)) with
+     (RFLX.TLV.Length (Val))
+   with
      Pre =>
        Valid_Length (Val);
 

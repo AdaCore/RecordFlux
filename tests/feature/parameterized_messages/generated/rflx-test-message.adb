@@ -12,7 +12,8 @@ pragma Ada_2012;
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 
-package body RFLX.Test.Message with
+package body RFLX.Test.Message
+with
   SPARK_Mode
 is
 
@@ -79,7 +80,8 @@ is
      (Ctx.Buffer /= null
       and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) < RFLX_Types.Bit_Length'Last
       and Ctx.First <= Field_First (Ctx, Fld)
-      and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1 <= Ctx.Written_Last) with
+      and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1 <= Ctx.Written_Last)
+   with
      Pre =>
        RFLX.Test.Message.Has_Buffer (Ctx)
        and RFLX.Test.Message.Valid_Next (Ctx, Fld);
@@ -92,7 +94,8 @@ is
                       and then (for all I in RFLX_Types.Index range RFLX_Types.To_Index (Field_First (Ctx, Fld)) .. RFLX_Types.To_Index (Field_Last (Ctx, Fld)) =>
                                    Ctx.Buffer.all (I) = Data (Data'First + (I - RFLX_Types.To_Index (Field_First (Ctx, Fld)))))));
 
-   procedure Reset_Dependent_Fields (Ctx : in out Context; Fld : Field) with
+   procedure Reset_Dependent_Fields (Ctx : in out Context; Fld : Field)
+   with
      Pre =>
        RFLX.Test.Message.Valid_Next (Ctx, Fld),
      Post =>
@@ -203,7 +206,8 @@ is
       Process_Extension (Ctx.Buffer.all (First .. Last));
    end Generic_Get_Extension;
 
-   procedure Initialize_Data_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
+   procedure Initialize_Data_Private (Ctx : in out Context; Length : RFLX_Types.Length)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.Test.Message.Has_Buffer (Ctx)
@@ -241,7 +245,8 @@ is
       Initialize_Data_Private (Ctx, RFLX_Types.To_Length (Field_Size (Ctx, F_Data)));
    end Initialize_Data;
 
-   procedure Initialize_Extension_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
+   procedure Initialize_Extension_Private (Ctx : in out Context; Length : RFLX_Types.Length)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.Test.Message.Has_Buffer (Ctx)

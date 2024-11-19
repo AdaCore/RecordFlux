@@ -15,7 +15,8 @@ with RFLX.RFLX_Types;
 use type RFLX.RFLX_Types.Index;
 use type RFLX.RFLX_Types.Bytes_Ptr;
 
-package RFLX.Test.S.FSM_Allocator with
+package RFLX.Test.S.FSM_Allocator
+with
   SPARK_Mode,
   Always_Terminates
 is
@@ -29,7 +30,8 @@ is
          Slot_5 : aliased RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
       end record;
 
-   subtype Slot_Ptr_Type_4096 is RFLX_Types.Bytes_Ptr with
+   subtype Slot_Ptr_Type_4096 is RFLX_Types.Bytes_Ptr
+   with
      Dynamic_Predicate =>
        Slot_Ptr_Type_4096 = null
        or else (Slot_Ptr_Type_4096'First = RFLX_Types.Index'First
@@ -58,11 +60,13 @@ is
       and S.Slot_Ptr_4 = null
       and S.Slot_Ptr_5 = null);
 
-   procedure Initialize (S : out Slots; M : Memory) with
+   procedure Initialize (S : out Slots; M : Memory)
+   with
      Post =>
        Initialized (S);
 
-   procedure Finalize (S : in out Slots) with
+   procedure Finalize (S : in out Slots)
+   with
      Post =>
        Uninitialized (S);
 

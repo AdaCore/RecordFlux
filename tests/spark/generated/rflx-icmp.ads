@@ -13,11 +13,13 @@ pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types;
 
-package RFLX.ICMP with
+package RFLX.ICMP
+with
   SPARK_Mode
 is
 
-   type Tag is (Echo_Reply, Destination_Unreachable, Source_Quench, Redirect, Echo_Request, Time_Exceeded, Parameter_Problem, Timestamp_Msg, Timestamp_Reply, Information_Request, Information_Reply) with
+   type Tag is (Echo_Reply, Destination_Unreachable, Source_Quench, Redirect, Echo_Request, Time_Exceeded, Parameter_Problem, Timestamp_Msg, Timestamp_Reply, Information_Request, Information_Reply)
+   with
      Size =>
        8;
    for Tag use (Echo_Reply => 0, Destination_Unreachable => 3, Source_Quench => 4, Redirect => 5, Echo_Request => 8, Time_Exceeded => 11, Parameter_Problem => 12, Timestamp_Msg => 13, Timestamp_Reply => 14, Information_Request => 15, Information_Reply => 16);
@@ -79,13 +81,15 @@ is
           when 16 =>
              Information_Reply,
           when others =>
-             RFLX.ICMP.Tag'Last) with
+             RFLX.ICMP.Tag'Last)
+   with
      Pre =>
        Valid_Tag (Val);
 
    pragma Warnings (On, "unreachable branch");
 
-   type Code_Destination_Unreachable is (Net_Unreachable, Host_Unreachable, Protocol_Unreachable, Port_Unreachable, Fragmentation_Needed_DF_Set, Source_Route_Failed) with
+   type Code_Destination_Unreachable is (Net_Unreachable, Host_Unreachable, Protocol_Unreachable, Port_Unreachable, Fragmentation_Needed_DF_Set, Source_Route_Failed)
+   with
      Size =>
        8;
    for Code_Destination_Unreachable use (Net_Unreachable => 0, Host_Unreachable => 1, Protocol_Unreachable => 2, Port_Unreachable => 3, Fragmentation_Needed_DF_Set => 4, Source_Route_Failed => 5);
@@ -125,13 +129,15 @@ is
           when 5 =>
              Source_Route_Failed,
           when others =>
-             RFLX.ICMP.Code_Destination_Unreachable'Last) with
+             RFLX.ICMP.Code_Destination_Unreachable'Last)
+   with
      Pre =>
        Valid_Code_Destination_Unreachable (Val);
 
    pragma Warnings (On, "unreachable branch");
 
-   type Code_Time_Exceeded is (TTL_Exceeded, Fragment_Reassembly_Time_Exceeded) with
+   type Code_Time_Exceeded is (TTL_Exceeded, Fragment_Reassembly_Time_Exceeded)
+   with
      Size =>
        8;
    for Code_Time_Exceeded use (TTL_Exceeded => 0, Fragment_Reassembly_Time_Exceeded => 1);
@@ -155,13 +161,15 @@ is
           when 1 =>
              Fragment_Reassembly_Time_Exceeded,
           when others =>
-             RFLX.ICMP.Code_Time_Exceeded'Last) with
+             RFLX.ICMP.Code_Time_Exceeded'Last)
+   with
      Pre =>
        Valid_Code_Time_Exceeded (Val);
 
    pragma Warnings (On, "unreachable branch");
 
-   type Code_Redirect is (Redirect_for_Network, Redirect_for_Host, Redirect_for_Service_Network, Redirect_for_Service_Host) with
+   type Code_Redirect is (Redirect_for_Network, Redirect_for_Host, Redirect_for_Service_Network, Redirect_for_Service_Host)
+   with
      Size =>
        8;
    for Code_Redirect use (Redirect_for_Network => 0, Redirect_for_Host => 1, Redirect_for_Service_Network => 2, Redirect_for_Service_Host => 3);
@@ -193,13 +201,15 @@ is
           when 3 =>
              Redirect_for_Service_Host,
           when others =>
-             RFLX.ICMP.Code_Redirect'Last) with
+             RFLX.ICMP.Code_Redirect'Last)
+   with
      Pre =>
        Valid_Code_Redirect (Val);
 
    pragma Warnings (On, "unreachable branch");
 
-   type Code_Zero is range 0 .. 0 with
+   type Code_Zero is range 0 .. 0
+   with
      Size =>
        8;
 
@@ -210,11 +220,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Code_Zero is
-     (RFLX.ICMP.Code_Zero (Val)) with
+     (RFLX.ICMP.Code_Zero (Val))
+   with
      Pre =>
        Valid_Code_Zero (Val);
 
-   type Checksum is range 0 .. 2**16 - 1 with
+   type Checksum is range 0 .. 2**16 - 1
+   with
      Size =>
        16;
 
@@ -225,11 +237,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Checksum is
-     (RFLX.ICMP.Checksum (Val)) with
+     (RFLX.ICMP.Checksum (Val))
+   with
      Pre =>
        Valid_Checksum (Val);
 
-   type Identifier is range 0 .. 2**16 - 1 with
+   type Identifier is range 0 .. 2**16 - 1
+   with
      Size =>
        16;
 
@@ -240,11 +254,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Identifier is
-     (RFLX.ICMP.Identifier (Val)) with
+     (RFLX.ICMP.Identifier (Val))
+   with
      Pre =>
        Valid_Identifier (Val);
 
-   type Sequence_Number is range 0 .. 2**16 - 1 with
+   type Sequence_Number is range 0 .. 2**16 - 1
+   with
      Size =>
        16;
 
@@ -255,11 +271,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Sequence_Number is
-     (RFLX.ICMP.Sequence_Number (Val)) with
+     (RFLX.ICMP.Sequence_Number (Val))
+   with
      Pre =>
        Valid_Sequence_Number (Val);
 
-   type Pointer is range 0 .. 2**8 - 1 with
+   type Pointer is range 0 .. 2**8 - 1
+   with
      Size =>
        8;
 
@@ -270,11 +288,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Pointer is
-     (RFLX.ICMP.Pointer (Val)) with
+     (RFLX.ICMP.Pointer (Val))
+   with
      Pre =>
        Valid_Pointer (Val);
 
-   type Timestamp is range 0 .. 2**32 - 1 with
+   type Timestamp is range 0 .. 2**32 - 1
+   with
      Size =>
        32;
 
@@ -285,11 +305,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Timestamp is
-     (RFLX.ICMP.Timestamp (Val)) with
+     (RFLX.ICMP.Timestamp (Val))
+   with
      Pre =>
        Valid_Timestamp (Val);
 
-   type Gateway_Internet_Address is range 0 .. 2**32 - 1 with
+   type Gateway_Internet_Address is range 0 .. 2**32 - 1
+   with
      Size =>
        32;
 
@@ -300,11 +322,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Gateway_Internet_Address is
-     (RFLX.ICMP.Gateway_Internet_Address (Val)) with
+     (RFLX.ICMP.Gateway_Internet_Address (Val))
+   with
      Pre =>
        Valid_Gateway_Internet_Address (Val);
 
-   type Unused_32 is range 0 .. 0 with
+   type Unused_32 is range 0 .. 0
+   with
      Size =>
        32;
 
@@ -315,11 +339,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Unused_32 is
-     (RFLX.ICMP.Unused_32 (Val)) with
+     (RFLX.ICMP.Unused_32 (Val))
+   with
      Pre =>
        Valid_Unused_32 (Val);
 
-   type Unused_24 is range 0 .. 0 with
+   type Unused_24 is range 0 .. 0
+   with
      Size =>
        24;
 
@@ -330,7 +356,8 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Unused_24 is
-     (RFLX.ICMP.Unused_24 (Val)) with
+     (RFLX.ICMP.Unused_24 (Val))
+   with
      Pre =>
        Valid_Unused_24 (Val);
 

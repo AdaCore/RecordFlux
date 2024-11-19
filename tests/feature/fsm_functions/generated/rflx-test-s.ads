@@ -17,11 +17,13 @@ with RFLX.RFLX_Types;
 with RFLX.Universal;
 with RFLX.Test.Definite_Message;
 
-package RFLX.Test.S with
+package RFLX.Test.S
+with
   SPARK_Mode
 is
 
-   procedure Get_Message_Type (State : in out RFLX.Test.S_Environment.State; RFLX_Result : out RFLX.Universal.Option_Type) with
+   procedure Get_Message_Type (State : in out RFLX.Test.S_Environment.State; RFLX_Result : out RFLX.Universal.Option_Type)
+   with
      Pre =>
        not RFLX_Result'Constrained;
 

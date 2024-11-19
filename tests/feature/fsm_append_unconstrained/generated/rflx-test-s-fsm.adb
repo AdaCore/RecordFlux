@@ -16,7 +16,8 @@ with RFLX.Universal.Options;
 with RFLX.Universal.Option;
 with RFLX.RFLX_Types.Operators;
 
-package body RFLX.Test.S.FSM with
+package body RFLX.Test.S.FSM
+with
   SPARK_Mode
 is
 
@@ -26,7 +27,8 @@ is
 
    use type RFLX.RFLX_Types.Bit_Length;
 
-   procedure Start (Ctx : in out Context) with
+   procedure Start (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
@@ -39,7 +41,8 @@ is
          and Options_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
          and Options_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + RFLX_Types.Length'(4095)
          and Ctx.P.Slots.Slot_Ptr_2 = null
-         and Ctx.P.Slots.Slot_Ptr_1 = null) with
+         and Ctx.P.Slots.Slot_Ptr_1 = null)
+      with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -364,14 +367,16 @@ is
       pragma Assert (Global_Initialized (Ctx));
    end Start;
 
-   procedure Reply (Ctx : in out Context) with
+   procedure Reply (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
        Initialized (Ctx) is
       function Reply_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
-         and Ctx.P.Slots.Slot_Ptr_2 /= null) with
+         and Ctx.P.Slots.Slot_Ptr_2 /= null)
+      with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -439,7 +444,8 @@ is
       function Read_Pre (Message_Buffer : RFLX_Types.Bytes) return Boolean is
         (Buffer'Length > 0
          and then Offset < Message_Buffer'Length);
-      procedure Read (Message_Buffer : RFLX_Types.Bytes) with
+      procedure Read (Message_Buffer : RFLX_Types.Bytes)
+      with
         Pre =>
           Read_Pre (Message_Buffer) is
          Length : constant RFLX_Types.Length := RFLX_Types.Length'Min (Buffer'Length, Message_Buffer'Length - Offset);

@@ -13,11 +13,13 @@ pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types;
 
-package RFLX.Messages with
+package RFLX.Messages
+with
   SPARK_Mode
 is
 
-   type Integer is range 0 .. 2**32 - 1 with
+   type Integer is range 0 .. 2**32 - 1
+   with
      Size =>
        32;
 
@@ -30,11 +32,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Messages.Integer is
-     (RFLX.Messages.Integer (Val)) with
+     (RFLX.Messages.Integer (Val))
+   with
      Pre =>
        Valid_Integer (Val);
 
-   type Enum_T is (Enum_A, Enum_B, Enum_C, Enum_D, Enum_E, Enum_F, Enum_G) with
+   type Enum_T is (Enum_A, Enum_B, Enum_C, Enum_D, Enum_E, Enum_F, Enum_G)
+   with
      Size =>
        32;
    for Enum_T use (Enum_A => 0, Enum_B => 1, Enum_C => 2, Enum_D => 4, Enum_E => 8, Enum_F => 16, Enum_G => 32);
@@ -78,7 +82,8 @@ is
           when 32 =>
              Enum_G,
           when others =>
-             RFLX.Messages.Enum_T'Last) with
+             RFLX.Messages.Enum_T'Last)
+   with
      Pre =>
        Valid_Enum_T (Val);
 

@@ -4,7 +4,8 @@ with RFLX_Template.RFLX_Generic_Types.Generic_Operators;
 
 generic
    with package Operators is new RFLX_Template.RFLX_Generic_Types.Generic_Operators (<>);
-package RFLX_Template.RFLX_Generic_Types.Generic_Operations with
+package RFLX_Template.RFLX_Generic_Types.Generic_Operations
+with
   SPARK_Mode,
   Always_Terminates
 is
@@ -13,7 +14,8 @@ is
 
    use type U64;
 
-   function Extract (Buffer : Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order) return U64 with
+   function Extract (Buffer : Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order) return U64
+   with
      Pre =>
        First >= Buffer'First
        and then Last <= Buffer'Last
@@ -26,7 +28,8 @@ is
      Post =>
        (if Size < U64'Size then Extract'Result < 2**Size);
 
-   function Extract (Buffer : Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order) return Base_Integer with
+   function Extract (Buffer : Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order) return Base_Integer
+   with
      Pre =>
        First >= Buffer'First
        and then Last <= Buffer'Last
@@ -39,7 +42,8 @@ is
      Post =>
        U64 (Extract'Result) < 2**Size;
 
-   procedure Insert (Val : U64; Buffer : in out Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order) with
+   procedure Insert (Val : U64; Buffer : in out Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order)
+   with
      Pre =>
        First >= Buffer'First
        and then Last <= Buffer'Last
@@ -52,7 +56,8 @@ is
        Buffer'First = Buffer'Old'First
        and Buffer'Last = Buffer'Old'Last;
 
-   procedure Insert (Val : Base_Integer; Buffer : in out Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order) with
+   procedure Insert (Val : Base_Integer; Buffer : in out Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order)
+   with
      Pre =>
        First >= Buffer'First
        and then Last <= Buffer'Last

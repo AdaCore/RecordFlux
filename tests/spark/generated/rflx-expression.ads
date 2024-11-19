@@ -12,7 +12,8 @@ pragma Ada_2012;
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 
-package RFLX.Expression with
+package RFLX.Expression
+with
   SPARK_Mode
 is
 

@@ -13,7 +13,8 @@ pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types.Operations;
 
-package body RFLX.Universal.Message with
+package body RFLX.Universal.Message
+with
   SPARK_Mode
 is
 
@@ -95,7 +96,8 @@ is
      (Ctx.Buffer /= null
       and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) < RFLX_Types.Bit_Length'Last
       and Ctx.First <= Field_First (Ctx, Fld)
-      and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1 <= Ctx.Written_Last) with
+      and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1 <= Ctx.Written_Last)
+   with
      Pre =>
        RFLX.Universal.Message.Has_Buffer (Ctx)
        and RFLX.Universal.Message.Valid_Next (Ctx, Fld);
@@ -110,7 +112,8 @@ is
                    when others =>
                       False));
 
-   procedure Reset_Dependent_Fields (Ctx : in out Context; Fld : Field) with
+   procedure Reset_Dependent_Fields (Ctx : in out Context; Fld : Field)
+   with
      Pre =>
        RFLX.Universal.Message.Valid_Next (Ctx, Fld),
      Post =>
@@ -137,7 +140,8 @@ is
    function Composite_Field (Fld : Field) return Boolean is
      (Fld in F_Data | F_Option_Types | F_Options | F_Values);
 
-   function Get (Ctx : Context; Fld : Field) return RFLX_Types.Base_Integer with
+   function Get (Ctx : Context; Fld : Field) return RFLX_Types.Base_Integer
+   with
      Pre =>
        RFLX.Universal.Message.Has_Buffer (Ctx)
        and then RFLX.Universal.Message.Valid_Next (Ctx, Fld)
@@ -235,7 +239,8 @@ is
       Process_Data (Ctx.Buffer.all (First .. Last));
    end Generic_Get_Data;
 
-   procedure Set (Ctx : in out Context; Fld : Field; Val : RFLX_Types.Base_Integer; Size : RFLX_Types.Bit_Length; State_Valid : Boolean; Buffer_First : out RFLX_Types.Index; Buffer_Last : out RFLX_Types.Index; Offset : out RFLX_Types.Offset) with
+   procedure Set (Ctx : in out Context; Fld : Field; Val : RFLX_Types.Base_Integer; Size : RFLX_Types.Bit_Length; State_Valid : Boolean; Buffer_First : out RFLX_Types.Index; Buffer_Last : out RFLX_Types.Index; Offset : out RFLX_Types.Offset)
+   with
      Pre =>
        RFLX.Universal.Message.Has_Buffer (Ctx)
        and then RFLX.Universal.Message.Valid_Next (Ctx, Fld)
@@ -295,7 +300,8 @@ is
       pragma Assert (Last = (Field_First (Ctx, Fld) + Size) - 1);
    end Set;
 
-   procedure Set_Scalar (Ctx : in out Context; Fld : Field; Val : RFLX_Types.Base_Integer) with
+   procedure Set_Scalar (Ctx : in out Context; Fld : Field; Val : RFLX_Types.Base_Integer)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.Universal.Message.Has_Buffer (Ctx)
@@ -406,7 +412,8 @@ is
       RFLX.Universal.Values.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
    end Set_Values;
 
-   procedure Initialize_Data_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
+   procedure Initialize_Data_Private (Ctx : in out Context; Length : RFLX_Types.Length)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.Universal.Message.Has_Buffer (Ctx)
@@ -445,7 +452,8 @@ is
       Initialize_Data_Private (Ctx, Length);
    end Initialize_Data;
 
-   procedure Initialize_Option_Types_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
+   procedure Initialize_Option_Types_Private (Ctx : in out Context; Length : RFLX_Types.Length)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.Universal.Message.Has_Buffer (Ctx)
@@ -484,7 +492,8 @@ is
       Initialize_Option_Types_Private (Ctx, RFLX_Types.To_Length (Field_Size (Ctx, F_Option_Types)));
    end Initialize_Option_Types;
 
-   procedure Initialize_Options_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
+   procedure Initialize_Options_Private (Ctx : in out Context; Length : RFLX_Types.Length)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.Universal.Message.Has_Buffer (Ctx)
@@ -521,7 +530,8 @@ is
       Initialize_Options_Private (Ctx, Length);
    end Initialize_Options;
 
-   procedure Initialize_Values_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
+   procedure Initialize_Values_Private (Ctx : in out Context; Length : RFLX_Types.Length)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.Universal.Message.Has_Buffer (Ctx)

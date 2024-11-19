@@ -12,7 +12,8 @@ pragma Ada_2012;
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 
-package body RFLX.In_IPv4.Contains with
+package body RFLX.In_IPv4.Contains
+with
   SPARK_Mode
 is
 

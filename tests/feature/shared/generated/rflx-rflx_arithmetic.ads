@@ -11,12 +11,14 @@
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, """Always_Terminates"" is not a valid aspect identifier");
 
-package RFLX.RFLX_Arithmetic with
+package RFLX.RFLX_Arithmetic
+with
   SPARK_Mode,
   Always_Terminates
 is
 
-   type U64 is mod 2**64 with
+   type U64 is mod 2**64
+   with
      Annotate =>
        (GNATprove, No_Wrap_Around);
 
@@ -25,12 +27,14 @@ is
    pragma Warnings (Off, "postcondition does not mention function result");
 
    function Fits_Into (V : U64; Bits : Natural) return Boolean is
-     (if Bits < U64'Size then V < 2**Bits) with
+     (if Bits < U64'Size then V < 2**Bits)
+   with
      Post =>
        True;
 
    function Fits_Into (V : Base_Integer; Bits : Natural) return Boolean is
-     (if Bits < Base_Integer'Size then V < 2**Bits) with
+     (if Bits < Base_Integer'Size then V < 2**Bits)
+   with
      Post =>
        True;
 
@@ -43,7 +47,8 @@ is
           Lower > 0
           and then Lower < U64'Size
        then
-          V <= U64'Last - 2**Lower + 1) with
+          V <= U64'Last - 2**Lower + 1)
+   with
      Pre =>
        Bits <= U64'Size
        and then Lower <= Bits,
@@ -52,7 +57,8 @@ is
 
    pragma Warnings (On, "postcondition does not mention function result");
 
-   function Shift_Add (V : U64; Data : U64; Amount : Natural; Bits : Natural) return U64 with
+   function Shift_Add (V : U64; Data : U64; Amount : Natural; Bits : Natural) return U64
+   with
      Pre =>
        Bits < U64'Size
        and then Amount < U64'Size
@@ -62,7 +68,8 @@ is
      Post =>
        Fits_Into (Shift_Add'Result, Bits + Amount);
 
-   function Right_Shift (V : U64; Amount : Natural; Size : Natural) return U64 with
+   function Right_Shift (V : U64; Amount : Natural; Size : Natural) return U64
+   with
      Pre =>
        Size <= U64'Size
        and then Fits_Into (V, Size)
@@ -71,7 +78,8 @@ is
      Post =>
        Fits_Into (Right_Shift'Result, Size - Amount);
 
-   function Left_Shift (V : U64; Amount : Natural; Size : Natural) return U64 with
+   function Left_Shift (V : U64; Amount : Natural; Size : Natural) return U64
+   with
      Pre =>
        Size < U64'Size
        and then Amount < U64'Size
@@ -80,7 +88,8 @@ is
      Post =>
        Fits_Into_Upper (Left_Shift'Result, Size + Amount, Amount);
 
-   function Mask_Lower (V : U64; Mask, Bits : Natural) return U64 with
+   function Mask_Lower (V : U64; Mask, Bits : Natural) return U64
+   with
      Pre =>
        Bits <= U64'Size
        and then Fits_Into (V, Bits)
@@ -89,7 +98,8 @@ is
      Post =>
        Fits_Into_Upper (Mask_Lower'Result, Bits, Mask);
 
-   function Mask_Upper (V : U64; Mask : Natural) return U64 with
+   function Mask_Upper (V : U64; Mask : Natural) return U64
+   with
      Pre =>
        Mask < U64'Size,
      Post =>
@@ -97,7 +107,8 @@ is
 
    pragma Warnings (Off, "aspect Unreferenced specified for ""Total_Bits""");
 
-   function Add (A : U64; B : U64; Total_Bits, Lower_Bits : Natural) return U64 with
+   function Add (A : U64; B : U64; Total_Bits, Lower_Bits : Natural) return U64
+   with
      Pre =>
        Total_Bits <= U64'Size
        and then Lower_Bits <= Total_Bits
@@ -112,7 +123,8 @@ is
 
    pragma Warnings (On, "aspect Unreferenced specified for ""Total_Bits""");
 
-   procedure Lemma_Size (Val : Base_Integer; Size : Positive) with
+   procedure Lemma_Size (Val : Base_Integer; Size : Positive)
+   with
      Ghost,
      Pre =>
        Size in 1 .. 63

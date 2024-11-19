@@ -13,11 +13,13 @@ pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types;
 
-package RFLX.Test with
+package RFLX.Test
+with
   SPARK_Mode
 is
 
-   type Result is (M_Valid, M_Invalid) with
+   type Result is (M_Valid, M_Invalid)
+   with
      Size =>
        2;
    for Result use (M_Valid => 0, M_Invalid => 1);
@@ -43,13 +45,15 @@ is
           when 1 =>
              M_Invalid,
           when others =>
-             RFLX.Test.Result'Last) with
+             RFLX.Test.Result'Last)
+   with
      Pre =>
        Valid_Result (Val);
 
    pragma Warnings (On, "unreachable branch");
 
-   type Length is range 0 .. 2**8 - 1 with
+   type Length is range 0 .. 2**8 - 1
+   with
      Size =>
        8;
 
@@ -60,7 +64,8 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Test.Length is
-     (RFLX.Test.Length (Val)) with
+     (RFLX.Test.Length (Val))
+   with
      Pre =>
        Valid_Length (Val);
 

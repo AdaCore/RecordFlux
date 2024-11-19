@@ -13,7 +13,8 @@ pragma Ada_2012;
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 
-package body RFLX.Test.S.FSM with
+package body RFLX.Test.S.FSM
+with
   SPARK_Mode
 is
 
@@ -21,13 +22,15 @@ is
 
    use type RFLX.RFLX_Types.Bit_Length;
 
-   procedure Start (Ctx : in out Context) with
+   procedure Start (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
        Initialized (Ctx) is
       function Start_Invariant return Boolean is
-        (Ctx.P.Slots.Slot_Ptr_1 = null) with
+        (Ctx.P.Slots.Slot_Ptr_1 = null)
+      with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -65,7 +68,8 @@ is
       Ctx.P.Next_State := S_Final;
    end Finalize;
 
-   procedure Reset_Messages_Before_Write (Ctx : in out Context) with
+   procedure Reset_Messages_Before_Write (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
@@ -112,7 +116,8 @@ is
          and then Context_Buffer_Length = Write_Buffer_Length
          and then Offset <= RFLX_Types.Length'Last - Buffer'Length
          and then Buffer'Length + Offset <= Write_Buffer_Length);
-      procedure Write (Message_Buffer : out RFLX_Types.Bytes; Length : out RFLX_Types.Length; Context_Buffer_Length : RFLX_Types.Length; Offset : RFLX_Types.Length) with
+      procedure Write (Message_Buffer : out RFLX_Types.Bytes; Length : out RFLX_Types.Length; Context_Buffer_Length : RFLX_Types.Length; Offset : RFLX_Types.Length)
+      with
         Pre =>
           Write_Pre (Context_Buffer_Length, Offset)
           and then Offset <= RFLX_Types.Length'Last - Message_Buffer'Length

@@ -12,7 +12,8 @@ pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, """Always_Terminates"" is not a valid aspect identifier");
 with RFLX.RFLX_Arithmetic;
 
-package RFLX.RFLX_Builtin_Types.Conversions with
+package RFLX.RFLX_Builtin_Types.Conversions
+with
   SPARK_Mode,
   Always_Terminates
 is
@@ -38,7 +39,8 @@ is
           when 1 =>
              True,
           when others =>
-             False) with
+             False)
+   with
      Pre =>
        Valid_Boolean (Val);
 
@@ -63,7 +65,8 @@ is
           when 1 =>
              True,
           when others =>
-             False) with
+             False)
+   with
      Pre =>
        Valid_Boolean (Val);
 

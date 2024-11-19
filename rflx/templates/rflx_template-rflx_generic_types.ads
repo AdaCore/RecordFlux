@@ -10,7 +10,8 @@ generic
    type Custom_Bytes_Ptr is access Custom_Bytes;
    type Custom_Length is range <>;
    type Custom_Bit_Length is range <>;
-package RFLX_Template.RFLX_Generic_Types with
+package RFLX_Template.RFLX_Generic_Types
+with
   SPARK_Mode,
   Always_Terminates
 is
@@ -80,17 +81,20 @@ is
    pragma Warnings (Off, "precondition is always False");
 
    function Unreachable return Boolean is
-     (False) with
+     (False)
+   with
      Pre =>
        False;
 
    function Unreachable return Bit_Length is
-     (0) with
+     (0)
+   with
      Pre =>
        False;
 
    function Unreachable return Length is
-     (0) with
+     (0)
+   with
      Pre =>
        False;
 

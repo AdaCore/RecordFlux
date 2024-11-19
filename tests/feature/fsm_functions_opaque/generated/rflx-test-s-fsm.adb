@@ -20,7 +20,8 @@ with RFLX.Universal.Values;
 with RFLX.RFLX_Types.Operators;
 with RFLX.RFLX_Types;
 
-package body RFLX.Test.S.FSM with
+package body RFLX.Test.S.FSM
+with
   SPARK_Mode
 is
 
@@ -34,13 +35,15 @@ is
 
    use type RFLX.RFLX_Types.Length;
 
-   procedure Start (Ctx : in out Context) with
+   procedure Start (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
        Initialized (Ctx) is
       function Start_Invariant return Boolean is
-        (Ctx.P.Slots.Slot_Ptr_1 /= null) with
+        (Ctx.P.Slots.Slot_Ptr_1 /= null)
+      with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -50,7 +53,8 @@ is
       pragma Assert (Start_Invariant);
    end Start;
 
-   procedure Check_Message (Ctx : in out Context) with
+   procedure Check_Message (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
@@ -62,7 +66,8 @@ is
         (Universal.Message.Has_Buffer (Message_Ctx)
          and Message_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
          and Message_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + RFLX_Types.Length'(4095)
-         and Ctx.P.Slots.Slot_Ptr_1 = null) with
+         and Ctx.P.Slots.Slot_Ptr_1 = null)
+      with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -172,7 +177,8 @@ is
       pragma Assert (Ctx.P.Slots.Slot_Ptr_1 /= null);
    end Check_Message;
 
-   procedure Check_Message_Sequence (Ctx : in out Context) with
+   procedure Check_Message_Sequence (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
@@ -184,7 +190,8 @@ is
         (Universal.Options.Has_Buffer (Message_Sequence_Ctx)
          and Message_Sequence_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
          and Message_Sequence_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + RFLX_Types.Length'(4095)
-         and Ctx.P.Slots.Slot_Ptr_1 = null) with
+         and Ctx.P.Slots.Slot_Ptr_1 = null)
+      with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -357,7 +364,8 @@ is
       pragma Assert (Ctx.P.Slots.Slot_Ptr_1 /= null);
    end Check_Message_Sequence;
 
-   procedure Check_Scalar_Sequence (Ctx : in out Context) with
+   procedure Check_Scalar_Sequence (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
@@ -369,7 +377,8 @@ is
         (Universal.Values.Has_Buffer (Scalar_Sequence_Ctx)
          and Scalar_Sequence_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
          and Scalar_Sequence_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + RFLX_Types.Length'(4095)
-         and Ctx.P.Slots.Slot_Ptr_1 = null) with
+         and Ctx.P.Slots.Slot_Ptr_1 = null)
+      with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -519,13 +528,15 @@ is
       pragma Assert (Ctx.P.Slots.Slot_Ptr_1 /= null);
    end Check_Scalar_Sequence;
 
-   procedure Error (Ctx : in out Context) with
+   procedure Error (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
        Initialized (Ctx) is
       function Error_Invariant return Boolean is
-        (Ctx.P.Slots.Slot_Ptr_1 /= null) with
+        (Ctx.P.Slots.Slot_Ptr_1 /= null)
+      with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;

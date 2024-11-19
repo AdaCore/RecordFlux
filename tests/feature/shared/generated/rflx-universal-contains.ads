@@ -15,7 +15,8 @@ with RFLX.RFLX_Types;
 with RFLX.Universal.Message;
 with RFLX.Universal.Option;
 
-package RFLX.Universal.Contains with
+package RFLX.Universal.Contains
+with
   SPARK_Mode,
   Always_Terminates
 is
@@ -30,7 +31,8 @@ is
 
    use type RFLX.Universal.Message.Field_Cursors;
 
-   procedure Switch_To_Data (Universal_Message_PDU_Context : in out RFLX.Universal.Message.Context; Universal_Option_SDU_Context : out RFLX.Universal.Option.Context) with
+   procedure Switch_To_Data (Universal_Message_PDU_Context : in out RFLX.Universal.Message.Context; Universal_Option_SDU_Context : out RFLX.Universal.Option.Context)
+   with
      Pre =>
        not Universal_Message_PDU_Context'Constrained
        and not Universal_Option_SDU_Context'Constrained
@@ -50,12 +52,14 @@ is
 
    function Sufficient_Space_For_Data (Universal_Message_PDU_Context : RFLX.Universal.Message.Context; Universal_Option_SDU_Context : RFLX.Universal.Option.Context) return Boolean is
      (RFLX.Universal.Option.Buffer_Size (Universal_Option_SDU_Context) >= RFLX.Universal.Message.Field_Size (Universal_Message_PDU_Context, RFLX.Universal.Message.F_Data)
-      and then RFLX_Types.To_First_Bit_Index (Universal_Option_SDU_Context.Buffer_First) + RFLX.Universal.Message.Field_Size (Universal_Message_PDU_Context, RFLX.Universal.Message.F_Data) - 1 < RFLX_Types.Bit_Index'Last) with
+      and then RFLX_Types.To_First_Bit_Index (Universal_Option_SDU_Context.Buffer_First) + RFLX.Universal.Message.Field_Size (Universal_Message_PDU_Context, RFLX.Universal.Message.F_Data) - 1 < RFLX_Types.Bit_Index'Last)
+   with
      Pre =>
        RFLX.Universal.Option.Has_Buffer (Universal_Option_SDU_Context)
        and then RFLX.Universal.Contains.Option_In_Message_Data (Universal_Message_PDU_Context);
 
-   procedure Copy_Data (Universal_Message_PDU_Context : RFLX.Universal.Message.Context; Universal_Option_SDU_Context : in out RFLX.Universal.Option.Context) with
+   procedure Copy_Data (Universal_Message_PDU_Context : RFLX.Universal.Message.Context; Universal_Option_SDU_Context : in out RFLX.Universal.Option.Context)
+   with
      Pre =>
        not Universal_Option_SDU_Context'Constrained
        and then RFLX.Universal.Option.Has_Buffer (Universal_Option_SDU_Context)

@@ -16,7 +16,8 @@ with RFLX.Test.S_Environment;
 with RFLX.RFLX_Types;
 with RFLX.Test.Option_Data;
 
-package RFLX.Test.S with
+package RFLX.Test.S
+with
   SPARK_Mode
 is
 

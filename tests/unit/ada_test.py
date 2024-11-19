@@ -698,14 +698,14 @@ def test_modular_type() -> None:
 def test_range_type() -> None:
     assert (
         str(ada.RangeType("A", ada.Number(1), ada.Number(100), [ada.SizeAspect(ada.Number(8))]))
-        == "type A is range 1 .. 100 with\n  Size =>\n    8;"
+        == "type A is range 1 .. 100\nwith\n  Size =>\n    8;"
     )
 
 
 def test_enumeration_type() -> None:
     assert (
         str(ada.EnumerationType("A", {ID("B"): None, ID("C"): None}, ada.Number(8)))
-        == "type A is (B, C) with\n  Size =>\n    8;"
+        == "type A is (B, C)\nwith\n  Size =>\n    8;"
     )
     assert (
         str(
@@ -715,7 +715,7 @@ def test_enumeration_type() -> None:
                 ada.Number(8),
             ),
         )
-        == "type A is (B, C) with\n  Size =>\n    8;\nfor A use (B => 1, C => 2);"
+        == "type A is (B, C)\nwith\n  Size =>\n    8;\nfor A use (B => 1, C => 2);"
     )
 
 

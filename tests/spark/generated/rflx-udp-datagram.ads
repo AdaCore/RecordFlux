@@ -13,7 +13,8 @@ pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types;
 
-package RFLX.UDP.Datagram with
+package RFLX.UDP.Datagram
+with
   SPARK_Mode,
   Always_Terminates
 is
@@ -60,7 +61,8 @@ is
 
    type Field_Cursors is private;
 
-   type Context (Buffer_First, Buffer_Last : RFLX_Types.Index := RFLX_Types.Index'First; First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First; Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First) is private with
+   type Context (Buffer_First, Buffer_Last : RFLX_Types.Index := RFLX_Types.Index'First; First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First; Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First) is private
+   with
      Default_Initial_Condition =>
        RFLX_Types.To_Index (First) >= Buffer_First
        and RFLX_Types.To_Index (Last) <= Buffer_Last
@@ -70,7 +72,8 @@ is
        and First rem RFLX_Types.Byte'Size = 1
        and Last rem RFLX_Types.Byte'Size = 0;
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; Written_Last : RFLX_Types.Bit_Length := 0) with
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; Written_Last : RFLX_Types.Bit_Length := 0)
+   with
      Pre =>
        not Ctx'Constrained
        and then Buffer /= null
@@ -91,7 +94,8 @@ is
      Depends =>
        (Ctx => (Buffer, Written_Last), Buffer => null);
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length := 0) with
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length := 0)
+   with
      Pre =>
        not Ctx'Constrained
        and then Buffer /= null
@@ -120,13 +124,15 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Initialized (Ctx : Context) return Boolean with
+   function Initialized (Ctx : Context) return Boolean
+   with
      Post =>
        True;
 
    pragma Warnings (On, "postcondition does not mention function result");
 
-   procedure Reset (Ctx : in out Context) with
+   procedure Reset (Ctx : in out Context)
+   with
      Pre =>
        not Ctx'Constrained
        and RFLX.UDP.Datagram.Has_Buffer (Ctx),
@@ -138,7 +144,8 @@ is
        and Ctx.Last = RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last)
        and Initialized (Ctx);
 
-   procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) with
+   procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length)
+   with
      Pre =>
        not Ctx'Constrained
        and RFLX.UDP.Datagram.Has_Buffer (Ctx)
@@ -156,7 +163,8 @@ is
        and Ctx.Last = Last
        and Initialized (Ctx);
 
-   procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr) with
+   procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr)
+   with
      Pre =>
        RFLX.UDP.Datagram.Has_Buffer (Ctx),
      Post =>
@@ -174,13 +182,15 @@ is
      Depends =>
        (Ctx => Ctx, Buffer => Ctx);
 
-   procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes) with
+   procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes)
+   with
      Pre =>
        RFLX.UDP.Datagram.Has_Buffer (Ctx)
        and then RFLX.UDP.Datagram.Well_Formed_Message (Ctx)
        and then RFLX.UDP.Datagram.Byte_Size (Ctx) = Buffer'Length;
 
-   function Read (Ctx : Context) return RFLX_Types.Bytes with
+   function Read (Ctx : Context) return RFLX_Types.Bytes
+   with
      Ghost,
      Pre =>
        RFLX.UDP.Datagram.Has_Buffer (Ctx)
@@ -200,7 +210,8 @@ is
    generic
       with procedure Read (Buffer : RFLX_Types.Bytes);
       with function Pre (Buffer : RFLX_Types.Bytes) return Boolean is Always_Valid;
-   procedure Generic_Read (Ctx : Context) with
+   procedure Generic_Read (Ctx : Context)
+   with
      Pre =>
        RFLX.UDP.Datagram.Has_Buffer (Ctx)
        and then RFLX.UDP.Datagram.Well_Formed_Message (Ctx)
@@ -220,7 +231,8 @@ is
    generic
       with procedure Write (Buffer : out RFLX_Types.Bytes; Length : out RFLX_Types.Length; Context_Buffer_Length : RFLX_Types.Length; Offset : RFLX_Types.Length);
       with function Pre (Context_Buffer_Length : RFLX_Types.Length; Offset : RFLX_Types.Length) return Boolean is Always_Valid;
-   procedure Generic_Write (Ctx : in out Context; Offset : RFLX_Types.Length := 0) with
+   procedure Generic_Write (Ctx : in out Context; Offset : RFLX_Types.Length := 0)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.UDP.Datagram.Has_Buffer (Ctx)
@@ -235,15 +247,18 @@ is
 
    function Has_Buffer (Ctx : Context) return Boolean;
 
-   function Buffer_Length (Ctx : Context) return RFLX_Types.Length with
+   function Buffer_Length (Ctx : Context) return RFLX_Types.Length
+   with
      Pre =>
        RFLX.UDP.Datagram.Has_Buffer (Ctx);
 
-   function Buffer_Size (Ctx : Context) return RFLX_Types.Bit_Length with
+   function Buffer_Size (Ctx : Context) return RFLX_Types.Bit_Length
+   with
      Pre =>
        RFLX.UDP.Datagram.Has_Buffer (Ctx);
 
-   function Size (Ctx : Context) return RFLX_Types.Bit_Length with
+   function Size (Ctx : Context) return RFLX_Types.Bit_Length
+   with
      Post =>
        Size'Result rem RFLX_Types.Byte'Size = 0;
 
@@ -253,7 +268,8 @@ is
 
    function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length;
 
-   procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes) with
+   procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes)
+   with
      Pre =>
        RFLX.UDP.Datagram.Has_Buffer (Ctx)
        and then RFLX.UDP.Datagram.Well_Formed_Message (Ctx)
@@ -261,7 +277,8 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Valid_Value (Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean with
+   function Valid_Value (Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean
+   with
      Post =>
        True;
 
@@ -269,7 +286,8 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Field_Condition (Ctx : Context; Fld : Field) return Boolean with
+   function Field_Condition (Ctx : Context; Fld : Field) return Boolean
+   with
      Pre =>
        RFLX.UDP.Datagram.Has_Buffer (Ctx)
        and then RFLX.UDP.Datagram.Valid_Next (Ctx, Fld)
@@ -279,7 +297,8 @@ is
 
    pragma Warnings (On, "postcondition does not mention function result");
 
-   function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
+   function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length
+   with
      Pre =>
        RFLX.UDP.Datagram.Valid_Next (Ctx, Fld),
      Post =>
@@ -291,7 +310,8 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index with
+   function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index
+   with
      Pre =>
        RFLX.UDP.Datagram.Valid_Next (Ctx, Fld),
      Post =>
@@ -299,7 +319,8 @@ is
 
    pragma Warnings (On, "postcondition does not mention function result");
 
-   function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
+   function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length
+   with
      Pre =>
        RFLX.UDP.Datagram.Valid_Next (Ctx, Fld)
        and then RFLX.UDP.Datagram.Sufficient_Space (Ctx, Fld),
@@ -312,20 +333,24 @@ is
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean;
 
-   function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
+   function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length
+   with
      Pre =>
        RFLX.UDP.Datagram.Valid_Next (Ctx, Fld);
 
-   function Sufficient_Space (Ctx : Context; Fld : Field) return Boolean with
+   function Sufficient_Space (Ctx : Context; Fld : Field) return Boolean
+   with
      Pre =>
        RFLX.UDP.Datagram.Valid_Next (Ctx, Fld);
 
-   function Equal (Ctx : Context; Fld : Field; Data : RFLX_Types.Bytes) return Boolean with
+   function Equal (Ctx : Context; Fld : Field; Data : RFLX_Types.Bytes) return Boolean
+   with
      Pre =>
        RFLX.UDP.Datagram.Has_Buffer (Ctx)
        and RFLX.UDP.Datagram.Valid_Next (Ctx, Fld);
 
-   procedure Verify (Ctx : in out Context; Fld : Field) with
+   procedure Verify (Ctx : in out Context; Fld : Field)
+   with
      Pre =>
        RFLX.UDP.Datagram.Has_Buffer (Ctx),
      Post =>
@@ -335,7 +360,8 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old;
 
-   procedure Verify_Message (Ctx : in out Context) with
+   procedure Verify_Message (Ctx : in out Context)
+   with
      Pre =>
        RFLX.UDP.Datagram.Has_Buffer (Ctx),
      Post =>
@@ -349,7 +375,8 @@ is
 
    function Well_Formed (Ctx : Context; Fld : Field) return Boolean;
 
-   function Valid (Ctx : Context; Fld : Field) return Boolean with
+   function Valid (Ctx : Context; Fld : Field) return Boolean
+   with
      Post =>
        (if Valid'Result then Well_Formed (Ctx, Fld) and Present (Ctx, Fld));
 
@@ -357,17 +384,20 @@ is
 
    function Invalid (Ctx : Context; Fld : Field) return Boolean;
 
-   function Well_Formed_Message (Ctx : Context) return Boolean with
+   function Well_Formed_Message (Ctx : Context) return Boolean
+   with
      Pre =>
        RFLX.UDP.Datagram.Has_Buffer (Ctx);
 
-   function Valid_Message (Ctx : Context) return Boolean with
+   function Valid_Message (Ctx : Context) return Boolean
+   with
      Pre =>
        RFLX.UDP.Datagram.Has_Buffer (Ctx);
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Incomplete_Message (Ctx : Context) return Boolean with
+   function Incomplete_Message (Ctx : Context) return Boolean
+   with
      Post =>
        True;
 
@@ -375,25 +405,30 @@ is
 
    pragma Warnings (Off, "precondition is always False");
 
-   function Get_Source_Port (Ctx : Context) return RFLX.UDP.Port with
+   function Get_Source_Port (Ctx : Context) return RFLX.UDP.Port
+   with
      Pre =>
        RFLX.UDP.Datagram.Valid (Ctx, RFLX.UDP.Datagram.F_Source_Port);
 
-   function Get_Destination_Port (Ctx : Context) return RFLX.UDP.Port with
+   function Get_Destination_Port (Ctx : Context) return RFLX.UDP.Port
+   with
      Pre =>
        RFLX.UDP.Datagram.Valid (Ctx, RFLX.UDP.Datagram.F_Destination_Port);
 
-   function Get_Length (Ctx : Context) return RFLX.UDP.Length with
+   function Get_Length (Ctx : Context) return RFLX.UDP.Length
+   with
      Pre =>
        RFLX.UDP.Datagram.Valid (Ctx, RFLX.UDP.Datagram.F_Length);
 
-   function Get_Checksum (Ctx : Context) return RFLX.UDP.Checksum with
+   function Get_Checksum (Ctx : Context) return RFLX.UDP.Checksum
+   with
      Pre =>
        RFLX.UDP.Datagram.Valid (Ctx, RFLX.UDP.Datagram.F_Checksum);
 
    pragma Warnings (On, "precondition is always False");
 
-   function Get_Payload (Ctx : Context) return RFLX_Types.Bytes with
+   function Get_Payload (Ctx : Context) return RFLX_Types.Bytes
+   with
      Ghost,
      Pre =>
        RFLX.UDP.Datagram.Has_Buffer (Ctx)
@@ -402,7 +437,8 @@ is
      Post =>
        Get_Payload'Result'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Payload));
 
-   procedure Get_Payload (Ctx : Context; Data : out RFLX_Types.Bytes) with
+   procedure Get_Payload (Ctx : Context; Data : out RFLX_Types.Bytes)
+   with
      Pre =>
        RFLX.UDP.Datagram.Has_Buffer (Ctx)
        and then RFLX.UDP.Datagram.Well_Formed (Ctx, RFLX.UDP.Datagram.F_Payload)
@@ -413,14 +449,16 @@ is
 
    generic
       with procedure Process_Payload (Payload : RFLX_Types.Bytes);
-   procedure Generic_Get_Payload (Ctx : Context) with
+   procedure Generic_Get_Payload (Ctx : Context)
+   with
      Pre =>
        RFLX.UDP.Datagram.Has_Buffer (Ctx)
        and RFLX.UDP.Datagram.Present (Ctx, RFLX.UDP.Datagram.F_Payload);
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean with
+   function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean
+   with
      Pre =>
        RFLX.UDP.Datagram.Valid_Next (Ctx, Fld),
      Post =>
@@ -430,7 +468,8 @@ is
 
    pragma Warnings (Off, "aspect ""*"" not enforced on inlined subprogram ""*""");
 
-   procedure Set_Source_Port (Ctx : in out Context; Val : RFLX.UDP.Port) with
+   procedure Set_Source_Port (Ctx : in out Context; Val : RFLX.UDP.Port)
+   with
      Inline_Always,
      Pre =>
        not Ctx'Constrained
@@ -455,7 +494,8 @@ is
        and Valid_Next (Ctx, F_Source_Port) = Valid_Next (Ctx, F_Source_Port)'Old
        and Field_First (Ctx, F_Source_Port) = Field_First (Ctx, F_Source_Port)'Old;
 
-   procedure Set_Destination_Port (Ctx : in out Context; Val : RFLX.UDP.Port) with
+   procedure Set_Destination_Port (Ctx : in out Context; Val : RFLX.UDP.Port)
+   with
      Inline_Always,
      Pre =>
        not Ctx'Constrained
@@ -482,7 +522,8 @@ is
        and (for all F in Field range F_Source_Port .. F_Source_Port =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
-   procedure Set_Length (Ctx : in out Context; Val : RFLX.UDP.Length) with
+   procedure Set_Length (Ctx : in out Context; Val : RFLX.UDP.Length)
+   with
      Inline_Always,
      Pre =>
        not Ctx'Constrained
@@ -509,7 +550,8 @@ is
        and (for all F in Field range F_Source_Port .. F_Destination_Port =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
-   procedure Set_Checksum (Ctx : in out Context; Val : RFLX.UDP.Checksum) with
+   procedure Set_Checksum (Ctx : in out Context; Val : RFLX.UDP.Checksum)
+   with
      Inline_Always,
      Pre =>
        not Ctx'Constrained
@@ -538,7 +580,8 @@ is
 
    pragma Warnings (On, "aspect ""*"" not enforced on inlined subprogram ""*""");
 
-   procedure Set_Payload_Empty (Ctx : in out Context) with
+   procedure Set_Payload_Empty (Ctx : in out Context)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.UDP.Datagram.Has_Buffer (Ctx)
@@ -561,7 +604,8 @@ is
        and Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
        and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old;
 
-   procedure Initialize_Payload (Ctx : in out Context) with
+   procedure Initialize_Payload (Ctx : in out Context)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.UDP.Datagram.Has_Buffer (Ctx)
@@ -582,7 +626,8 @@ is
        and then Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
        and then Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old;
 
-   procedure Set_Payload (Ctx : in out Context; Data : RFLX_Types.Bytes) with
+   procedure Set_Payload (Ctx : in out Context; Data : RFLX_Types.Bytes)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.UDP.Datagram.Has_Buffer (Ctx)
@@ -610,7 +655,8 @@ is
    generic
       with procedure Process_Payload (Payload : out RFLX_Types.Bytes);
       with function Process_Data_Pre (Length : RFLX_Types.Length) return Boolean;
-   procedure Generic_Set_Payload (Ctx : in out Context; Length : RFLX_Types.Length) with
+   procedure Generic_Set_Payload (Ctx : in out Context; Length : RFLX_Types.Length)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.UDP.Datagram.Has_Buffer (Ctx)
@@ -634,17 +680,20 @@ is
        and Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
        and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old;
 
-   function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
+   function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor
+   with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
 
-   function Context_Cursors (Ctx : Context) return Field_Cursors with
+   function Context_Cursors (Ctx : Context) return Field_Cursors
+   with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
 
-   function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor with
+   function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor
+   with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
@@ -660,7 +709,8 @@ is
 
    function Valid_Structure (Unused_Struct : Structure) return Boolean;
 
-   procedure To_Structure (Ctx : Context; Struct : out Structure) with
+   procedure To_Structure (Ctx : Context; Struct : out Structure)
+   with
      Pre =>
        RFLX.UDP.Datagram.Has_Buffer (Ctx)
        and then RFLX.UDP.Datagram.Well_Formed_Message (Ctx),
@@ -669,7 +719,8 @@ is
 
    function Sufficient_Buffer_Length (Ctx : Context; Struct : Structure) return Boolean;
 
-   procedure To_Context (Struct : Structure; Ctx : in out Context) with
+   procedure To_Context (Struct : Structure; Ctx : in out Context)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.UDP.Datagram.Has_Buffer (Ctx)
@@ -681,23 +732,28 @@ is
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old;
 
-   function Field_Size_Source_Port (Struct : Structure) return RFLX_Types.Bit_Length with
+   function Field_Size_Source_Port (Struct : Structure) return RFLX_Types.Bit_Length
+   with
      Pre =>
        Valid_Structure (Struct);
 
-   function Field_Size_Destination_Port (Struct : Structure) return RFLX_Types.Bit_Length with
+   function Field_Size_Destination_Port (Struct : Structure) return RFLX_Types.Bit_Length
+   with
      Pre =>
        Valid_Structure (Struct);
 
-   function Field_Size_Length (Struct : Structure) return RFLX_Types.Bit_Length with
+   function Field_Size_Length (Struct : Structure) return RFLX_Types.Bit_Length
+   with
      Pre =>
        Valid_Structure (Struct);
 
-   function Field_Size_Checksum (Struct : Structure) return RFLX_Types.Bit_Length with
+   function Field_Size_Checksum (Struct : Structure) return RFLX_Types.Bit_Length
+   with
      Pre =>
        Valid_Structure (Struct);
 
-   function Field_Size_Payload (Struct : Structure) return RFLX_Types.Bit_Length with
+   function Field_Size_Payload (Struct : Structure) return RFLX_Types.Bit_Length
+   with
      Pre =>
        Valid_Structure (Struct);
 
@@ -736,7 +792,8 @@ private
               Cursors (F).First >= First
               and Cursors (F).Last <= Verified_Last
               and Cursors (F).First <= Cursors (F).Last + 1
-              and Valid_Value (F, Cursors (F).Value)))) with
+              and Valid_Value (F, Cursors (F).Value))))
+   with
      Post =>
        True;
 
@@ -753,7 +810,8 @@ private
       and then (if Well_Formed (Cursors (F_Destination_Port)) then Valid (Cursors (F_Source_Port)))
       and then (if Well_Formed (Cursors (F_Length)) then Valid (Cursors (F_Destination_Port)))
       and then (if Well_Formed (Cursors (F_Checksum)) then Valid (Cursors (F_Length)))
-      and then (if Well_Formed (Cursors (F_Payload)) then Valid (Cursors (F_Checksum)))) with
+      and then (if Well_Formed (Cursors (F_Payload)) then Valid (Cursors (F_Checksum))))
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last),
      Post =>
@@ -782,7 +840,8 @@ private
               and then True),
           when F_Payload =>
              (Valid (Cursors (F_Checksum))
-              and then True)) with
+              and then True))
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last),
@@ -800,7 +859,8 @@ private
           when F_Source_Port | F_Destination_Port | F_Length | F_Checksum =>
              16,
           when F_Payload =>
-             (RFLX_Types.Bit_Length (Cursors (F_Length).Value) - 8) * 8) with
+             (RFLX_Types.Bit_Length (Cursors (F_Length).Value) - 8) * 8)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
@@ -819,35 +879,40 @@ private
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
    function Field_First_Source_Port (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First) with
+     (First)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Source_Port);
 
    function Field_First_Destination_Port (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First + 16) with
+     (First + 16)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Destination_Port);
 
    function Field_First_Length (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First + 32) with
+     (First + 32)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Length);
 
    function Field_First_Checksum (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First + 48) with
+     (First + 48)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Checksum);
 
    function Field_First_Payload (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First + 64) with
+     (First + 64)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
@@ -864,7 +929,8 @@ private
           when F_Checksum =>
              Field_First_Checksum (Cursors, First, Verified_Last, Written_Last),
           when F_Payload =>
-             Field_First_Payload (Cursors, First, Verified_Last, Written_Last)) with
+             Field_First_Payload (Cursors, First, Verified_Last, Written_Last))
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
@@ -932,7 +998,8 @@ private
                              Well_Formed (Cursors (F_Payload))
                           then
                              (Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = (RFLX_Types.Bit_Length (Cursors (F_Length).Value) - 8) * 8
-                              and then Cursors (F_Payload).First = Cursors (F_Checksum).Last + 1)))) with
+                              and then Cursors (F_Payload).First = Cursors (F_Checksum).Last + 1))))
+   with
      Post =>
        True;
 
@@ -946,7 +1013,8 @@ private
          Written_Last : RFLX_Types.Bit_Length := First - 1;
          Buffer : RFLX_Types.Bytes_Ptr := null;
          Cursors : Field_Cursors := (others => <>);
-      end record with
+      end record
+   with
      Dynamic_Predicate =>
        Valid_Context (Context.Buffer_First, Context.Buffer_Last, Context.First, Context.Last, Context.Verified_Last, Context.Written_Last, Context.Buffer, Context.Cursors);
 
@@ -1058,7 +1126,8 @@ private
      (To_Actual (Ctx.Cursors (F_Checksum).Value));
 
    function Valid_Size (Ctx : Context; Fld : Field; Size : RFLX_Types.Bit_Length) return Boolean is
-     (Size = Field_Size (Ctx, Fld)) with
+     (Size = Field_Size (Ctx, Fld))
+   with
      Pre =>
        RFLX.UDP.Datagram.Valid_Next (Ctx, Fld);
 

@@ -15,7 +15,8 @@ with RFLX.TLV;
 use RFLX.TLV;
 with RFLX.TLV.Message;
 
-package RFLX.In_TLV.Contains with
+package RFLX.In_TLV.Contains
+with
   SPARK_Mode,
   Always_Terminates
 is

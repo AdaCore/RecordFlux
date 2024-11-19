@@ -13,11 +13,13 @@ pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types;
 
-package RFLX.IPv4 with
+package RFLX.IPv4
+with
   SPARK_Mode
 is
 
-   type Version is range 4 .. 4 with
+   type Version is range 4 .. 4
+   with
      Size =>
        4;
 
@@ -30,11 +32,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Version is
-     (RFLX.IPv4.Version (Val)) with
+     (RFLX.IPv4.Version (Val))
+   with
      Pre =>
        Valid_Version (Val);
 
-   type IHL is range 5 .. 15 with
+   type IHL is range 5 .. 15
+   with
      Size =>
        4;
 
@@ -46,11 +50,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.IHL is
-     (RFLX.IPv4.IHL (Val)) with
+     (RFLX.IPv4.IHL (Val))
+   with
      Pre =>
        Valid_IHL (Val);
 
-   type DCSP is range 0 .. 2**6 - 1 with
+   type DCSP is range 0 .. 2**6 - 1
+   with
      Size =>
        6;
 
@@ -61,11 +67,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.DCSP is
-     (RFLX.IPv4.DCSP (Val)) with
+     (RFLX.IPv4.DCSP (Val))
+   with
      Pre =>
        Valid_DCSP (Val);
 
-   type ECN is range 0 .. 2**2 - 1 with
+   type ECN is range 0 .. 2**2 - 1
+   with
      Size =>
        2;
 
@@ -76,11 +84,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.ECN is
-     (RFLX.IPv4.ECN (Val)) with
+     (RFLX.IPv4.ECN (Val))
+   with
      Pre =>
        Valid_ECN (Val);
 
-   type Total_Length is range 0 .. 2**16 - 1 with
+   type Total_Length is range 0 .. 2**16 - 1
+   with
      Size =>
        16;
 
@@ -91,11 +101,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Total_Length is
-     (RFLX.IPv4.Total_Length (Val)) with
+     (RFLX.IPv4.Total_Length (Val))
+   with
      Pre =>
        Valid_Total_Length (Val);
 
-   type Identification is range 0 .. 2**16 - 1 with
+   type Identification is range 0 .. 2**16 - 1
+   with
      Size =>
        16;
 
@@ -106,11 +118,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Identification is
-     (RFLX.IPv4.Identification (Val)) with
+     (RFLX.IPv4.Identification (Val))
+   with
      Pre =>
        Valid_Identification (Val);
 
-   type Fragment_Offset is range 0 .. 2**13 - 1 with
+   type Fragment_Offset is range 0 .. 2**13 - 1
+   with
      Size =>
        13;
 
@@ -121,11 +135,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Fragment_Offset is
-     (RFLX.IPv4.Fragment_Offset (Val)) with
+     (RFLX.IPv4.Fragment_Offset (Val))
+   with
      Pre =>
        Valid_Fragment_Offset (Val);
 
-   type TTL is range 0 .. 2**8 - 1 with
+   type TTL is range 0 .. 2**8 - 1
+   with
      Size =>
        8;
 
@@ -136,11 +152,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.TTL is
-     (RFLX.IPv4.TTL (Val)) with
+     (RFLX.IPv4.TTL (Val))
+   with
      Pre =>
        Valid_TTL (Val);
 
-   type Protocol_Enum is (P_ICMP, P_UDP) with
+   type Protocol_Enum is (P_ICMP, P_UDP)
+   with
      Size =>
        8;
    for Protocol_Enum use (P_ICMP => 1, P_UDP => 17);
@@ -178,14 +196,16 @@ is
           when 17 =>
              (True, P_UDP),
           when others =>
-             (False, Val)) with
+             (False, Val))
+   with
      Pre =>
        Valid_Protocol (Val);
 
    function To_Base_Integer (Val : RFLX.IPv4.Protocol) return RFLX.RFLX_Types.Base_Integer is
      (if Val.Known then To_Base_Integer (Val.Enum) else Val.Raw);
 
-   type Header_Checksum is range 0 .. 2**16 - 1 with
+   type Header_Checksum is range 0 .. 2**16 - 1
+   with
      Size =>
        16;
 
@@ -196,11 +216,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Header_Checksum is
-     (RFLX.IPv4.Header_Checksum (Val)) with
+     (RFLX.IPv4.Header_Checksum (Val))
+   with
      Pre =>
        Valid_Header_Checksum (Val);
 
-   type Address is range 0 .. 2**32 - 1 with
+   type Address is range 0 .. 2**32 - 1
+   with
      Size =>
        32;
 
@@ -211,11 +233,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Address is
-     (RFLX.IPv4.Address (Val)) with
+     (RFLX.IPv4.Address (Val))
+   with
      Pre =>
        Valid_Address (Val);
 
-   type Option_Class is (Control, Debugging_And_Measurement) with
+   type Option_Class is (Control, Debugging_And_Measurement)
+   with
      Size =>
        2;
    for Option_Class use (Control => 0, Debugging_And_Measurement => 2);
@@ -239,13 +263,15 @@ is
           when 2 =>
              Debugging_And_Measurement,
           when others =>
-             RFLX.IPv4.Option_Class'Last) with
+             RFLX.IPv4.Option_Class'Last)
+   with
      Pre =>
        Valid_Option_Class (Val);
 
    pragma Warnings (On, "unreachable branch");
 
-   type Option_Number is range 0 .. 2**5 - 1 with
+   type Option_Number is range 0 .. 2**5 - 1
+   with
      Size =>
        5;
 
@@ -256,11 +282,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Option_Number is
-     (RFLX.IPv4.Option_Number (Val)) with
+     (RFLX.IPv4.Option_Number (Val))
+   with
      Pre =>
        Valid_Option_Number (Val);
 
-   type Option_Length is range 2 .. 2**8 - 1 with
+   type Option_Length is range 2 .. 2**8 - 1
+   with
      Size =>
        8;
 
@@ -272,7 +300,8 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Option_Length is
-     (RFLX.IPv4.Option_Length (Val)) with
+     (RFLX.IPv4.Option_Length (Val))
+   with
      Pre =>
        Valid_Option_Length (Val);
 

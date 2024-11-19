@@ -13,11 +13,13 @@ pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types;
 
-package RFLX.Enumeration with
+package RFLX.Enumeration
+with
   SPARK_Mode
 is
 
-   type Priority_Enum is (Low, Medium, High) with
+   type Priority_Enum is (Low, Medium, High)
+   with
      Size =>
        8;
    for Priority_Enum use (Low => 1, Medium => 4, High => 7);
@@ -61,7 +63,8 @@ is
           when 7 =>
              (True, High),
           when others =>
-             (False, Val)) with
+             (False, Val))
+   with
      Pre =>
        Valid_Priority (Val);
 

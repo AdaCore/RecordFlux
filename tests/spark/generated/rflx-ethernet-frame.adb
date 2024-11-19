@@ -13,7 +13,8 @@ pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types.Operations;
 
-package body RFLX.Ethernet.Frame with
+package body RFLX.Ethernet.Frame
+with
   SPARK_Mode
 is
 
@@ -98,7 +99,8 @@ is
      (Ctx.Buffer /= null
       and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) < RFLX_Types.Bit_Length'Last
       and Ctx.First <= Field_First (Ctx, Fld)
-      and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1 <= Ctx.Written_Last) with
+      and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1 <= Ctx.Written_Last)
+   with
      Pre =>
        RFLX.Ethernet.Frame.Has_Buffer (Ctx)
        and RFLX.Ethernet.Frame.Valid_Next (Ctx, Fld);
@@ -113,7 +115,8 @@ is
                    when others =>
                       False));
 
-   procedure Reset_Dependent_Fields (Ctx : in out Context; Fld : Field) with
+   procedure Reset_Dependent_Fields (Ctx : in out Context; Fld : Field)
+   with
      Pre =>
        RFLX.Ethernet.Frame.Valid_Next (Ctx, Fld),
      Post =>
@@ -140,7 +143,8 @@ is
    function Composite_Field (Fld : Field) return Boolean is
      (Fld in F_Payload);
 
-   function Get (Ctx : Context; Fld : Field) return RFLX_Types.Base_Integer with
+   function Get (Ctx : Context; Fld : Field) return RFLX_Types.Base_Integer
+   with
      Pre =>
        RFLX.Ethernet.Frame.Has_Buffer (Ctx)
        and then RFLX.Ethernet.Frame.Valid_Next (Ctx, Fld)
@@ -228,7 +232,8 @@ is
       Process_Payload (Ctx.Buffer.all (First .. Last));
    end Generic_Get_Payload;
 
-   procedure Set (Ctx : in out Context; Fld : Field; Val : RFLX_Types.Base_Integer; Size : RFLX_Types.Bit_Length; State_Valid : Boolean; Buffer_First : out RFLX_Types.Index; Buffer_Last : out RFLX_Types.Index; Offset : out RFLX_Types.Offset) with
+   procedure Set (Ctx : in out Context; Fld : Field; Val : RFLX_Types.Base_Integer; Size : RFLX_Types.Bit_Length; State_Valid : Boolean; Buffer_First : out RFLX_Types.Index; Buffer_Last : out RFLX_Types.Index; Offset : out RFLX_Types.Offset)
+   with
      Pre =>
        RFLX.Ethernet.Frame.Has_Buffer (Ctx)
        and then RFLX.Ethernet.Frame.Valid_Next (Ctx, Fld)
@@ -283,7 +288,8 @@ is
       pragma Assert (Last = (Field_First (Ctx, Fld) + Size) - 1);
    end Set;
 
-   procedure Set_Scalar (Ctx : in out Context; Fld : Field; Val : RFLX_Types.Base_Integer) with
+   procedure Set_Scalar (Ctx : in out Context; Fld : Field; Val : RFLX_Types.Base_Integer)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.Ethernet.Frame.Has_Buffer (Ctx)
@@ -351,7 +357,8 @@ is
       Set_Scalar (Ctx, F_Type_Length, RFLX.Ethernet.To_Base_Integer (Val));
    end Set_Type_Length;
 
-   procedure Initialize_Payload_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
+   procedure Initialize_Payload_Private (Ctx : in out Context; Length : RFLX_Types.Length)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.Ethernet.Frame.Has_Buffer (Ctx)

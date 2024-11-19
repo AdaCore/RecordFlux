@@ -13,7 +13,8 @@ pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types;
 
-package RFLX.ICMP.Message with
+package RFLX.ICMP.Message
+with
   SPARK_Mode,
   Always_Terminates
 is
@@ -60,7 +61,8 @@ is
 
    type Field_Cursors is private;
 
-   type Context (Buffer_First, Buffer_Last : RFLX_Types.Index := RFLX_Types.Index'First; First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First; Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First) is private with
+   type Context (Buffer_First, Buffer_Last : RFLX_Types.Index := RFLX_Types.Index'First; First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First; Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First) is private
+   with
      Default_Initial_Condition =>
        RFLX_Types.To_Index (First) >= Buffer_First
        and RFLX_Types.To_Index (Last) <= Buffer_Last
@@ -70,7 +72,8 @@ is
        and First rem RFLX_Types.Byte'Size = 1
        and Last rem RFLX_Types.Byte'Size = 0;
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; Written_Last : RFLX_Types.Bit_Length := 0) with
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; Written_Last : RFLX_Types.Bit_Length := 0)
+   with
      Pre =>
        not Ctx'Constrained
        and then Buffer /= null
@@ -91,7 +94,8 @@ is
      Depends =>
        (Ctx => (Buffer, Written_Last), Buffer => null);
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length := 0) with
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length := 0)
+   with
      Pre =>
        not Ctx'Constrained
        and then Buffer /= null
@@ -120,13 +124,15 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Initialized (Ctx : Context) return Boolean with
+   function Initialized (Ctx : Context) return Boolean
+   with
      Post =>
        True;
 
    pragma Warnings (On, "postcondition does not mention function result");
 
-   procedure Reset (Ctx : in out Context) with
+   procedure Reset (Ctx : in out Context)
+   with
      Pre =>
        not Ctx'Constrained
        and RFLX.ICMP.Message.Has_Buffer (Ctx),
@@ -138,7 +144,8 @@ is
        and Ctx.Last = RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last)
        and Initialized (Ctx);
 
-   procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) with
+   procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length)
+   with
      Pre =>
        not Ctx'Constrained
        and RFLX.ICMP.Message.Has_Buffer (Ctx)
@@ -156,7 +163,8 @@ is
        and Ctx.Last = Last
        and Initialized (Ctx);
 
-   procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr) with
+   procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr)
+   with
      Pre =>
        RFLX.ICMP.Message.Has_Buffer (Ctx),
      Post =>
@@ -174,13 +182,15 @@ is
      Depends =>
        (Ctx => Ctx, Buffer => Ctx);
 
-   procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes) with
+   procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes)
+   with
      Pre =>
        RFLX.ICMP.Message.Has_Buffer (Ctx)
        and then RFLX.ICMP.Message.Well_Formed_Message (Ctx)
        and then RFLX.ICMP.Message.Byte_Size (Ctx) = Buffer'Length;
 
-   function Read (Ctx : Context) return RFLX_Types.Bytes with
+   function Read (Ctx : Context) return RFLX_Types.Bytes
+   with
      Ghost,
      Pre =>
        RFLX.ICMP.Message.Has_Buffer (Ctx)
@@ -200,7 +210,8 @@ is
    generic
       with procedure Read (Buffer : RFLX_Types.Bytes);
       with function Pre (Buffer : RFLX_Types.Bytes) return Boolean is Always_Valid;
-   procedure Generic_Read (Ctx : Context) with
+   procedure Generic_Read (Ctx : Context)
+   with
      Pre =>
        RFLX.ICMP.Message.Has_Buffer (Ctx)
        and then RFLX.ICMP.Message.Well_Formed_Message (Ctx)
@@ -220,7 +231,8 @@ is
    generic
       with procedure Write (Buffer : out RFLX_Types.Bytes; Length : out RFLX_Types.Length; Context_Buffer_Length : RFLX_Types.Length; Offset : RFLX_Types.Length);
       with function Pre (Context_Buffer_Length : RFLX_Types.Length; Offset : RFLX_Types.Length) return Boolean is Always_Valid;
-   procedure Generic_Write (Ctx : in out Context; Offset : RFLX_Types.Length := 0) with
+   procedure Generic_Write (Ctx : in out Context; Offset : RFLX_Types.Length := 0)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.ICMP.Message.Has_Buffer (Ctx)
@@ -235,15 +247,18 @@ is
 
    function Has_Buffer (Ctx : Context) return Boolean;
 
-   function Buffer_Length (Ctx : Context) return RFLX_Types.Length with
+   function Buffer_Length (Ctx : Context) return RFLX_Types.Length
+   with
      Pre =>
        RFLX.ICMP.Message.Has_Buffer (Ctx);
 
-   function Buffer_Size (Ctx : Context) return RFLX_Types.Bit_Length with
+   function Buffer_Size (Ctx : Context) return RFLX_Types.Bit_Length
+   with
      Pre =>
        RFLX.ICMP.Message.Has_Buffer (Ctx);
 
-   function Size (Ctx : Context) return RFLX_Types.Bit_Length with
+   function Size (Ctx : Context) return RFLX_Types.Bit_Length
+   with
      Post =>
        Size'Result rem RFLX_Types.Byte'Size = 0;
 
@@ -253,7 +268,8 @@ is
 
    function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length;
 
-   procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes) with
+   procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes)
+   with
      Pre =>
        RFLX.ICMP.Message.Has_Buffer (Ctx)
        and then RFLX.ICMP.Message.Well_Formed_Message (Ctx)
@@ -261,7 +277,8 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Valid_Value (Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean with
+   function Valid_Value (Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean
+   with
      Post =>
        True;
 
@@ -269,7 +286,8 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean with
+   function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean
+   with
      Pre =>
        RFLX.ICMP.Message.Has_Buffer (Ctx)
        and then RFLX.ICMP.Message.Valid_Value (Fld, Val)
@@ -280,7 +298,8 @@ is
 
    pragma Warnings (On, "postcondition does not mention function result");
 
-   function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
+   function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length
+   with
      Pre =>
        RFLX.ICMP.Message.Valid_Next (Ctx, Fld),
      Post =>
@@ -292,7 +311,8 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index with
+   function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index
+   with
      Pre =>
        RFLX.ICMP.Message.Valid_Next (Ctx, Fld),
      Post =>
@@ -300,7 +320,8 @@ is
 
    pragma Warnings (On, "postcondition does not mention function result");
 
-   function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
+   function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length
+   with
      Pre =>
        RFLX.ICMP.Message.Valid_Next (Ctx, Fld)
        and then RFLX.ICMP.Message.Sufficient_Space (Ctx, Fld),
@@ -313,20 +334,24 @@ is
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean;
 
-   function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
+   function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length
+   with
      Pre =>
        RFLX.ICMP.Message.Valid_Next (Ctx, Fld);
 
-   function Sufficient_Space (Ctx : Context; Fld : Field) return Boolean with
+   function Sufficient_Space (Ctx : Context; Fld : Field) return Boolean
+   with
      Pre =>
        RFLX.ICMP.Message.Valid_Next (Ctx, Fld);
 
-   function Equal (Ctx : Context; Fld : Field; Data : RFLX_Types.Bytes) return Boolean with
+   function Equal (Ctx : Context; Fld : Field; Data : RFLX_Types.Bytes) return Boolean
+   with
      Pre =>
        RFLX.ICMP.Message.Has_Buffer (Ctx)
        and RFLX.ICMP.Message.Valid_Next (Ctx, Fld);
 
-   procedure Verify (Ctx : in out Context; Fld : Field) with
+   procedure Verify (Ctx : in out Context; Fld : Field)
+   with
      Pre =>
        RFLX.ICMP.Message.Has_Buffer (Ctx),
      Post =>
@@ -336,7 +361,8 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old;
 
-   procedure Verify_Message (Ctx : in out Context) with
+   procedure Verify_Message (Ctx : in out Context)
+   with
      Pre =>
        RFLX.ICMP.Message.Has_Buffer (Ctx),
      Post =>
@@ -350,7 +376,8 @@ is
 
    function Well_Formed (Ctx : Context; Fld : Field) return Boolean;
 
-   function Valid (Ctx : Context; Fld : Field) return Boolean with
+   function Valid (Ctx : Context; Fld : Field) return Boolean
+   with
      Post =>
        (if Valid'Result then Well_Formed (Ctx, Fld) and Present (Ctx, Fld));
 
@@ -358,17 +385,20 @@ is
 
    function Invalid (Ctx : Context; Fld : Field) return Boolean;
 
-   function Well_Formed_Message (Ctx : Context) return Boolean with
+   function Well_Formed_Message (Ctx : Context) return Boolean
+   with
      Pre =>
        RFLX.ICMP.Message.Has_Buffer (Ctx);
 
-   function Valid_Message (Ctx : Context) return Boolean with
+   function Valid_Message (Ctx : Context) return Boolean
+   with
      Pre =>
        RFLX.ICMP.Message.Has_Buffer (Ctx);
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Incomplete_Message (Ctx : Context) return Boolean with
+   function Incomplete_Message (Ctx : Context) return Boolean
+   with
      Post =>
        True;
 
@@ -376,69 +406,85 @@ is
 
    pragma Warnings (Off, "precondition is always False");
 
-   function Get_Tag (Ctx : Context) return RFLX.ICMP.Tag with
+   function Get_Tag (Ctx : Context) return RFLX.ICMP.Tag
+   with
      Pre =>
        RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Tag);
 
-   function Get_Code_Destination_Unreachable (Ctx : Context) return RFLX.ICMP.Code_Destination_Unreachable with
+   function Get_Code_Destination_Unreachable (Ctx : Context) return RFLX.ICMP.Code_Destination_Unreachable
+   with
      Pre =>
        RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Code_Destination_Unreachable);
 
-   function Get_Code_Redirect (Ctx : Context) return RFLX.ICMP.Code_Redirect with
+   function Get_Code_Redirect (Ctx : Context) return RFLX.ICMP.Code_Redirect
+   with
      Pre =>
        RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Code_Redirect);
 
-   function Get_Code_Time_Exceeded (Ctx : Context) return RFLX.ICMP.Code_Time_Exceeded with
+   function Get_Code_Time_Exceeded (Ctx : Context) return RFLX.ICMP.Code_Time_Exceeded
+   with
      Pre =>
        RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Code_Time_Exceeded);
 
-   function Get_Code_Zero (Ctx : Context) return RFLX.ICMP.Code_Zero with
+   function Get_Code_Zero (Ctx : Context) return RFLX.ICMP.Code_Zero
+   with
      Pre =>
        RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Code_Zero);
 
-   function Get_Checksum (Ctx : Context) return RFLX.ICMP.Checksum with
+   function Get_Checksum (Ctx : Context) return RFLX.ICMP.Checksum
+   with
      Pre =>
        RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Checksum);
 
-   function Get_Gateway_Internet_Address (Ctx : Context) return RFLX.ICMP.Gateway_Internet_Address with
+   function Get_Gateway_Internet_Address (Ctx : Context) return RFLX.ICMP.Gateway_Internet_Address
+   with
      Pre =>
        RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Gateway_Internet_Address);
 
-   function Get_Identifier (Ctx : Context) return RFLX.ICMP.Identifier with
+   function Get_Identifier (Ctx : Context) return RFLX.ICMP.Identifier
+   with
      Pre =>
        RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Identifier);
 
-   function Get_Pointer (Ctx : Context) return RFLX.ICMP.Pointer with
+   function Get_Pointer (Ctx : Context) return RFLX.ICMP.Pointer
+   with
      Pre =>
        RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Pointer);
 
-   function Get_Unused_32 (Ctx : Context) return RFLX.ICMP.Unused_32 with
+   function Get_Unused_32 (Ctx : Context) return RFLX.ICMP.Unused_32
+   with
      Pre =>
        RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Unused_32);
 
-   function Get_Sequence_Number (Ctx : Context) return RFLX.ICMP.Sequence_Number with
+   function Get_Sequence_Number (Ctx : Context) return RFLX.ICMP.Sequence_Number
+   with
      Pre =>
        RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Sequence_Number);
 
-   function Get_Unused_24 (Ctx : Context) return RFLX.ICMP.Unused_24 with
+   function Get_Unused_24 (Ctx : Context) return RFLX.ICMP.Unused_24
+   with
      Pre =>
        RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Unused_24);
 
-   function Get_Originate_Timestamp (Ctx : Context) return RFLX.ICMP.Timestamp with
+   function Get_Originate_Timestamp (Ctx : Context) return RFLX.ICMP.Timestamp
+   with
      Pre =>
        RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Originate_Timestamp);
 
-   function Get_Receive_Timestamp (Ctx : Context) return RFLX.ICMP.Timestamp with
+   function Get_Receive_Timestamp (Ctx : Context) return RFLX.ICMP.Timestamp
+   with
      Pre =>
        RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Receive_Timestamp);
 
-   function Get_Transmit_Timestamp (Ctx : Context) return RFLX.ICMP.Timestamp with
+   function Get_Transmit_Timestamp (Ctx : Context) return RFLX.ICMP.Timestamp
+   with
      Pre =>
        RFLX.ICMP.Message.Valid (Ctx, RFLX.ICMP.Message.F_Transmit_Timestamp);
 
    pragma Warnings (On, "precondition is always False");
 
-   function Get_Data (Ctx : Context) return RFLX_Types.Bytes with
+   function Get_Data (Ctx : Context) return RFLX_Types.Bytes
+   with
      Ghost,
      Pre =>
        RFLX.ICMP.Message.Has_Buffer (Ctx)
@@ -447,7 +493,8 @@ is
      Post =>
        Get_Data'Result'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Data));
 
-   procedure Get_Data (Ctx : Context; Data : out RFLX_Types.Bytes) with
+   procedure Get_Data (Ctx : Context; Data : out RFLX_Types.Bytes)
+   with
      Pre =>
        RFLX.ICMP.Message.Has_Buffer (Ctx)
        and then RFLX.ICMP.Message.Well_Formed (Ctx, RFLX.ICMP.Message.F_Data)
@@ -458,14 +505,16 @@ is
 
    generic
       with procedure Process_Data (Data : RFLX_Types.Bytes);
-   procedure Generic_Get_Data (Ctx : Context) with
+   procedure Generic_Get_Data (Ctx : Context)
+   with
      Pre =>
        RFLX.ICMP.Message.Has_Buffer (Ctx)
        and RFLX.ICMP.Message.Present (Ctx, RFLX.ICMP.Message.F_Data);
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean with
+   function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean
+   with
      Pre =>
        RFLX.ICMP.Message.Valid_Next (Ctx, Fld),
      Post =>
@@ -475,7 +524,8 @@ is
 
    pragma Warnings (Off, "aspect ""*"" not enforced on inlined subprogram ""*""");
 
-   procedure Set_Tag (Ctx : in out Context; Val : RFLX.ICMP.Tag) with
+   procedure Set_Tag (Ctx : in out Context; Val : RFLX.ICMP.Tag)
+   with
      Inline_Always,
      Pre =>
        not Ctx'Constrained
@@ -533,7 +583,8 @@ is
        and Valid_Next (Ctx, F_Tag) = Valid_Next (Ctx, F_Tag)'Old
        and Field_First (Ctx, F_Tag) = Field_First (Ctx, F_Tag)'Old;
 
-   procedure Set_Code_Destination_Unreachable (Ctx : in out Context; Val : RFLX.ICMP.Code_Destination_Unreachable) with
+   procedure Set_Code_Destination_Unreachable (Ctx : in out Context; Val : RFLX.ICMP.Code_Destination_Unreachable)
+   with
      Inline_Always,
      Pre =>
        not Ctx'Constrained
@@ -571,7 +622,8 @@ is
        and (for all F in Field range F_Tag .. F_Tag =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
-   procedure Set_Code_Redirect (Ctx : in out Context; Val : RFLX.ICMP.Code_Redirect) with
+   procedure Set_Code_Redirect (Ctx : in out Context; Val : RFLX.ICMP.Code_Redirect)
+   with
      Inline_Always,
      Pre =>
        not Ctx'Constrained
@@ -608,7 +660,8 @@ is
        and (for all F in Field range F_Tag .. F_Code_Destination_Unreachable =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
-   procedure Set_Code_Time_Exceeded (Ctx : in out Context; Val : RFLX.ICMP.Code_Time_Exceeded) with
+   procedure Set_Code_Time_Exceeded (Ctx : in out Context; Val : RFLX.ICMP.Code_Time_Exceeded)
+   with
      Inline_Always,
      Pre =>
        not Ctx'Constrained
@@ -644,7 +697,8 @@ is
        and (for all F in Field range F_Tag .. F_Code_Redirect =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
-   procedure Set_Code_Zero (Ctx : in out Context; Val : RFLX.ICMP.Code_Zero) with
+   procedure Set_Code_Zero (Ctx : in out Context; Val : RFLX.ICMP.Code_Zero)
+   with
      Inline_Always,
      Pre =>
        not Ctx'Constrained
@@ -678,7 +732,8 @@ is
        and (for all F in Field range F_Tag .. F_Code_Time_Exceeded =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
-   procedure Set_Checksum (Ctx : in out Context; Val : RFLX.ICMP.Checksum) with
+   procedure Set_Checksum (Ctx : in out Context; Val : RFLX.ICMP.Checksum)
+   with
      Inline_Always,
      Pre =>
        not Ctx'Constrained
@@ -734,7 +789,8 @@ is
        and (for all F in Field range F_Tag .. F_Code_Zero =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
-   procedure Set_Gateway_Internet_Address (Ctx : in out Context; Val : RFLX.ICMP.Gateway_Internet_Address) with
+   procedure Set_Gateway_Internet_Address (Ctx : in out Context; Val : RFLX.ICMP.Gateway_Internet_Address)
+   with
      Inline_Always,
      Pre =>
        not Ctx'Constrained
@@ -768,7 +824,8 @@ is
        and (for all F in Field range F_Tag .. F_Checksum =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
-   procedure Set_Identifier (Ctx : in out Context; Val : RFLX.ICMP.Identifier) with
+   procedure Set_Identifier (Ctx : in out Context; Val : RFLX.ICMP.Identifier)
+   with
      Inline_Always,
      Pre =>
        not Ctx'Constrained
@@ -801,7 +858,8 @@ is
        and (for all F in Field range F_Tag .. F_Gateway_Internet_Address =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
-   procedure Set_Pointer (Ctx : in out Context; Val : RFLX.ICMP.Pointer) with
+   procedure Set_Pointer (Ctx : in out Context; Val : RFLX.ICMP.Pointer)
+   with
      Inline_Always,
      Pre =>
        not Ctx'Constrained
@@ -833,7 +891,8 @@ is
        and (for all F in Field range F_Tag .. F_Identifier =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
-   procedure Set_Unused_32 (Ctx : in out Context; Val : RFLX.ICMP.Unused_32) with
+   procedure Set_Unused_32 (Ctx : in out Context; Val : RFLX.ICMP.Unused_32)
+   with
      Inline_Always,
      Pre =>
        not Ctx'Constrained
@@ -863,7 +922,8 @@ is
        and (for all F in Field range F_Tag .. F_Pointer =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
-   procedure Set_Sequence_Number (Ctx : in out Context; Val : RFLX.ICMP.Sequence_Number) with
+   procedure Set_Sequence_Number (Ctx : in out Context; Val : RFLX.ICMP.Sequence_Number)
+   with
      Inline_Always,
      Pre =>
        not Ctx'Constrained
@@ -904,7 +964,8 @@ is
        and (for all F in Field range F_Tag .. F_Unused_32 =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
-   procedure Set_Unused_24 (Ctx : in out Context; Val : RFLX.ICMP.Unused_24) with
+   procedure Set_Unused_24 (Ctx : in out Context; Val : RFLX.ICMP.Unused_24)
+   with
      Inline_Always,
      Pre =>
        not Ctx'Constrained
@@ -933,7 +994,8 @@ is
        and (for all F in Field range F_Tag .. F_Sequence_Number =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
-   procedure Set_Originate_Timestamp (Ctx : in out Context; Val : RFLX.ICMP.Timestamp) with
+   procedure Set_Originate_Timestamp (Ctx : in out Context; Val : RFLX.ICMP.Timestamp)
+   with
      Inline_Always,
      Pre =>
        not Ctx'Constrained
@@ -963,7 +1025,8 @@ is
        and (for all F in Field range F_Tag .. F_Unused_24 =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
-   procedure Set_Receive_Timestamp (Ctx : in out Context; Val : RFLX.ICMP.Timestamp) with
+   procedure Set_Receive_Timestamp (Ctx : in out Context; Val : RFLX.ICMP.Timestamp)
+   with
      Inline_Always,
      Pre =>
        not Ctx'Constrained
@@ -992,7 +1055,8 @@ is
        and (for all F in Field range F_Tag .. F_Data =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
-   procedure Set_Transmit_Timestamp (Ctx : in out Context; Val : RFLX.ICMP.Timestamp) with
+   procedure Set_Transmit_Timestamp (Ctx : in out Context; Val : RFLX.ICMP.Timestamp)
+   with
      Inline_Always,
      Pre =>
        not Ctx'Constrained
@@ -1023,7 +1087,8 @@ is
 
    pragma Warnings (On, "aspect ""*"" not enforced on inlined subprogram ""*""");
 
-   procedure Set_Data_Empty (Ctx : in out Context) with
+   procedure Set_Data_Empty (Ctx : in out Context)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.ICMP.Message.Has_Buffer (Ctx)
@@ -1046,7 +1111,8 @@ is
        and Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
        and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old;
 
-   procedure Initialize_Data (Ctx : in out Context; Length : RFLX_Types.Length) with
+   procedure Initialize_Data (Ctx : in out Context; Length : RFLX_Types.Length)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.ICMP.Message.Has_Buffer (Ctx)
@@ -1069,7 +1135,8 @@ is
        and then Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
        and then Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old;
 
-   procedure Set_Data (Ctx : in out Context; Data : RFLX_Types.Bytes) with
+   procedure Set_Data (Ctx : in out Context; Data : RFLX_Types.Bytes)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.ICMP.Message.Has_Buffer (Ctx)
@@ -1097,7 +1164,8 @@ is
    generic
       with procedure Process_Data (Data : out RFLX_Types.Bytes);
       with function Process_Data_Pre (Length : RFLX_Types.Length) return Boolean;
-   procedure Generic_Set_Data (Ctx : in out Context; Length : RFLX_Types.Length) with
+   procedure Generic_Set_Data (Ctx : in out Context; Length : RFLX_Types.Length)
+   with
      Pre =>
        not Ctx'Constrained
        and then RFLX.ICMP.Message.Has_Buffer (Ctx)
@@ -1121,17 +1189,20 @@ is
        and Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
        and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old;
 
-   function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
+   function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor
+   with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
 
-   function Context_Cursors (Ctx : Context) return Field_Cursors with
+   function Context_Cursors (Ctx : Context) return Field_Cursors
+   with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
 
-   function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor with
+   function Context_Cursors_Index (Cursors : Field_Cursors; Fld : Field) return Field_Cursor
+   with
      Annotate =>
        (GNATprove, Inline_For_Proof),
      Ghost;
@@ -1171,7 +1242,8 @@ private
               Cursors (F).First >= First
               and Cursors (F).Last <= Verified_Last
               and Cursors (F).First <= Cursors (F).Last + 1
-              and Valid_Value (F, Cursors (F).Value)))) with
+              and Valid_Value (F, Cursors (F).Value))))
+   with
      Post =>
        True;
 
@@ -1264,7 +1336,8 @@ private
                    or Valid (Cursors (F_Unused_24))
                    or Valid (Cursors (F_Unused_32)))
       and then (if Well_Formed (Cursors (F_Receive_Timestamp)) then Valid (Cursors (F_Originate_Timestamp)))
-      and then (if Well_Formed (Cursors (F_Transmit_Timestamp)) then Valid (Cursors (F_Receive_Timestamp)))) with
+      and then (if Well_Formed (Cursors (F_Transmit_Timestamp)) then Valid (Cursors (F_Receive_Timestamp))))
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last),
      Post =>
@@ -1354,7 +1427,8 @@ private
               and then True),
           when F_Transmit_Timestamp =>
              (Valid (Cursors (F_Receive_Timestamp))
-              and then True)) with
+              and then True))
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last),
@@ -1409,7 +1483,8 @@ private
               else
                  RFLX_Types.Unreachable),
           when F_Receive_Timestamp | F_Transmit_Timestamp =>
-             32) with
+             32)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
@@ -1428,112 +1503,128 @@ private
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
    function Field_First_Tag (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First) with
+     (First)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Tag);
 
    function Field_First_Code_Destination_Unreachable (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First + 8) with
+     (First + 8)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Code_Destination_Unreachable);
 
    function Field_First_Code_Redirect (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First + 8) with
+     (First + 8)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Code_Redirect);
 
    function Field_First_Code_Time_Exceeded (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First + 8) with
+     (First + 8)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Code_Time_Exceeded);
 
    function Field_First_Code_Zero (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First + 8) with
+     (First + 8)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Code_Zero);
 
    function Field_First_Checksum (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First + 16) with
+     (First + 16)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Checksum);
 
    function Field_First_Gateway_Internet_Address (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (Field_First_Checksum (Cursors, First, Verified_Last, Written_Last) + 16) with
+     (Field_First_Checksum (Cursors, First, Verified_Last, Written_Last) + 16)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Gateway_Internet_Address);
 
    function Field_First_Identifier (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (Field_First_Checksum (Cursors, First, Verified_Last, Written_Last) + 16) with
+     (Field_First_Checksum (Cursors, First, Verified_Last, Written_Last) + 16)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Identifier);
 
    function Field_First_Pointer (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (Field_First_Checksum (Cursors, First, Verified_Last, Written_Last) + 16) with
+     (Field_First_Checksum (Cursors, First, Verified_Last, Written_Last) + 16)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Pointer);
 
    function Field_First_Unused_32 (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (Field_First_Checksum (Cursors, First, Verified_Last, Written_Last) + 16) with
+     (Field_First_Checksum (Cursors, First, Verified_Last, Written_Last) + 16)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Unused_32);
 
    function Field_First_Sequence_Number (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (Field_First_Checksum (Cursors, First, Verified_Last, Written_Last) + 32) with
+     (Field_First_Checksum (Cursors, First, Verified_Last, Written_Last) + 32)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Sequence_Number);
 
    function Field_First_Unused_24 (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (Field_First_Checksum (Cursors, First, Verified_Last, Written_Last) + 24) with
+     (Field_First_Checksum (Cursors, First, Verified_Last, Written_Last) + 24)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Unused_24);
 
    function Field_First_Originate_Timestamp (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (Field_First_Checksum (Cursors, First, Verified_Last, Written_Last) + 48) with
+     (Field_First_Checksum (Cursors, First, Verified_Last, Written_Last) + 48)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Originate_Timestamp);
 
    function Field_First_Data (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (Field_First_Checksum (Cursors, First, Verified_Last, Written_Last) + 48) with
+     (Field_First_Checksum (Cursors, First, Verified_Last, Written_Last) + 48)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Data);
 
    function Field_First_Receive_Timestamp (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (Field_First_Checksum (Cursors, First, Verified_Last, Written_Last) + 80) with
+     (Field_First_Checksum (Cursors, First, Verified_Last, Written_Last) + 80)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Receive_Timestamp);
 
    function Field_First_Transmit_Timestamp (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (Field_First_Checksum (Cursors, First, Verified_Last, Written_Last) + 112) with
+     (Field_First_Checksum (Cursors, First, Verified_Last, Written_Last) + 112)
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
@@ -1572,7 +1663,8 @@ private
           when F_Receive_Timestamp =>
              Field_First_Receive_Timestamp (Cursors, First, Verified_Last, Written_Last),
           when F_Transmit_Timestamp =>
-             Field_First_Transmit_Timestamp (Cursors, First, Verified_Last, Written_Last)) with
+             Field_First_Transmit_Timestamp (Cursors, First, Verified_Last, Written_Last))
+   with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
@@ -1740,7 +1832,8 @@ private
                              Well_Formed (Cursors (F_Transmit_Timestamp))
                           then
                              (Cursors (F_Transmit_Timestamp).Last - Cursors (F_Transmit_Timestamp).First + 1 = 32
-                              and then Cursors (F_Transmit_Timestamp).First = Cursors (F_Receive_Timestamp).Last + 1)))) with
+                              and then Cursors (F_Transmit_Timestamp).First = Cursors (F_Receive_Timestamp).Last + 1))))
+   with
      Post =>
        True;
 
@@ -1754,7 +1847,8 @@ private
          Written_Last : RFLX_Types.Bit_Length := First - 1;
          Buffer : RFLX_Types.Bytes_Ptr := null;
          Cursors : Field_Cursors := (others => <>);
-      end record with
+      end record
+   with
      Dynamic_Predicate =>
        Valid_Context (Context.Buffer_First, Context.Buffer_Last, Context.First, Context.Last, Context.Verified_Last, Context.Written_Last, Context.Buffer, Context.Cursors);
 
@@ -1971,7 +2065,8 @@ private
        then
           Size <= Available_Space (Ctx, Fld)
        else
-          Size = Field_Size (Ctx, Fld)) with
+          Size = Field_Size (Ctx, Fld))
+   with
      Pre =>
        RFLX.ICMP.Message.Valid_Next (Ctx, Fld);
 

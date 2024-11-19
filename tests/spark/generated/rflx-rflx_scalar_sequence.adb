@@ -11,7 +11,8 @@
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 with RFLX.RFLX_Types.Operations;
 
-package body RFLX.RFLX_Scalar_Sequence with
+package body RFLX.RFLX_Scalar_Sequence
+with
   SPARK_Mode
 is
 

@@ -13,11 +13,13 @@ pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types;
 
-package RFLX.Universal with
+package RFLX.Universal
+with
   SPARK_Mode
 is
 
-   type Option_Type_Enum is (OT_Null, OT_Data) with
+   type Option_Type_Enum is (OT_Null, OT_Data)
+   with
      Size =>
        8;
    for Option_Type_Enum use (OT_Null => 0, OT_Data => 1);
@@ -57,7 +59,8 @@ is
           when 1 =>
              (True, OT_Data),
           when others =>
-             (False, Val)) with
+             (False, Val))
+   with
      Pre =>
        Valid_Option_Type (Val);
 

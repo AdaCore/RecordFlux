@@ -13,11 +13,13 @@ pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types;
 
-package RFLX.Test with
+package RFLX.Test
+with
   SPARK_Mode
 is
 
-   type Size is range 0 .. 2**32 - 1 with
+   type Size is range 0 .. 2**32 - 1
+   with
      Size =>
        32;
 
@@ -30,7 +32,8 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Test.Size is
-     (RFLX.Test.Size (Val)) with
+     (RFLX.Test.Size (Val))
+   with
      Pre =>
        Valid_Size (Val);
 

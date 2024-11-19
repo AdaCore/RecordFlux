@@ -13,11 +13,13 @@ pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types;
 
-package RFLX.UDP with
+package RFLX.UDP
+with
   SPARK_Mode
 is
 
-   type Port is range 0 .. 2**16 - 1 with
+   type Port is range 0 .. 2**16 - 1
+   with
      Size =>
        16;
 
@@ -30,11 +32,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.UDP.Port is
-     (RFLX.UDP.Port (Val)) with
+     (RFLX.UDP.Port (Val))
+   with
      Pre =>
        Valid_Port (Val);
 
-   type Length is range 8 .. 2**16 - 1 with
+   type Length is range 8 .. 2**16 - 1
+   with
      Size =>
        16;
 
@@ -46,11 +50,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.UDP.Length is
-     (RFLX.UDP.Length (Val)) with
+     (RFLX.UDP.Length (Val))
+   with
      Pre =>
        Valid_Length (Val);
 
-   type Checksum is range 0 .. 2**16 - 1 with
+   type Checksum is range 0 .. 2**16 - 1
+   with
      Size =>
        16;
 
@@ -61,7 +67,8 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.UDP.Checksum is
-     (RFLX.UDP.Checksum (Val)) with
+     (RFLX.UDP.Checksum (Val))
+   with
      Pre =>
        Valid_Checksum (Val);
 

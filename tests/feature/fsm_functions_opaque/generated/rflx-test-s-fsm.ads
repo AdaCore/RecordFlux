@@ -14,7 +14,8 @@ pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.Test.S.FSM_Allocator;
 
-package RFLX.Test.S.FSM with
+package RFLX.Test.S.FSM
+with
   SPARK_Mode
 is
 
@@ -36,14 +37,16 @@ is
 
    function Active (Ctx : Context) return Boolean;
 
-   procedure Initialize (Ctx : in out Context) with
+   procedure Initialize (Ctx : in out Context)
+   with
      Pre =>
        Uninitialized (Ctx),
      Post =>
        Initialized (Ctx)
        and Active (Ctx);
 
-   procedure Finalize (Ctx : in out Context) with
+   procedure Finalize (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
@@ -52,7 +55,8 @@ is
 
    pragma Warnings (Off, "subprogram ""Tick"" has no effect");
 
-   procedure Tick (Ctx : in out Context) with
+   procedure Tick (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
@@ -64,7 +68,8 @@ is
 
    pragma Warnings (Off, "subprogram ""Run"" has no effect");
 
-   procedure Run (Ctx : in out Context) with
+   procedure Run (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>

@@ -18,7 +18,8 @@ with RFLX.Universal;
 with RFLX.Universal.Message;
 with RFLX.Universal.Option;
 
-package RFLX.Test.S.FSM with
+package RFLX.Test.S.FSM
+with
   SPARK_Mode
 is
 
@@ -49,14 +50,16 @@ is
 
    function Active (Ctx : Context) return Boolean;
 
-   procedure Initialize (Ctx : in out Context) with
+   procedure Initialize (Ctx : in out Context)
+   with
      Pre =>
        Uninitialized (Ctx),
      Post =>
        Initialized (Ctx)
        and Active (Ctx);
 
-   procedure Finalize (Ctx : in out Context) with
+   procedure Finalize (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
@@ -65,7 +68,8 @@ is
 
    pragma Warnings (Off, "subprogram ""Tick"" has no effect");
 
-   procedure Tick (Ctx : in out Context) with
+   procedure Tick (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
@@ -77,7 +81,8 @@ is
 
    pragma Warnings (Off, "subprogram ""Run"" has no effect");
 
-   procedure Run (Ctx : in out Context) with
+   procedure Run (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
@@ -87,16 +92,19 @@ is
 
    function Next_State (Ctx : Context) return State;
 
-   function Has_Data (Ctx : Context; Chan : Channel) return Boolean with
+   function Has_Data (Ctx : Context; Chan : Channel) return Boolean
+   with
      Pre =>
        Initialized (Ctx);
 
-   function Read_Buffer_Size (Ctx : Context; Chan : Channel) return RFLX_Types.Length with
+   function Read_Buffer_Size (Ctx : Context; Chan : Channel) return RFLX_Types.Length
+   with
      Pre =>
        Initialized (Ctx)
        and then Has_Data (Ctx, Chan);
 
-   procedure Read (Ctx : Context; Chan : Channel; Buffer : out RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) with
+   procedure Read (Ctx : Context; Chan : Channel; Buffer : out RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0)
+   with
      Pre =>
        Initialized (Ctx)
        and then Has_Data (Ctx, Chan)
@@ -107,16 +115,19 @@ is
        Initialized (Ctx)
        and then Next_State (Ctx) = Next_State (Ctx)'Old;
 
-   function Needs_Data (Ctx : Context; Chan : Channel) return Boolean with
+   function Needs_Data (Ctx : Context; Chan : Channel) return Boolean
+   with
      Pre =>
        Initialized (Ctx);
 
-   function Write_Buffer_Size (Ctx : Context; Chan : Channel) return RFLX_Types.Length with
+   function Write_Buffer_Size (Ctx : Context; Chan : Channel) return RFLX_Types.Length
+   with
      Pre =>
        Initialized (Ctx)
        and then Needs_Data (Ctx, Chan);
 
-   procedure Write (Ctx : in out Context; Chan : Channel; Buffer : RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) with
+   procedure Write (Ctx : in out Context; Chan : Channel; Buffer : RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0)
+   with
      Pre =>
        Initialized (Ctx)
        and then Needs_Data (Ctx, Chan)

@@ -13,11 +13,13 @@ pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types;
 
-package RFLX.Test with
+package RFLX.Test
+with
   SPARK_Mode
 is
 
-   type Tiny_Int is range 1 .. 4 with
+   type Tiny_Int is range 1 .. 4
+   with
      Size =>
        8;
 
@@ -31,11 +33,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Test.Tiny_Int is
-     (RFLX.Test.Tiny_Int (Val)) with
+     (RFLX.Test.Tiny_Int (Val))
+   with
      Pre =>
        Valid_Tiny_Int (Val);
 
-   type Int is range 0 .. 2**16 - 1 with
+   type Int is range 0 .. 2**16 - 1
+   with
      Size =>
        16;
 
@@ -46,7 +50,8 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Test.Int is
-     (RFLX.Test.Int (Val)) with
+     (RFLX.Test.Int (Val))
+   with
      Pre =>
        Valid_Int (Val);
 

@@ -16,7 +16,8 @@ with RFLX.Universal.Option;
 with RFLX.Universal.Option_Types;
 with RFLX.RFLX_Types.Operators;
 
-package body RFLX.Test.S.FSM with
+package body RFLX.Test.S.FSM
+with
   SPARK_Mode
 is
 
@@ -40,7 +41,8 @@ is
 
    pragma Warnings (On, """*"" is already use-visible through previous use_type_clause");
 
-   procedure Start (Ctx : in out Context) with
+   procedure Start (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
@@ -53,7 +55,8 @@ is
          and Ctx.P.Slots.Slot_Ptr_5 /= null
          and Ctx.P.Slots.Slot_Ptr_6 /= null
          and Ctx.P.Slots.Slot_Ptr_7 /= null
-         and Ctx.P.Slots.Slot_Ptr_8 /= null) with
+         and Ctx.P.Slots.Slot_Ptr_8 /= null)
+      with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -331,7 +334,8 @@ is
       <<Finalize_Start>>
    end Start;
 
-   procedure Process_1 (Ctx : in out Context) with
+   procedure Process_1 (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
@@ -352,7 +356,8 @@ is
          and Ctx.P.Slots.Slot_Ptr_5 /= null
          and Ctx.P.Slots.Slot_Ptr_6 /= null
          and Ctx.P.Slots.Slot_Ptr_7 /= null
-         and Ctx.P.Slots.Slot_Ptr_8 /= null) with
+         and Ctx.P.Slots.Slot_Ptr_8 /= null)
+      with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -945,7 +950,8 @@ is
       pragma Assert (Global_Initialized (Ctx));
    end Process_1;
 
-   procedure Send_1 (Ctx : in out Context) with
+   procedure Send_1 (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
@@ -958,7 +964,8 @@ is
          and Ctx.P.Slots.Slot_Ptr_5 /= null
          and Ctx.P.Slots.Slot_Ptr_6 /= null
          and Ctx.P.Slots.Slot_Ptr_7 /= null
-         and Ctx.P.Slots.Slot_Ptr_8 /= null) with
+         and Ctx.P.Slots.Slot_Ptr_8 /= null)
+      with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -969,7 +976,8 @@ is
       pragma Assert (Send_1_Invariant);
    end Send_1;
 
-   procedure Process_2 (Ctx : in out Context) with
+   procedure Process_2 (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
@@ -990,7 +998,8 @@ is
          and Ctx.P.Slots.Slot_Ptr_5 /= null
          and Ctx.P.Slots.Slot_Ptr_6 /= null
          and Ctx.P.Slots.Slot_Ptr_7 /= null
-         and Ctx.P.Slots.Slot_Ptr_8 /= null) with
+         and Ctx.P.Slots.Slot_Ptr_8 /= null)
+      with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -1277,7 +1286,8 @@ is
       pragma Assert (Global_Initialized (Ctx));
    end Process_2;
 
-   procedure Send_2 (Ctx : in out Context) with
+   procedure Send_2 (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
@@ -1290,7 +1300,8 @@ is
          and Ctx.P.Slots.Slot_Ptr_5 /= null
          and Ctx.P.Slots.Slot_Ptr_6 /= null
          and Ctx.P.Slots.Slot_Ptr_7 /= null
-         and Ctx.P.Slots.Slot_Ptr_8 /= null) with
+         and Ctx.P.Slots.Slot_Ptr_8 /= null)
+      with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -1392,7 +1403,8 @@ is
       function Read_Pre (Message_Buffer : RFLX_Types.Bytes) return Boolean is
         (Buffer'Length > 0
          and then Offset < Message_Buffer'Length);
-      procedure Read (Message_Buffer : RFLX_Types.Bytes) with
+      procedure Read (Message_Buffer : RFLX_Types.Bytes)
+      with
         Pre =>
           Read_Pre (Message_Buffer) is
          Length : constant RFLX_Types.Length := RFLX_Types.Length'Min (Buffer'Length, Message_Buffer'Length - Offset);

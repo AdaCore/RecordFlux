@@ -17,7 +17,8 @@ use RFLX.Ethernet;
 with RFLX.Ethernet.Frame;
 with RFLX.IPv4.Packet;
 
-package RFLX.In_Ethernet.Contains with
+package RFLX.In_Ethernet.Contains
+with
   SPARK_Mode,
   Always_Terminates
 is
@@ -34,7 +35,8 @@ is
 
    use type RFLX.Ethernet.Frame.Field_Cursors;
 
-   procedure Switch_To_Payload (Ethernet_Frame_PDU_Context : in out RFLX.Ethernet.Frame.Context; IPv4_Packet_SDU_Context : out RFLX.IPv4.Packet.Context) with
+   procedure Switch_To_Payload (Ethernet_Frame_PDU_Context : in out RFLX.Ethernet.Frame.Context; IPv4_Packet_SDU_Context : out RFLX.IPv4.Packet.Context)
+   with
      Pre =>
        not Ethernet_Frame_PDU_Context'Constrained
        and not IPv4_Packet_SDU_Context'Constrained
@@ -54,12 +56,14 @@ is
 
    function Sufficient_Space_For_Payload (Ethernet_Frame_PDU_Context : RFLX.Ethernet.Frame.Context; IPv4_Packet_SDU_Context : RFLX.IPv4.Packet.Context) return Boolean is
      (RFLX.IPv4.Packet.Buffer_Size (IPv4_Packet_SDU_Context) >= RFLX.Ethernet.Frame.Field_Size (Ethernet_Frame_PDU_Context, RFLX.Ethernet.Frame.F_Payload)
-      and then RFLX_Types.To_First_Bit_Index (IPv4_Packet_SDU_Context.Buffer_First) + RFLX.Ethernet.Frame.Field_Size (Ethernet_Frame_PDU_Context, RFLX.Ethernet.Frame.F_Payload) - 1 < RFLX_Types.Bit_Index'Last) with
+      and then RFLX_Types.To_First_Bit_Index (IPv4_Packet_SDU_Context.Buffer_First) + RFLX.Ethernet.Frame.Field_Size (Ethernet_Frame_PDU_Context, RFLX.Ethernet.Frame.F_Payload) - 1 < RFLX_Types.Bit_Index'Last)
+   with
      Pre =>
        RFLX.IPv4.Packet.Has_Buffer (IPv4_Packet_SDU_Context)
        and then RFLX.In_Ethernet.Contains.IPv4_Packet_In_Ethernet_Frame_Payload (Ethernet_Frame_PDU_Context);
 
-   procedure Copy_Payload (Ethernet_Frame_PDU_Context : RFLX.Ethernet.Frame.Context; IPv4_Packet_SDU_Context : in out RFLX.IPv4.Packet.Context) with
+   procedure Copy_Payload (Ethernet_Frame_PDU_Context : RFLX.Ethernet.Frame.Context; IPv4_Packet_SDU_Context : in out RFLX.IPv4.Packet.Context)
+   with
      Pre =>
        not IPv4_Packet_SDU_Context'Constrained
        and then RFLX.IPv4.Packet.Has_Buffer (IPv4_Packet_SDU_Context)

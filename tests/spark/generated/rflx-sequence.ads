@@ -13,11 +13,13 @@ pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types;
 
-package RFLX.Sequence with
+package RFLX.Sequence
+with
   SPARK_Mode
 is
 
-   type Length is range 0 .. 2**8 - 1 with
+   type Length is range 0 .. 2**8 - 1
+   with
      Size =>
        8;
 
@@ -30,11 +32,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Sequence.Length is
-     (RFLX.Sequence.Length (Val)) with
+     (RFLX.Sequence.Length (Val))
+   with
      Pre =>
        Valid_Length (Val);
 
-   type Integer is range 1 .. 100 with
+   type Integer is range 1 .. 100
+   with
      Size =>
        16;
 
@@ -46,11 +50,13 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Sequence.Integer is
-     (RFLX.Sequence.Integer (Val)) with
+     (RFLX.Sequence.Integer (Val))
+   with
      Pre =>
        Valid_Integer (Val);
 
-   type Enumeration is (Zero, One, Two) with
+   type Enumeration is (Zero, One, Two)
+   with
      Size =>
        8;
    for Enumeration use (Zero => 0, One => 1, Two => 2);
@@ -78,13 +84,15 @@ is
           when 2 =>
              Two,
           when others =>
-             RFLX.Sequence.Enumeration'Last) with
+             RFLX.Sequence.Enumeration'Last)
+   with
      Pre =>
        Valid_Enumeration (Val);
 
    pragma Warnings (On, "unreachable branch");
 
-   type AV_Enumeration_Enum is (AV_Zero, AV_One, AV_Two) with
+   type AV_Enumeration_Enum is (AV_Zero, AV_One, AV_Two)
+   with
      Size =>
        8;
    for AV_Enumeration_Enum use (AV_Zero => 0, AV_One => 1, AV_Two => 2);
@@ -126,7 +134,8 @@ is
           when 2 =>
              (True, AV_Two),
           when others =>
-             (False, Val)) with
+             (False, Val))
+   with
      Pre =>
        Valid_AV_Enumeration (Val);
 

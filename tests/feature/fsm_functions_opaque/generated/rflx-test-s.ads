@@ -15,7 +15,8 @@ pragma Warnings (Off, "redundant conversion");
 with RFLX.Test.S_Environment;
 with RFLX.RFLX_Types;
 
-package RFLX.Test.S with
+package RFLX.Test.S
+with
   SPARK_Mode
 is
 

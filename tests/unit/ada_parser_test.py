@@ -1065,7 +1065,8 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             package P
             is
 
-               procedure F (C : T) with
+               procedure F (C : T)
+               with
                  Pre =>
                    not C'Constrained;
 
@@ -1077,7 +1078,8 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             package P
             is
 
-               procedure F (C : out T; B : in out T; D : in T) with
+               procedure F (C : out T; B : in out T; D : in T)
+               with
                  Depends =>
                    (C => B, B => null);
 
@@ -1089,7 +1091,8 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             package P
             is
 
-               procedure F (C : T) with
+               procedure F (C : T)
+               with
                  Post =>
                    P (C) = P (C)'Old;
 
@@ -1101,7 +1104,8 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             package P
             is
 
-               procedure S (C : T) with
+               procedure S (C : T)
+               with
                  Pre =>
                    P (C) = L'(if V (C) then E (C) else F (C))'Old;
 
@@ -1113,7 +1117,8 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             package P
             is
 
-               procedure S (C : T) with
+               procedure S (C : T)
+               with
                  Contract_Cases =>
                    (P (C) =>
                        True,
@@ -1128,7 +1133,8 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             package P
             is
 
-               procedure P (C : T) with
+               procedure P (C : T)
+               with
                  Global =>
                    null;
 
@@ -1142,7 +1148,8 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
 
                G1, G2, G3 : Integer;
 
-               procedure P (C : T) with
+               procedure P (C : T)
+               with
                  Global =>
                    (Input => G1, Output => G2, In_Out => G3);
 
@@ -1154,7 +1161,8 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             package P
             is
 
-               procedure P (C : T; D : in out T; E : out T) with
+               procedure P (C : T; D : in out T; E : out T)
+               with
                  Depends =>
                    (D => (D, C), E => C);
 
@@ -1163,7 +1171,8 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P with
+            package P
+            with
               Always_Terminates
             is
 
@@ -1175,7 +1184,8 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             package P
             is
 
-               type T (D : U) is private with
+               type T (D : U) is private
+               with
                  Default_Initial_Condition =>
                    P (D)
                    and Q (D);
@@ -1212,7 +1222,8 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             package P
             is
 
-               type Color is (Red, Green, Blue) with
+               type Color is (Red, Green, Blue)
+               with
                  Size =>
                    8;
 
@@ -1247,7 +1258,8 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             package P
             is
 
-               type T (D : U) is private with
+               type T (D : U) is private
+               with
                  Dynamic_Predicate =>
                    P (D)
                    and Q (D);
@@ -1451,7 +1463,8 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             package P
             is
 
-               procedure S (C : T) with
+               procedure S (C : T)
+               with
                  Pre =>
                    V (C)
                    and then (S (C) >= C.First + I (E)) - 1;
@@ -1649,7 +1662,9 @@ def test_roundtrip_text(spec: str, body: str | None) -> None:
         package P
         is
 
-           type E is (E1, E2) with Size => 8, Size => 16;
+           type E is (E1, E2)
+           with
+             Size => 8, Size => 16;
 
         end P;
         """,
@@ -1684,11 +1699,12 @@ def test_roundtrip_text(spec: str, body: str | None) -> None:
         is
 
             procedure P
-               with Global => (In_Out => X, In_Out =>X);
+            with
+              Global => (In_Out => X, In_Out =>X);
 
         end P;
         """,
-            "<stdin>:5:23: error: duplicate In_Out",
+            "<stdin>:6:17: error: duplicate In_Out",
         ),
         (
             """\
@@ -1696,11 +1712,12 @@ def test_roundtrip_text(spec: str, body: str | None) -> None:
         is
 
             procedure P
-               with Global => (Input => X, Input =>X);
+            with
+              Global => (Input => X, Input =>X);
 
         end P;
         """,
-            "<stdin>:5:23: error: duplicate Input",
+            "<stdin>:6:17: error: duplicate Input",
         ),
         (
             """\
@@ -1708,11 +1725,12 @@ def test_roundtrip_text(spec: str, body: str | None) -> None:
         is
 
             procedure P
-               with Global => (Output => X, Output =>X);
+            with
+              Global => (Output => X, Output =>X);
 
         end P;
         """,
-            "<stdin>:5:23: error: duplicate Output",
+            "<stdin>:6:17: error: duplicate Output",
         ),
         (
             """\
@@ -1844,9 +1862,9 @@ def test_parse_error(data: str, message: str) -> None:
     "aspect_specification",
     [
         "",
-        " with\n             Ghost",
-        " with\n             Convention =>\n               Intrinsic",
-        " with\n             Pre =>\n               P > 0",
+        "\n           with\n             Ghost",
+        "\n           with\n             Convention =>\n               Intrinsic",
+        "\n           with\n             Pre =>\n               P > 0",
     ],
     ids=range(4),
 )

@@ -1,17 +1,20 @@
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 
-package body RFLX_Template.RFLX_Arithmetic with
+package body RFLX_Template.RFLX_Arithmetic
+with
   SPARK_Mode
 is
 
-   function Shift_Left (Value : U64; Amount : Natural) return U64 with
+   function Shift_Left (Value : U64; Amount : Natural) return U64
+   with
      Import,
      Convention =>
        Intrinsic,
      Global =>
        null;
 
-   function Shift_Right (Value : U64; Amount : Natural) return U64 with
+   function Shift_Right (Value : U64; Amount : Natural) return U64
+   with
      Import,
      Convention =>
        Intrinsic,

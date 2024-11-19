@@ -14,7 +14,8 @@ pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types.Operators;
 
-package body RFLX.Test.S.FSM with
+package body RFLX.Test.S.FSM
+with
   SPARK_Mode
 is
 
@@ -26,7 +27,8 @@ is
 
    use type RFLX.TLV.Tag;
 
-   procedure Global (Ctx : in out Context) with
+   procedure Global (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
@@ -42,7 +44,8 @@ is
          and Ctx.P.Slots.Slot_Ptr_4 /= null
          and Ctx.P.Slots.Slot_Ptr_5 /= null
          and Ctx.P.Slots.Slot_Ptr_6 /= null
-         and Ctx.P.Slots.Slot_Ptr_7 /= null) with
+         and Ctx.P.Slots.Slot_Ptr_7 /= null)
+      with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -354,7 +357,8 @@ is
       <<Finalize_Global>>
    end Global;
 
-   procedure Reply_1 (Ctx : in out Context) with
+   procedure Reply_1 (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
@@ -366,7 +370,8 @@ is
          and Ctx.P.Slots.Slot_Ptr_4 /= null
          and Ctx.P.Slots.Slot_Ptr_5 /= null
          and Ctx.P.Slots.Slot_Ptr_6 /= null
-         and Ctx.P.Slots.Slot_Ptr_7 /= null) with
+         and Ctx.P.Slots.Slot_Ptr_7 /= null)
+      with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -377,7 +382,8 @@ is
       pragma Assert (Reply_1_Invariant);
    end Reply_1;
 
-   procedure Local (Ctx : in out Context) with
+   procedure Local (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
@@ -405,7 +411,8 @@ is
          and Ctx.P.Slots.Slot_Ptr_2 = null
          and Ctx.P.Slots.Slot_Ptr_3 = null
          and Ctx.P.Slots.Slot_Ptr_6 /= null
-         and Ctx.P.Slots.Slot_Ptr_7 /= null) with
+         and Ctx.P.Slots.Slot_Ptr_7 /= null)
+      with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -869,7 +876,8 @@ is
       pragma Assert (Global_Initialized (Ctx));
    end Local;
 
-   procedure Reply_2 (Ctx : in out Context) with
+   procedure Reply_2 (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
@@ -881,7 +889,8 @@ is
          and Ctx.P.Slots.Slot_Ptr_4 /= null
          and Ctx.P.Slots.Slot_Ptr_5 /= null
          and Ctx.P.Slots.Slot_Ptr_6 /= null
-         and Ctx.P.Slots.Slot_Ptr_7 /= null) with
+         and Ctx.P.Slots.Slot_Ptr_7 /= null)
+      with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -981,7 +990,8 @@ is
       function Read_Pre (Message_Buffer : RFLX_Types.Bytes) return Boolean is
         (Buffer'Length > 0
          and then Offset < Message_Buffer'Length);
-      procedure Read (Message_Buffer : RFLX_Types.Bytes) with
+      procedure Read (Message_Buffer : RFLX_Types.Bytes)
+      with
         Pre =>
           Read_Pre (Message_Buffer) is
          Length : constant RFLX_Types.Length := RFLX_Types.Length'Min (Buffer'Length, Message_Buffer'Length - Offset);

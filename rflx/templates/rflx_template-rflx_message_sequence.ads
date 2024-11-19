@@ -12,7 +12,8 @@ generic
    with function Element_Last (Ctx : Element_Context) return RFLX_Types.Bit_Index;
    with function Element_Initialized (Ctx : Element_Context) return Boolean;
    with function Element_Valid_Message (Ctx : Element_Context) return Boolean;
-package RFLX_Template.RFLX_Message_Sequence with
+package RFLX_Template.RFLX_Message_Sequence
+with
   SPARK_Mode,
   Always_Terminates
 is
@@ -25,7 +26,8 @@ is
 
    pragma Warnings (On, """LENGTH"" is already use-visible through previous use_type_clause");
 
-   type Context (Buffer_First, Buffer_Last : RFLX_Types.Index := RFLX_Types.Index'First; First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First; Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First) is private with
+   type Context (Buffer_First, Buffer_Last : RFLX_Types.Index := RFLX_Types.Index'First; First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First; Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First) is private
+   with
      Default_Initial_Condition =>
        RFLX_Types.To_Index (First) >= Buffer_First
        and RFLX_Types.To_Index (Last) <= Buffer_Last
@@ -35,7 +37,8 @@ is
        and First mod RFLX_Types.Byte'Size = 1
        and Last mod RFLX_Types.Byte'Size = 0;
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr) with
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr)
+   with
      Pre =>
        not Ctx'Constrained
        and then Buffer /= null
@@ -53,7 +56,8 @@ is
      Depends =>
        (Ctx => Buffer, Buffer => null);
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) with
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length)
+   with
      Pre =>
        not Ctx'Constrained
        and then Buffer /= null
@@ -77,7 +81,8 @@ is
      Depends =>
        (Ctx => (Buffer, First, Last), Buffer => null);
 
-   procedure Reset (Ctx : in out Context) with
+   procedure Reset (Ctx : in out Context)
+   with
      Pre =>
        Has_Buffer (Ctx),
      Post =>
@@ -89,7 +94,8 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Sequence_Last (Ctx) = Ctx.First - 1;
 
-   procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr) with
+   procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr)
+   with
      Pre =>
        Has_Buffer (Ctx),
      Post =>
@@ -106,7 +112,8 @@ is
      Depends =>
        (Ctx => Ctx, Buffer => Ctx);
 
-   procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes) with
+   procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes)
+   with
      Pre =>
        Has_Buffer (Ctx)
        and Valid (Ctx)
@@ -114,7 +121,8 @@ is
 
    function Has_Element (Ctx : Context) return Boolean;
 
-   procedure Append_Element (Ctx : in out Context; Element_Ctx : Element_Context) with
+   procedure Append_Element (Ctx : in out Context; Element_Ctx : Element_Context)
+   with
      Pre =>
        Has_Buffer (Ctx)
        and then Valid (Ctx)
@@ -131,7 +139,8 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old;
 
-   procedure Switch (Ctx : in out Context; Element_Ctx : out Element_Context) with
+   procedure Switch (Ctx : in out Context; Element_Ctx : out Element_Context)
+   with
      Pre =>
        not Element_Ctx'Constrained
        and then Has_Buffer (Ctx)
@@ -157,7 +166,8 @@ is
      Depends =>
        (Ctx => Ctx, Element_Ctx => Ctx);
 
-   procedure Update (Ctx : in out Context; Element_Ctx : in out Element_Context) with
+   procedure Update (Ctx : in out Context; Element_Ctx : in out Element_Context)
+   with
      Pre =>
        not Has_Buffer (Ctx)
        and then Element_Has_Buffer (Element_Ctx)
@@ -196,7 +206,8 @@ is
 
    function Byte_Size (Ctx : Context) return RFLX_Types.Length;
 
-   procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes) with
+   procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes)
+   with
      Pre =>
        Has_Buffer (Ctx)
        and then Valid (Ctx)
@@ -218,7 +229,8 @@ private
          Sequence_Last : RFLX_Types.Bit_Length := First - 1;
          Buffer : RFLX_Types.Bytes_Ptr := null;
          State : Context_State := S_Valid;
-      end record with
+      end record
+   with
      Dynamic_Predicate =>
        (if Buffer /= null then Buffer'First = Buffer_First and Buffer'Last = Buffer_Last)
        and RFLX_Types.To_Index (First) >= Buffer_First

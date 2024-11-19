@@ -12,11 +12,13 @@ pragma Ada_2012;
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 
-package body RFLX.Test.S.FSM_Allocator with
+package body RFLX.Test.S.FSM_Allocator
+with
   SPARK_Mode
 is
 
-   procedure Initialize (S : out Slots; M : Memory) with
+   procedure Initialize (S : out Slots; M : Memory)
+   with
      SPARK_Mode =>
        Off is
    begin
@@ -25,7 +27,8 @@ is
       S.Slot_Ptr_3 := M.Slot_3'Unrestricted_Access;
    end Initialize;
 
-   procedure Finalize (S : in out Slots) with
+   procedure Finalize (S : in out Slots)
+   with
      SPARK_Mode =>
        Off is
    begin

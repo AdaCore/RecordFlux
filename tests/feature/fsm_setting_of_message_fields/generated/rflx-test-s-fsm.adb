@@ -15,7 +15,8 @@ pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Builtin_Types.Conversions;
 with RFLX.RFLX_Types.Operators;
 
-package body RFLX.Test.S.FSM with
+package body RFLX.Test.S.FSM
+with
   SPARK_Mode
 is
 
@@ -35,7 +36,8 @@ is
 
    pragma Warnings (On, """*"" is already use-visible through previous use_type_clause");
 
-   procedure Start (Ctx : in out Context) with
+   procedure Start (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
@@ -49,7 +51,8 @@ is
       T_6 : Boolean;
       function Start_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
-         and Ctx.P.Slots.Slot_Ptr_2 /= null) with
+         and Ctx.P.Slots.Slot_Ptr_2 /= null)
+      with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -116,7 +119,8 @@ is
       <<Finalize_Start>>
    end Start;
 
-   procedure Process (Ctx : in out Context) with
+   procedure Process (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
@@ -132,7 +136,8 @@ is
          and Local_Message_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
          and Local_Message_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + RFLX_Types.Length'(4095)
          and Ctx.P.Slots.Slot_Ptr_2 = null
-         and Ctx.P.Slots.Slot_Ptr_1 = null) with
+         and Ctx.P.Slots.Slot_Ptr_1 = null)
+      with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -332,7 +337,8 @@ is
            (Test.Message.Has_Buffer (RFLX_Ctx_P_Message_Ctx_Tmp)
             and then Test.Message.Well_Formed (RFLX_Ctx_P_Message_Ctx_Tmp, Test.Message.F_Data)
             and then Length = RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_Message_Ctx_Tmp, Test.Message.F_Data)));
-         procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
+         procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes)
+         with
            Pre =>
              RFLX_Process_Data_Pre (Data'Length) is
          begin
@@ -411,14 +417,16 @@ is
       pragma Assert (Global_Initialized (Ctx));
    end Process;
 
-   procedure Reply (Ctx : in out Context) with
+   procedure Reply (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
        Initialized (Ctx) is
       function Reply_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
-         and Ctx.P.Slots.Slot_Ptr_2 /= null) with
+         and Ctx.P.Slots.Slot_Ptr_2 /= null)
+      with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -478,7 +486,8 @@ is
       Ctx.P.Next_State := S_Final;
    end Finalize;
 
-   procedure Reset_Messages_Before_Write (Ctx : in out Context) with
+   procedure Reset_Messages_Before_Write (Ctx : in out Context)
+   with
      Pre =>
        Initialized (Ctx),
      Post =>
@@ -526,7 +535,8 @@ is
       function Read_Pre (Message_Buffer : RFLX_Types.Bytes) return Boolean is
         (Buffer'Length > 0
          and then Offset < Message_Buffer'Length);
-      procedure Read (Message_Buffer : RFLX_Types.Bytes) with
+      procedure Read (Message_Buffer : RFLX_Types.Bytes)
+      with
         Pre =>
           Read_Pre (Message_Buffer) is
          Length : constant RFLX_Types.Length := RFLX_Types.Length'Min (Buffer'Length, Message_Buffer'Length - Offset);
@@ -557,7 +567,8 @@ is
          and then Context_Buffer_Length = Write_Buffer_Length
          and then Offset <= RFLX_Types.Length'Last - Buffer'Length
          and then Buffer'Length + Offset <= Write_Buffer_Length);
-      procedure Write (Message_Buffer : out RFLX_Types.Bytes; Length : out RFLX_Types.Length; Context_Buffer_Length : RFLX_Types.Length; Offset : RFLX_Types.Length) with
+      procedure Write (Message_Buffer : out RFLX_Types.Bytes; Length : out RFLX_Types.Length; Context_Buffer_Length : RFLX_Types.Length; Offset : RFLX_Types.Length)
+      with
         Pre =>
           Write_Pre (Context_Buffer_Length, Offset)
           and then Offset <= RFLX_Types.Length'Last - Message_Buffer'Length

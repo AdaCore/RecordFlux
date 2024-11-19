@@ -10,7 +10,8 @@
 
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 
-package body RFLX.RFLX_Message_Sequence with
+package body RFLX.RFLX_Message_Sequence
+with
   SPARK_Mode
 is
 
