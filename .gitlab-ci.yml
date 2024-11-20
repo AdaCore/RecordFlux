@@ -128,7 +128,7 @@ setup:
         . .venv/bin/activate;
         make install;
       else
-        ln -s .venv$PYTHON_VERSION .venv;
+        ln -sf .venv$PYTHON_VERSION .venv;
         . .venv$PYTHON_VERSION/bin/activate;
         make init;
       fi
