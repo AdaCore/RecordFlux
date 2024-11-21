@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>General &mdash; RecordFlux</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Language Reference" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #12284c" >
+            <a href="index.html" class="icon icon-home"> RecordFlux
+            <img src="_static/adacore-logo-white.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                0.25.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">General</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#basic-elements">Basic Elements</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#comments">Comments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#names">Names</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#numbers">Numbers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#strings">Strings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mathematical-expressions">Mathematical Expressions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sequence-expressions">Sequence Expressions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#boolean-expressions">Boolean Expressions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#extended-boolean-expressions">Extended Boolean Expressions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sizes">Sizes</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#scalar-types">Scalar Types</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#integer-types">Integer Types</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#range-integer-types">Range Integer Types</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#unsigned-integer-types">Unsigned Integer Types</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#enumeration-types">Enumeration Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#boolean">Boolean</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#parameters-and-arguments">Parameters and Arguments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#message-types">Message Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#type-refinements">Type Refinements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#type-derivations">Type Derivations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#sequence-types">Sequence Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#state-machines">State Machines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#state-machine-parameters">State Machine Parameters</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#functions">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#channels">Channels</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#declarations">Declarations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#variable-declaration">Variable Declaration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#renaming-declaration">Renaming Declaration</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#states">States</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#state-transitions">State Transitions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#state-actions">State Actions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#assignment-statements">Assignment Statements</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#message-field-assignment-statements">Message Field Assignment Statements</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#append-attribute-statements">Append Attribute Statements</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#extend-attribute-statements">Extend Attribute Statements</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#reset-attribute-statements">Reset Attribute Statements</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#read-attribute-statements">Read Attribute Statements</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#write-attribute-statements">Write Attribute Statements</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#expressions">Expressions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#message-aggregates">Message Aggregates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#aggregates">Aggregates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#attribute-expressions">Attribute Expressions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#selected-expressions">Selected Expressions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#list-comprehensions">List Comprehensions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#quantified-expressions">Quantified Expressions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#calls">Calls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#conversions">Conversions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#case-expressions">Case Expressions</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#packages">Packages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#context-clauses">Context Clauses</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#files">Files</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #12284c" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">RecordFlux</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">General</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/language_reference.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="general">
+<h1>General<a class="headerlink" href="#general" title="Permalink to this headline"></a></h1>
+<p id="highlighted">The specification language describes protocol message formats based on types.
+For each type of the specification language a description of its syntax and semantics and an example is given.</p>
+<p>A simple variant of Backus-Naur Form is used to describe the syntax.</p>
+<ul class="simple">
+<li><p>Optional elements are enclosed in [brackets].</p></li>
+<li><p>Elements which occur zero or more times are enclosed in {curly brackets}.</p></li>
+<li><p>Terms are grouped using (parentheses).</p></li>
+<li><p>Alternatives are delimited by the <cite>|</cite> character.</p></li>
+<li><p>Reserved keywords and literals are marked in 'single quotes' or &quot;double quotes&quot;.</p></li>
+<li><p>Literal ranges denote a character range from a start character to an end character separated by <cite>..</cite> (e.g. <cite>&quot;a&quot; .. &quot;f&quot;</cite>).</p></li>
+<li><p>A production can use a non-formal verbal description starting with a <cite>#</cite> sign (e.g. <cite># All non-whitespace Unicode characters</cite>).</p></li>
+<li><p>Non-terminals are referenced using hyperlinks (e.g. <em>prefix_</em><a class="reference internal" href="#non-terminal">non_terminal</a>).</p></li>
+</ul>
+<p>To convey some semantic information regarding the usage of the non-terminal in a given context its name can be prefixed by an identifier when referencing it.
+Non-terminals with prefixes are equivalent to the respective non-terminals without the prefix.</p>
+<p>See the section <a class="reference internal" href="#variable-declaration">Variable Declaration</a> for an example.</p>
+</section>
+<section id="basic-elements">
+<h1>Basic Elements<a class="headerlink" href="#basic-elements" title="Permalink to this headline"></a></h1>
+<p>The following basic elements are used to describe the syntax of the language.
+The type system is inspired by Ada, but differs in some details.
+In contrast to Ada, integer variables are considered type-compatible.
+Explicit type conversions of integer variables are neither required nor supported.</p>
+<section id="comments">
+<h2>Comments<a class="headerlink" href="#comments" title="Permalink to this headline"></a></h2>
+<p>Comments are started with two dashes (<cite>--</cite>) and extend to the end of the line.
+Block comments do not exist in RecordFlux.</p>
+</section>
+<section id="names">
+<h2>Names<a class="headerlink" href="#names" title="Permalink to this headline"></a></h2>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-name">name          </strong> ::=  <a class="reference internal" href="#grammar-token-letter"><code class="xref docutils literal notranslate"><span class="pre">letter</span></code></a> { [ &quot;_&quot; ] <a class="reference internal" href="#grammar-token-alphanum"><code class="xref docutils literal notranslate"><span class="pre">alphanum</span></code></a> { <a class="reference internal" href="#grammar-token-alphanum"><code class="xref docutils literal notranslate"><span class="pre">alphanum</span></code></a> } }
+<strong id="grammar-token-alphanum">alphanum      </strong> ::=  <a class="reference internal" href="#grammar-token-letter"><code class="xref docutils literal notranslate"><span class="pre">letter</span></code></a> | <a class="reference internal" href="#grammar-token-dec_digit"><code class="xref docutils literal notranslate"><span class="pre">dec_digit</span></code></a>
+<strong id="grammar-token-letter">letter        </strong> ::=  &quot;A&quot; .. &quot;Z&quot; | &quot;a&quot; .. &quot;z&quot;
+<strong id="grammar-token-qualified_name"><span id="grammar-token-qualified-name"></span>qualified_name</strong> ::=  <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> { &quot;::&quot; <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> }
+</pre>
+<p>By convention a name starts with a capital and after each underscore follows a capital as well.
+A qualified name starts with the package hierachy the respective entity is located in, separated by <cite>::</cite>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span>Mixed_Case_With_Underscores
+</pre></div>
+</div>
+</section>
+<section id="numbers">
+<h2>Numbers<a class="headerlink" href="#numbers" title="Permalink to this headline"></a></h2>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-number">number         </strong> ::=  <a class="reference internal" href="#grammar-token-baseless_number"><code class="xref docutils literal notranslate"><span class="pre">baseless_number</span></code></a>
+                     | <a class="reference internal" href="#grammar-token-bin_number"><code class="xref docutils literal notranslate"><span class="pre">bin_number</span></code></a>
+                     | <a class="reference internal" href="#grammar-token-oct_number"><code class="xref docutils literal notranslate"><span class="pre">oct_number</span></code></a>
+                     | <a class="reference internal" href="#grammar-token-dec_number"><code class="xref docutils literal notranslate"><span class="pre">dec_number</span></code></a>
+                     | <a class="reference internal" href="#grammar-token-hex_number"><code class="xref docutils literal notranslate"><span class="pre">hex_number</span></code></a>
+<strong id="grammar-token-baseless_number"><span id="grammar-token-baseless-number"></span>baseless_number</strong> ::=  <a class="reference internal" href="#grammar-token-dec_digit"><code class="xref docutils literal notranslate"><span class="pre">dec_digit</span></code></a>
+                     { [ &quot;_&quot; ] <a class="reference internal" href="#grammar-token-dec_digit"><code class="xref docutils literal notranslate"><span class="pre">dec_digit</span></code></a> { <a class="reference internal" href="#grammar-token-dec_digit"><code class="xref docutils literal notranslate"><span class="pre">dec_digit</span></code></a> } }
+<strong id="grammar-token-bin_digit"><span id="grammar-token-bin-digit"></span>bin_digit      </strong> ::=  &quot;0&quot; | &quot;1&quot;
+<strong id="grammar-token-oct_digit"><span id="grammar-token-oct-digit"></span>oct_digit      </strong> ::=  &quot;0&quot; .. &quot;7&quot;
+<strong id="grammar-token-dec_digit"><span id="grammar-token-dec-digit"></span>dec_digit      </strong> ::=  &quot;0&quot; .. &quot;9&quot;
+<strong id="grammar-token-hex_digit"><span id="grammar-token-hex-digit"></span>hex_digit      </strong> ::=  <a class="reference internal" href="#grammar-token-dec_digit"><code class="xref docutils literal notranslate"><span class="pre">dec_digit</span></code></a> | &quot;A&quot; .. &quot;F&quot;
+<strong id="grammar-token-bin_number"><span id="grammar-token-bin-number"></span>bin_number     </strong> ::=  &quot;2&quot; &quot;#&quot; <a class="reference internal" href="#grammar-token-bin_digit"><code class="xref docutils literal notranslate"><span class="pre">bin_digit</span></code></a>
+                     { [ &quot;_&quot; ] <a class="reference internal" href="#grammar-token-bin_digit"><code class="xref docutils literal notranslate"><span class="pre">bin_digit</span></code></a> { <a class="reference internal" href="#grammar-token-bin_digit"><code class="xref docutils literal notranslate"><span class="pre">bin_digit</span></code></a> } } &quot;#&quot;
+<strong id="grammar-token-oct_number"><span id="grammar-token-oct-number"></span>oct_number     </strong> ::=  &quot;8&quot; &quot;#&quot; <a class="reference internal" href="#grammar-token-oct_digit"><code class="xref docutils literal notranslate"><span class="pre">oct_digit</span></code></a>
+                     { [ &quot;_&quot; ] <a class="reference internal" href="#grammar-token-oct_digit"><code class="xref docutils literal notranslate"><span class="pre">oct_digit</span></code></a> { <a class="reference internal" href="#grammar-token-oct_digit"><code class="xref docutils literal notranslate"><span class="pre">oct_digit</span></code></a> } } &quot;#&quot;
+<strong id="grammar-token-dec_number"><span id="grammar-token-dec-number"></span>dec_number     </strong> ::=  &quot;10&quot; &quot;#&quot; <a class="reference internal" href="#grammar-token-dec_digit"><code class="xref docutils literal notranslate"><span class="pre">dec_digit</span></code></a>
+                     { [ &quot;_&quot; ] <a class="reference internal" href="#grammar-token-dec_digit"><code class="xref docutils literal notranslate"><span class="pre">dec_digit</span></code></a> { <a class="reference internal" href="#grammar-token-dec_digit"><code class="xref docutils literal notranslate"><span class="pre">dec_digit</span></code></a> } } &quot;#&quot;
+<strong id="grammar-token-hex_number"><span id="grammar-token-hex-number"></span>hex_number     </strong> ::=  &quot;16&quot; &quot;#&quot; <a class="reference internal" href="#grammar-token-hex_digit"><code class="xref docutils literal notranslate"><span class="pre">hex_digit</span></code></a>
+                     { [ &quot;_&quot; ] <a class="reference internal" href="#grammar-token-hex_digit"><code class="xref docutils literal notranslate"><span class="pre">hex_digit</span></code></a> { <a class="reference internal" href="#grammar-token-hex_digit"><code class="xref docutils literal notranslate"><span class="pre">hex_digit</span></code></a> } } &quot;#&quot;
+</pre>
+<p><strong>Static Semantics</strong></p>
+<p>A baseless number (one not containing a &quot;#&quot; symbol) is considered base 10.
+Numbers with an explicit base (2, 8, 10, or 16) are considered to have that respective base.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="m">16#DEAD_C0DE#</span>
+</pre></div>
+</div>
+</section>
+<section id="strings">
+<h2>Strings<a class="headerlink" href="#strings" title="Permalink to this headline"></a></h2>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-string">string   </strong> ::=  '&quot;' { <a class="reference internal" href="#grammar-token-character"><code class="xref docutils literal notranslate"><span class="pre">character</span></code></a> } '&quot;'
+<strong id="grammar-token-character">character</strong> ::=  # Any Unicode character except QUOTATION MARK
+</pre>
+<p><strong>Static Semantics</strong></p>
+<p>Internally, strings are UTF-8 encoded.
+There is currently no way to represent the QUOTATION MARK character (U+0022).</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="s s-Literal">&quot;Hello World&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="mathematical-expressions">
+<h2>Mathematical Expressions<a class="headerlink" href="#mathematical-expressions" title="Permalink to this headline"></a></h2>
+<p>Expressions of this category yield an integer result.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-math_expression"><span id="grammar-token-math-expression"></span>math_expression      </strong> ::=  ( <a class="reference internal" href="#grammar-token-math_expression"><code class="xref docutils literal notranslate"><span class="pre">math_expression</span></code></a>
+                             ( &quot;+&quot; | &quot;-&quot; ) <a class="reference internal" href="#grammar-token-math_unop_term"><code class="xref docutils literal notranslate"><span class="pre">math_unop_term</span></code></a> )
+                           | <a class="reference internal" href="#grammar-token-math_unop_term"><code class="xref docutils literal notranslate"><span class="pre">math_unop_term</span></code></a>
+<strong id="grammar-token-math_unop_term"><span id="grammar-token-math-unop-term"></span>math_unop_term       </strong> ::=  ( &quot;-&quot; <a class="reference internal" href="#grammar-token-math_term"><code class="xref docutils literal notranslate"><span class="pre">math_term</span></code></a> ) | <a class="reference internal" href="#grammar-token-math_term"><code class="xref docutils literal notranslate"><span class="pre">math_term</span></code></a>
+<strong id="grammar-token-math_term"><span id="grammar-token-math-term"></span>math_term            </strong> ::=  ( <a class="reference internal" href="#grammar-token-math_term"><code class="xref docutils literal notranslate"><span class="pre">math_term</span></code></a>
+                             ( &quot;*&quot; | &quot;/&quot; | &quot;mod&quot; )
+                               <a class="reference internal" href="#grammar-token-math_factor"><code class="xref docutils literal notranslate"><span class="pre">math_factor</span></code></a> )
+                           | <a class="reference internal" href="#grammar-token-math_factor"><code class="xref docutils literal notranslate"><span class="pre">math_factor</span></code></a>
+<strong id="grammar-token-math_factor"><span id="grammar-token-math-factor"></span>math_factor          </strong> ::=  ( <a class="reference internal" href="#grammar-token-math_primary"><code class="xref docutils literal notranslate"><span class="pre">math_primary</span></code></a> &quot;**&quot; <a class="reference internal" href="#grammar-token-math_primary"><code class="xref docutils literal notranslate"><span class="pre">math_primary</span></code></a> )
+                           | <a class="reference internal" href="#grammar-token-math_suffix"><code class="xref docutils literal notranslate"><span class="pre">math_suffix</span></code></a>
+<strong id="grammar-token-math_suffix"><span id="grammar-token-math-suffix"></span>math_suffix          </strong> ::=  ( <a class="reference internal" href="#grammar-token-math_suffix"><code class="xref docutils literal notranslate"><span class="pre">math_suffix</span></code></a> &quot;'&quot; <a class="reference internal" href="#grammar-token-math_attribute"><code class="xref docutils literal notranslate"><span class="pre">math_attribute</span></code></a> )
+                           | <a class="reference internal" href="#grammar-token-math_primary"><code class="xref docutils literal notranslate"><span class="pre">math_primary</span></code></a>
+<strong id="grammar-token-math_attribute"><span id="grammar-token-math-attribute"></span>math_attribute       </strong> ::=  &quot;First&quot; | &quot;Size&quot; | &quot;Last&quot;
+<strong id="grammar-token-math_primary"><span id="grammar-token-math-primary"></span>math_primary         </strong> ::=  <a class="reference internal" href="#grammar-token-number"><code class="xref docutils literal notranslate"><span class="pre">number</span></code></a>
+                           | <a class="reference internal" href="#grammar-token-qualified_name"><code class="xref docutils literal notranslate"><span class="pre">qualified_name</span></code></a>
+                           | <a class="reference internal" href="#grammar-token-selected"><code class="xref docutils literal notranslate"><span class="pre">selected</span></code></a>
+                           | <a class="reference internal" href="#grammar-token-paren_math_expression"><code class="xref docutils literal notranslate"><span class="pre">paren_math_expression</span></code></a>
+<strong id="grammar-token-paren_math_expression"><span id="grammar-token-paren-math-expression"></span>paren_math_expression</strong> ::=  &quot;(&quot; <a class="reference internal" href="#grammar-token-math_expression"><code class="xref docutils literal notranslate"><span class="pre">math_expression</span></code></a> &quot;)&quot;
+</pre>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="m">2</span><span class="w"> </span><span class="o">**</span><span class="w"> </span><span class="p">(</span>V<span class="p">&#39;</span><span class="k">First</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="m">23</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="m">12</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="m">1</span>
+</pre></div>
+</div>
+</section>
+<section id="sequence-expressions">
+<h2>Sequence Expressions<a class="headerlink" href="#sequence-expressions" title="Permalink to this headline"></a></h2>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-seq_expression"><span id="grammar-token-seq-expression"></span>seq_expression      </strong> ::=  <a class="reference internal" href="#grammar-token-seq_paren_expression"><code class="xref docutils literal notranslate"><span class="pre">seq_paren_expression</span></code></a>
+                          | <a class="reference internal" href="#grammar-token-comprehension"><code class="xref docutils literal notranslate"><span class="pre">comprehension</span></code></a>
+                          | <a class="reference internal" href="#grammar-token-aggregate"><code class="xref docutils literal notranslate"><span class="pre">aggregate</span></code></a>
+                          | <a class="reference internal" href="#grammar-token-selected"><code class="xref docutils literal notranslate"><span class="pre">selected</span></code></a>
+                          | <a class="reference internal" href="#grammar-token-string"><code class="xref docutils literal notranslate"><span class="pre">string</span></code></a>
+                          | <a class="reference internal" href="#grammar-token-qualified_name"><code class="xref docutils literal notranslate"><span class="pre">qualified_name</span></code></a>
+<strong id="grammar-token-seq_paren_expression"><span id="grammar-token-seq-paren-expression"></span>seq_paren_expression</strong> ::=  &quot;(&quot; <a class="reference internal" href="#grammar-token-seq_expression"><code class="xref docutils literal notranslate"><span class="pre">seq_expression</span></code></a> &quot;)&quot;
+</pre>
+</section>
+<section id="boolean-expressions">
+<h2>Boolean Expressions<a class="headerlink" href="#boolean-expressions" title="Permalink to this headline"></a></h2>
+<p>Expressions of this category yield a boolean result.
+Standard boolean expressions are used in then-clauses and refinements of messages.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-bool_expression"><span id="grammar-token-bool-expression"></span>bool_expression      </strong> ::=  ( <a class="reference internal" href="#grammar-token-bool_expression"><code class="xref docutils literal notranslate"><span class="pre">bool_expression</span></code></a>
+                             ( &quot;and&quot; | &quot;or&quot; ) <a class="reference internal" href="#grammar-token-bool_unop_term"><code class="xref docutils literal notranslate"><span class="pre">bool_unop_term</span></code></a> )
+                           | <a class="reference internal" href="#grammar-token-bool_unop_term"><code class="xref docutils literal notranslate"><span class="pre">bool_unop_term</span></code></a>
+<strong id="grammar-token-bool_unop_term"><span id="grammar-token-bool-unop-term"></span>bool_unop_term       </strong> ::=  ( &quot;not&quot; <a class="reference internal" href="#grammar-token-bool_term"><code class="xref docutils literal notranslate"><span class="pre">bool_term</span></code></a> ) | <a class="reference internal" href="#grammar-token-bool_term"><code class="xref docutils literal notranslate"><span class="pre">bool_term</span></code></a>
+<strong id="grammar-token-bool_term"><span id="grammar-token-bool-term"></span>bool_term            </strong> ::=  &quot;True&quot;
+                           | &quot;False&quot;
+                           | <a class="reference internal" href="#grammar-token-bool_suffix"><code class="xref docutils literal notranslate"><span class="pre">bool_suffix</span></code></a>
+                           | <a class="reference internal" href="#grammar-token-qualified_name"><code class="xref docutils literal notranslate"><span class="pre">qualified_name</span></code></a>
+                           | <a class="reference internal" href="#grammar-token-bool_relation"><code class="xref docutils literal notranslate"><span class="pre">bool_relation</span></code></a>
+                           | <a class="reference internal" href="#grammar-token-math_relation"><code class="xref docutils literal notranslate"><span class="pre">math_relation</span></code></a>
+                           | <a class="reference internal" href="#grammar-token-seq_relation"><code class="xref docutils literal notranslate"><span class="pre">seq_relation</span></code></a>
+                           | <a class="reference internal" href="#grammar-token-bool_paren_expression"><code class="xref docutils literal notranslate"><span class="pre">bool_paren_expression</span></code></a>
+<strong id="grammar-token-bool_suffix"><span id="grammar-token-bool-suffix"></span>bool_suffix          </strong> ::=  <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;'&quot; <a class="reference internal" href="#grammar-token-bool_attribute"><code class="xref docutils literal notranslate"><span class="pre">bool_attribute</span></code></a>
+<strong id="grammar-token-bool_attribute"><span id="grammar-token-bool-attribute"></span>bool_attribute       </strong> ::=  &quot;Valid_Checksum&quot;
+<strong id="grammar-token-bool_relation"><span id="grammar-token-bool-relation"></span>bool_relation        </strong> ::=  <a class="reference internal" href="#grammar-token-bool_expression"><code class="xref docutils literal notranslate"><span class="pre">bool_expression</span></code></a>
+                           ( &quot;=&quot; | &quot;/=&quot; ) <a class="reference internal" href="#grammar-token-bool_expression"><code class="xref docutils literal notranslate"><span class="pre">bool_expression</span></code></a>
+<strong id="grammar-token-math_relation"><span id="grammar-token-math-relation"></span>math_relation        </strong> ::=  <a class="reference internal" href="#grammar-token-math_expression"><code class="xref docutils literal notranslate"><span class="pre">math_expression</span></code></a>
+                           ( &quot;=&quot; | &quot;/=&quot; | &quot;&lt;=&quot; | &quot;&lt;&quot; | &quot;&gt;=&quot; | &quot;&gt;&quot; )
+                           <a class="reference internal" href="#grammar-token-math_expression"><code class="xref docutils literal notranslate"><span class="pre">math_expression</span></code></a>
+<strong id="grammar-token-seq_relation"><span id="grammar-token-seq-relation"></span>seq_relation         </strong> ::=  <a class="reference internal" href="#grammar-token-seq_expression"><code class="xref docutils literal notranslate"><span class="pre">seq_expression</span></code></a>
+                           ( &quot;=&quot; | &quot;/=&quot; ) <a class="reference internal" href="#grammar-token-seq_expression"><code class="xref docutils literal notranslate"><span class="pre">seq_expression</span></code></a>
+<strong id="grammar-token-seq_membership"><span id="grammar-token-seq-membership"></span>seq_membership       </strong> ::=  <a class="reference internal" href="#grammar-token-expression"><code class="xref docutils literal notranslate"><span class="pre">expression</span></code></a>
+                           ( &quot;in&quot; | &quot;not in&quot; ) <a class="reference internal" href="#grammar-token-seq_expression"><code class="xref docutils literal notranslate"><span class="pre">seq_expression</span></code></a>
+<strong id="grammar-token-bool_paren_expression"><span id="grammar-token-bool-paren-expression"></span>bool_paren_expression</strong> ::=  &quot;(&quot; <a class="reference internal" href="#grammar-token-bool_expression"><code class="xref docutils literal notranslate"><span class="pre">bool_expression</span></code></a> &quot;)&quot;
+</pre>
+<p><strong>Static Semantics</strong></p>
+<p>The semantics of the <code class="docutils literal notranslate"><span class="pre">Valid_Checksum</span></code> attribute is explained in the section <a class="reference internal" href="#message-types">Message Types</a>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span>V<span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="m">20</span><span class="w"> </span><span class="o o-Text">and</span><span class="w"> </span>U<span class="w"> </span><span class="o">=</span><span class="w"> </span>True
+</pre></div>
+</div>
+</section>
+<section id="extended-boolean-expressions">
+<h2>Extended Boolean Expressions<a class="headerlink" href="#extended-boolean-expressions" title="Permalink to this headline"></a></h2>
+<p>Expressions of this category yield a boolean result.
+Extended boolean expressions are used in state machines.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-ext_bool_expression"><span id="grammar-token-ext-bool-expression"></span>ext_bool_expression      </strong> ::=  ( <a class="reference internal" href="#grammar-token-ext_bool_expression"><code class="xref docutils literal notranslate"><span class="pre">ext_bool_expression</span></code></a>
+                                 ( &quot;and&quot; | &quot;or&quot; )
+                                 <a class="reference internal" href="#grammar-token-ext_bool_unop_term"><code class="xref docutils literal notranslate"><span class="pre">ext_bool_unop_term</span></code></a> )
+                               | <a class="reference internal" href="#grammar-token-ext_bool_unop_term"><code class="xref docutils literal notranslate"><span class="pre">ext_bool_unop_term</span></code></a>
+<strong id="grammar-token-ext_bool_unop_term"><span id="grammar-token-ext-bool-unop-term"></span>ext_bool_unop_term       </strong> ::=  ( &quot;not&quot; <a class="reference internal" href="#grammar-token-ext_bool_term"><code class="xref docutils literal notranslate"><span class="pre">ext_bool_term</span></code></a> )
+                               | <a class="reference internal" href="#grammar-token-ext_bool_term"><code class="xref docutils literal notranslate"><span class="pre">ext_bool_term</span></code></a>
+<strong id="grammar-token-ext_bool_term"><span id="grammar-token-ext-bool-term"></span>ext_bool_term            </strong> ::=  &quot;True&quot;
+                               | &quot;False&quot;
+                               | <a class="reference internal" href="#grammar-token-ext_bool_suffix"><code class="xref docutils literal notranslate"><span class="pre">ext_bool_suffix</span></code></a>
+                               | <a class="reference internal" href="#grammar-token-qualified_name"><code class="xref docutils literal notranslate"><span class="pre">qualified_name</span></code></a>
+                               | <a class="reference internal" href="#grammar-token-ext_bool_relation"><code class="xref docutils literal notranslate"><span class="pre">ext_bool_relation</span></code></a>
+                               | <a class="reference internal" href="#grammar-token-math_relation"><code class="xref docutils literal notranslate"><span class="pre">math_relation</span></code></a>
+                               | <a class="reference internal" href="#grammar-token-seq_relation"><code class="xref docutils literal notranslate"><span class="pre">seq_relation</span></code></a>
+                               | <a class="reference internal" href="#grammar-token-seq_membership"><code class="xref docutils literal notranslate"><span class="pre">seq_membership</span></code></a>
+                               | <a class="reference internal" href="#grammar-token-quantified_expression"><code class="xref docutils literal notranslate"><span class="pre">quantified_expression</span></code></a>
+                               | <a class="reference internal" href="#grammar-token-selected"><code class="xref docutils literal notranslate"><span class="pre">selected</span></code></a>
+                               | <a class="reference internal" href="#grammar-token-ext_bool_paren_expression"><code class="xref docutils literal notranslate"><span class="pre">ext_bool_paren_expression</span></code></a>
+<strong id="grammar-token-ext_bool_suffix"><span id="grammar-token-ext-bool-suffix"></span>ext_bool_suffix          </strong> ::=  <a class="reference internal" href="#grammar-token-expression"><code class="xref docutils literal notranslate"><span class="pre">expression</span></code></a> &quot;'&quot; <a class="reference internal" href="#grammar-token-ext_bool_attribute"><code class="xref docutils literal notranslate"><span class="pre">ext_bool_attribute</span></code></a>
+<strong id="grammar-token-ext_bool_attribute"><span id="grammar-token-ext-bool-attribute"></span>ext_bool_attribute       </strong> ::=  &quot;Valid&quot; | &quot;Has_Data&quot; | &quot;Present&quot;
+<strong id="grammar-token-ext_bool_relation"><span id="grammar-token-ext-bool-relation"></span>ext_bool_relation        </strong> ::=  <a class="reference internal" href="#grammar-token-ext_bool_expression"><code class="xref docutils literal notranslate"><span class="pre">ext_bool_expression</span></code></a>
+                               ( &quot;=&quot; | &quot;/=&quot; )
+                               <a class="reference internal" href="#grammar-token-ext_bool_expression"><code class="xref docutils literal notranslate"><span class="pre">ext_bool_expression</span></code></a>
+<strong id="grammar-token-ext_bool_paren_expression"><span id="grammar-token-ext-bool-paren-expression"></span>ext_bool_paren_expression</strong> ::=  &quot;(&quot; <a class="reference internal" href="#grammar-token-ext_bool_expression"><code class="xref docutils literal notranslate"><span class="pre">ext_bool_expression</span></code></a> &quot;)&quot;
+</pre>
+<p><strong>Static Semantics</strong></p>
+<p>The Valid attribute allows to determine the validity of a message or sequence.</p>
+<p>Whether a channel contains data can be checked with the Has_Data attribute.</p>
+</section>
+<section id="sizes">
+<h2>Sizes<a class="headerlink" href="#sizes" title="Permalink to this headline"></a></h2>
+<p>A size aspect defines the size of a type or message field in bits.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-size_aspect"><span id="grammar-token-size-aspect"></span>size_aspect    </strong> ::=  &quot;Size&quot; &quot;=&gt;&quot; <a class="reference internal" href="#grammar-token-size_expression"><code class="xref docutils literal notranslate"><span class="pre">size_expression</span></code></a>
+<strong id="grammar-token-size_expression"><span id="grammar-token-size-expression"></span>size_expression</strong> ::=  <a class="reference internal" href="#grammar-token-math_expression"><code class="xref docutils literal notranslate"><span class="pre">math_expression</span></code></a>
+</pre>
+</section>
+</section>
+<section id="scalar-types">
+<h1>Scalar Types<a class="headerlink" href="#scalar-types" title="Permalink to this headline"></a></h1>
+<section id="integer-types">
+<h2>Integer Types<a class="headerlink" href="#integer-types" title="Permalink to this headline"></a></h2>
+<p>An integer type is used to represent whole numbers.
+In RecordFlux integer types can be specified in several ways as explained next.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-integer_type"><span id="grammar-token-integer-type"></span>integer_type</strong> ::=  <a class="reference internal" href="#grammar-token-range_type"><code class="xref docutils literal notranslate"><span class="pre">range_type</span></code></a>
+                  | <a class="reference internal" href="#grammar-token-unsigned_type"><code class="xref docutils literal notranslate"><span class="pre">unsigned_type</span></code></a>
+</pre>
+<section id="range-integer-types">
+<h3>Range Integer Types<a class="headerlink" href="#range-integer-types" title="Permalink to this headline"></a></h3>
+<p>A range integer type is the most general form of integer type specifications.
+It allows one to explicitly specify the lower and upper bound for the type, as well as the size of the type in bits.
+At the moment only non-negative integers are supported.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-range_type"><span id="grammar-token-range-type"></span>range_type</strong> ::=  &quot;type&quot; <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;is&quot;
+                &quot;range&quot; <a class="reference internal" href="#grammar-token-first"><code class="xref docutils literal notranslate"><span class="pre">first</span></code></a> &quot;..&quot; <a class="reference internal" href="#grammar-token-last"><code class="xref docutils literal notranslate"><span class="pre">last</span></code></a>
+                &quot;with&quot; <a class="reference internal" href="#grammar-token-size_aspect"><code class="xref docutils literal notranslate"><span class="pre">size_aspect</span></code></a>
+<strong id="grammar-token-first">first     </strong> ::=  <a class="reference internal" href="#grammar-token-math_expression"><code class="xref docutils literal notranslate"><span class="pre">math_expression</span></code></a>
+<strong id="grammar-token-last">last      </strong> ::=  <a class="reference internal" href="#grammar-token-math_expression"><code class="xref docutils literal notranslate"><span class="pre">math_expression</span></code></a>
+</pre>
+<p><strong>Static Semantics</strong></p>
+<p>The set of values of a range integer type consists of all numbers from the lower bound to the upper bound.
+The lower bound must be &gt;= 0 and &lt;= the upper bound.
+The bit size has to be specified explicitly and must be a value between 1 and 63 (inclusive).
+It does not have to be a multiple of 8 bits.
+However, the size of the type must be able to accommodate the upper bound.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="k">type</span><span class="w"> </span>Type_Length<span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">range</span><span class="w"> </span><span class="m">46</span><span class="w"> </span><span class="o">..</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="o">**</span><span class="w"> </span><span class="m">16</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="k">with</span><span class="w"> </span>Size<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">16</span>
+</pre></div>
+</div>
+</section>
+<section id="unsigned-integer-types">
+<h3>Unsigned Integer Types<a class="headerlink" href="#unsigned-integer-types" title="Permalink to this headline"></a></h3>
+<p>For unsigned integers which cover the whole range of their specified size the following shorthand syntax is available.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-unsigned_type"><span id="grammar-token-unsigned-type"></span>unsigned_type</strong> ::=  &quot;type&quot; <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a>
+                   &quot;is&quot; &quot;unsigned&quot; <a class="reference internal" href="#grammar-token-size_expression"><code class="xref docutils literal notranslate"><span class="pre">size_expression</span></code></a>
+</pre>
+<p><strong>Static Semantics</strong></p>
+<p>The above syntax is equivalent to the definition of a range integer type where the lower limit is <code class="docutils literal notranslate"><span class="pre">0</span></code> and upper limit <code class="docutils literal notranslate"><span class="pre">2</span> <span class="pre">**</span> <span class="pre">size</span> <span class="pre">-</span> <span class="pre">1</span></code>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="c">-- Value range: 0 .. 63</span>
+<span class="k">type</span><span class="w"> </span>Address<span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">unsigned</span><span class="w"> </span><span class="m">6</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="enumeration-types">
+<h2>Enumeration Types<a class="headerlink" href="#enumeration-types" title="Permalink to this headline"></a></h2>
+<p>An enumeration type represents a value out of a list of possible values.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-enumeration_type"><span id="grammar-token-enumeration-type"></span>enumeration_type   </strong> ::=  &quot;type&quot; <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;is&quot; &quot;(&quot; <a class="reference internal" href="#grammar-token-literals"><code class="xref docutils literal notranslate"><span class="pre">literals</span></code></a> &quot;)&quot;
+                         &quot;with&quot; <a class="reference internal" href="#grammar-token-enumeration_aspects"><code class="xref docutils literal notranslate"><span class="pre">enumeration_aspects</span></code></a>
+<strong id="grammar-token-literals">literals           </strong> ::=  <a class="reference internal" href="#grammar-token-enumeration_literal"><code class="xref docutils literal notranslate"><span class="pre">enumeration_literal</span></code></a>
+                         { &quot;,&quot; <a class="reference internal" href="#grammar-token-enumeration_literal"><code class="xref docutils literal notranslate"><span class="pre">enumeration_literal</span></code></a> }
+<strong id="grammar-token-enumeration_literal"><span id="grammar-token-enumeration-literal"></span>enumeration_literal</strong> ::=  <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> [ &quot;=&gt;&quot; <a class="reference internal" href="#grammar-token-number"><code class="xref docutils literal notranslate"><span class="pre">number</span></code></a> ]
+<strong id="grammar-token-enumeration_aspects"><span id="grammar-token-enumeration-aspects"></span>enumeration_aspects</strong> ::=  <a class="reference internal" href="#grammar-token-enumeration_aspect"><code class="xref docutils literal notranslate"><span class="pre">enumeration_aspect</span></code></a>
+                         { &quot;,&quot; <a class="reference internal" href="#grammar-token-enumeration_aspect"><code class="xref docutils literal notranslate"><span class="pre">enumeration_aspect</span></code></a> }
+<strong id="grammar-token-enumeration_aspect"><span id="grammar-token-enumeration-aspect"></span>enumeration_aspect </strong> ::=  <a class="reference internal" href="#grammar-token-size_aspect"><code class="xref docutils literal notranslate"><span class="pre">size_aspect</span></code></a> | <a class="reference internal" href="#grammar-token-always_valid_aspect"><code class="xref docutils literal notranslate"><span class="pre">always_valid_aspect</span></code></a>
+<strong id="grammar-token-always_valid_aspect"><span id="grammar-token-always-valid-aspect"></span>always_valid_aspect</strong> ::=  &quot;Always_Valid&quot;
+                         [ &quot;=&gt;&quot; ( &quot;True&quot; | &quot;False&quot; ) ]
+</pre>
+<p><strong>Static Semantics</strong></p>
+<p>The set of values of an enumeration type consists of the list of declared enumeration literals.
+Each enumeration literal has a distinct value.
+If no explicit value is given, the first literal is zero, and the value of each subsequent literal is incremented by one.
+Literals with and without explicit value must not be intermixed in one definition.
+The bit size of the enumeration type must be specified explicitly.
+Optionally, an enumeration type can be flagged as always valid.
+A message field with such type is always considered valid, whether or not its value corresponds to one of the specified literals.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="k">type</span><span class="w"> </span>Tag<span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="p">(</span>Msg_Error<span class="p">,</span><span class="w"> </span>Msg_Data<span class="p">)</span><span class="w"> </span><span class="k">with</span><span class="w"> </span>Size<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">1</span>
+</pre></div>
+</div>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="k">type</span><span class="w"> </span>Ether_Type<span class="w"> </span><span class="k">is</span>
+<span class="w">   </span><span class="p">(</span>ET_IPv4<span class="w">            </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">16#0800#</span><span class="p">,</span>
+<span class="w">    </span>ET_ARP<span class="w">             </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">16#0806#</span><span class="p">,</span>
+<span class="w">    </span>ET_VLAN_Tag<span class="w">        </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">16#8100#</span><span class="p">,</span>
+<span class="w">    </span>ET_IPv6<span class="w">            </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">16#86DD#</span><span class="p">,</span>
+<span class="w">    </span>ET_VLAN_Tag_Double<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">16#9100#</span><span class="p">)</span>
+<span class="k">with</span><span class="w"> </span>Size<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">16</span><span class="p">,</span><span class="w"> </span>Always_Valid
+</pre></div>
+</div>
+</section>
+<section id="boolean">
+<h2>Boolean<a class="headerlink" href="#boolean" title="Permalink to this headline"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">Boolean</span></code> is a built-in enumeration type with the literals <code class="docutils literal notranslate"><span class="pre">False</span> <span class="pre">=&gt;</span> <span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">True</span> <span class="pre">=&gt;</span> <span class="pre">1</span></code> with a size of 1 bit.</p>
+</section>
+</section>
+<section id="parameters-and-arguments">
+<h1>Parameters and Arguments<a class="headerlink" href="#parameters-and-arguments" title="Permalink to this headline"></a></h1>
+<p>Parameters define the objects directly visible within functions or parameterized messages and their associated types.</p>
+<pre>
+<strong id="grammar-token-parameter">parameter     </strong> ::=  <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;:&quot; <a class="reference internal" href="#grammar-token-qualified_name"><code class="xref docutils literal notranslate"><span class="pre">qualified_name</span></code></a>
+<strong id="grammar-token-parameter_list"><span id="grammar-token-parameter-list"></span>parameter_list</strong> ::=  &quot;(&quot; <a class="reference internal" href="#grammar-token-parameter"><code class="xref docutils literal notranslate"><span class="pre">parameter</span></code></a> { &quot;;&quot; <a class="reference internal" href="#grammar-token-parameter"><code class="xref docutils literal notranslate"><span class="pre">parameter</span></code></a> } &quot;)&quot;
+</pre>
+<p>Named arguments associate a parameter with an expression.</p>
+<pre>
+<strong id="grammar-token-named_argument"><span id="grammar-token-named-argument"></span>named_argument     </strong> ::=  parameter_<a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;=&gt;&quot; <a class="reference internal" href="#grammar-token-expression"><code class="xref docutils literal notranslate"><span class="pre">expression</span></code></a>
+<strong id="grammar-token-named_argument_list"><span id="grammar-token-named-argument-list"></span>named_argument_list</strong> ::=  <a class="reference internal" href="#grammar-token-named_argument"><code class="xref docutils literal notranslate"><span class="pre">named_argument</span></code></a>
+                         { &quot;,&quot; <a class="reference internal" href="#grammar-token-named_argument"><code class="xref docutils literal notranslate"><span class="pre">named_argument</span></code></a> }
+</pre>
+</section>
+<section id="message-types">
+<h1>Message Types<a class="headerlink" href="#message-types" title="Permalink to this headline"></a></h1>
+<p>A message type is a collection of fields.
+Additional <a class="reference external" href="#grammar-token-then_clause">then clauses</a> enable the definition of conditions and dependencies between fields.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-message_type"><span id="grammar-token-message-type"></span>message_type        </strong> ::=  &quot;type&quot; <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> [ <a class="reference internal" href="#grammar-token-parameter_list"><code class="xref docutils literal notranslate"><span class="pre">parameter_list</span></code></a> ] &quot;is&quot;
+                           ( &quot;message&quot;
+                              [ <a class="reference internal" href="#grammar-token-null_field"><code class="xref docutils literal notranslate"><span class="pre">null_field</span></code></a> ]
+                                <a class="reference internal" href="#grammar-token-field"><code class="xref docutils literal notranslate"><span class="pre">field</span></code></a>
+                              { <a class="reference internal" href="#grammar-token-field"><code class="xref docutils literal notranslate"><span class="pre">field</span></code></a> }
+                             &quot;end&quot; &quot;message&quot; [ &quot;with&quot;
+                                <a class="reference internal" href="#grammar-token-message_aspects"><code class="xref docutils literal notranslate"><span class="pre">message_aspects</span></code></a> ]
+                           | &quot;null&quot; &quot;message&quot; )
+<strong id="grammar-token-field">field               </strong> ::=  <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;:&quot; <a class="reference internal" href="#grammar-token-qualified_name"><code class="xref docutils literal notranslate"><span class="pre">qualified_name</span></code></a>
+                           [ &quot;(&quot; <a class="reference internal" href="#grammar-token-named_argument_list"><code class="xref docutils literal notranslate"><span class="pre">named_argument_list</span></code></a> &quot;)&quot; ]
+                           [ &quot;with&quot; <a class="reference internal" href="#grammar-token-aspects"><code class="xref docutils literal notranslate"><span class="pre">aspects</span></code></a> ]
+                           { <a class="reference internal" href="#grammar-token-then_clause"><code class="xref docutils literal notranslate"><span class="pre">then_clause</span></code></a> } &quot;;&quot;
+<strong id="grammar-token-null_field"><span id="grammar-token-null-field"></span>null_field          </strong> ::=  &quot;null&quot; <a class="reference internal" href="#grammar-token-then_clause"><code class="xref docutils literal notranslate"><span class="pre">then_clause</span></code></a> { <a class="reference internal" href="#grammar-token-then_clause"><code class="xref docutils literal notranslate"><span class="pre">then_clause</span></code></a> } &quot;;&quot;
+<strong id="grammar-token-target_field"><span id="grammar-token-target-field"></span>target_field        </strong> ::=  field_<a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> | &quot;null&quot;
+<strong id="grammar-token-then_clause"><span id="grammar-token-then-clause"></span>then_clause         </strong> ::=  &quot;then&quot; <a class="reference internal" href="#grammar-token-target_field"><code class="xref docutils literal notranslate"><span class="pre">target_field</span></code></a>
+                           [ &quot;with&quot; <a class="reference internal" href="#grammar-token-aspects"><code class="xref docutils literal notranslate"><span class="pre">aspects</span></code></a> ]
+                           [ &quot;if&quot; <a class="reference internal" href="#grammar-token-bool_expression"><code class="xref docutils literal notranslate"><span class="pre">bool_expression</span></code></a> ]
+<strong id="grammar-token-aspects">aspects             </strong> ::=  <a class="reference internal" href="#grammar-token-aspect"><code class="xref docutils literal notranslate"><span class="pre">aspect</span></code></a> { &quot;,&quot; <a class="reference internal" href="#grammar-token-aspect"><code class="xref docutils literal notranslate"><span class="pre">aspect</span></code></a> }
+<strong id="grammar-token-aspect">aspect              </strong> ::=  <a class="reference internal" href="#grammar-token-first_aspect"><code class="xref docutils literal notranslate"><span class="pre">first_aspect</span></code></a> | <a class="reference internal" href="#grammar-token-size_aspect"><code class="xref docutils literal notranslate"><span class="pre">size_aspect</span></code></a>
+<strong id="grammar-token-first_aspect"><span id="grammar-token-first-aspect"></span>first_aspect        </strong> ::=  &quot;First&quot; &quot;=&gt;&quot; <a class="reference internal" href="#grammar-token-math_expression"><code class="xref docutils literal notranslate"><span class="pre">math_expression</span></code></a>
+<strong id="grammar-token-message_aspects"><span id="grammar-token-message-aspects"></span>message_aspects     </strong> ::=  <a class="reference internal" href="#grammar-token-message_aspect"><code class="xref docutils literal notranslate"><span class="pre">message_aspect</span></code></a> { &quot;,&quot; <a class="reference internal" href="#grammar-token-message_aspect"><code class="xref docutils literal notranslate"><span class="pre">message_aspect</span></code></a> }
+<strong id="grammar-token-message_aspect"><span id="grammar-token-message-aspect"></span>message_aspect      </strong> ::=  <a class="reference internal" href="#grammar-token-checksum_aspect"><code class="xref docutils literal notranslate"><span class="pre">checksum_aspect</span></code></a> | <a class="reference internal" href="#grammar-token-byteorder_aspect"><code class="xref docutils literal notranslate"><span class="pre">byteorder_aspect</span></code></a>
+<strong id="grammar-token-checksum_aspect"><span id="grammar-token-checksum-aspect"></span>checksum_aspect     </strong> ::=  &quot;Checksum&quot; &quot;=&gt;&quot;
+                              &quot;(&quot; <a class="reference internal" href="#grammar-token-checksum_definition"><code class="xref docutils literal notranslate"><span class="pre">checksum_definition</span></code></a>
+                                { &quot;,&quot; <a class="reference internal" href="#grammar-token-checksum_definition"><code class="xref docutils literal notranslate"><span class="pre">checksum_definition</span></code></a> } &quot;)&quot;
+<strong id="grammar-token-checksum_definition"><span id="grammar-token-checksum-definition"></span>checksum_definition </strong> ::=  <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;=&gt;&quot;
+                            &quot;(&quot; <a class="reference internal" href="#grammar-token-checksum_element"><code class="xref docutils literal notranslate"><span class="pre">checksum_element</span></code></a>
+                              { &quot;,&quot; <a class="reference internal" href="#grammar-token-checksum_element"><code class="xref docutils literal notranslate"><span class="pre">checksum_element</span></code></a> } &quot;)&quot;
+<strong id="grammar-token-checksum_element"><span id="grammar-token-checksum-element"></span>checksum_element    </strong> ::=  <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a>
+                          | <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;'&quot; &quot;Size&quot;
+                          | <a class="reference internal" href="#grammar-token-field_range"><code class="xref docutils literal notranslate"><span class="pre">field_range</span></code></a>
+<strong id="grammar-token-field_range"><span id="grammar-token-field-range"></span>field_range         </strong> ::=  <a class="reference internal" href="#grammar-token-field_range_first"><code class="xref docutils literal notranslate"><span class="pre">field_range_first</span></code></a> &quot;..&quot; <a class="reference internal" href="#grammar-token-field_range_last"><code class="xref docutils literal notranslate"><span class="pre">field_range_last</span></code></a>
+<strong id="grammar-token-field_range_first"><span id="grammar-token-field-range-first"></span>field_range_first   </strong> ::=  <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;'&quot; &quot;First&quot;
+                          | <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;'&quot; &quot;Last&quot; &quot;+&quot; &quot;1&quot;
+<strong id="grammar-token-field_range_last"><span id="grammar-token-field-range-last"></span>field_range_last    </strong> ::=  <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;'&quot; &quot;Last&quot;
+                          | <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;'&quot; &quot;First&quot; &quot;-&quot; &quot;1&quot;
+<strong id="grammar-token-byteorder_aspect"><span id="grammar-token-byteorder-aspect"></span>byteorder_aspect    </strong> ::=  &quot;Byte_Order&quot; &quot;=&gt;&quot; <a class="reference internal" href="#grammar-token-byteorder_definition"><code class="xref docutils literal notranslate"><span class="pre">byteorder_definition</span></code></a>
+<strong id="grammar-token-byteorder_definition"><span id="grammar-token-byteorder-definition"></span>byteorder_definition</strong> ::=  &quot;High_Order_First&quot;
+                          | &quot;Low_Order_First&quot;
+</pre>
+<p><strong>Static Semantics</strong></p>
+<p>A message type specifies the message format of a protocol.
+A message is represented by a graph-based model.
+Each node in the graph corresponds to one field in a message.
+The links in the graph define the order of the fields.
+A link is represented by a then clause in the specification.
+If no then clause is given, it is assumed that always the next field of the message follows.
+If no further field follows, it is assumed that the message ends with this field.
+The end of a message can also be denoted explicitly by adding a then clause to <em>null</em>.
+Optionally, a then clause can contain a condition under which the corresponding field follows and aspects which enable the definition of the size of the next field and the location of its first bit.
+These aspects can also be specified for the field directly.
+Each aspect can be specified either for the field or in all incoming then clauses, but not in both.
+The condition can refer to previous fields (including the field containing the then clause).
+If required, a null field can be used to specify the size of the first field in the message.
+An empty message can be represented by a null message.</p>
+<p>A message can be parameterized.
+Message parameters can be used in conditions and aspects and enable the definition of message formats that depend on prior negotiation.
+Only scalar types are allowed for parameters.</p>
+<p>The field type <code class="docutils literal notranslate"><span class="pre">Opaque</span></code> represents an unconstrained sequence of bytes.
+The size of opaque fields and sequence fields must be defined by a size aspect, if another field can follow.
+If no size aspect is given, the field size is implicitly defined by the available space (defined by the outer message when parsing or by the written data when serializing).
+Opaque fields and sequence fields must be byte aligned.
+The size of a message must be a multiple of 8 bit.</p>
+<p>A checksum aspect specifies which parts of a message are covered by a checksum.
+The definition of the checksum calculation is not part of the specification.
+Code based on the message specification must provide a function which is able to verify a checksum using the specified checksum elements.
+A checksum element can be a field value, a field size or a range of fields.
+The point where a checksum should be checked during parsing or generated during serialization must be defined for each checksum.
+For this purpose the <code class="docutils literal notranslate"><span class="pre">Valid_Checksum</span></code> attribute is added to a condition.
+All message parts on which the checksum depends have to be known at this point.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">Byte_Order</span></code> aspect allows the user to specify the endianness of the message, with the two possible choices <code class="docutils literal notranslate"><span class="pre">High_Order_First</span></code> (big endian, or network byte order) and <code class="docutils literal notranslate"><span class="pre">Low_Order_First</span></code> (little endian).
+If the <code class="docutils literal notranslate"><span class="pre">Byte_Order</span></code> aspect is not specified, the byte order of the message is set to <code class="docutils literal notranslate"><span class="pre">High_Order_First</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Message’First</span></code>, <code class="docutils literal notranslate"><span class="pre">Message’Last</span></code> and <code class="docutils literal notranslate"><span class="pre">Message’Size</span></code> can be used in expressions to refer to the position of the first or last bit of the message or the size of the message.
+All bytes which were received when parsing or were written when serializing are considered as part of the message.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="k">type</span><span class="w"> </span>Frame<span class="w"> </span><span class="k">is</span>
+<span class="w">   </span><span class="k">message</span>
+<span class="w">      </span>Destination<span class="w"> </span><span class="p">:</span><span class="w"> </span>Address<span class="p">;</span>
+<span class="w">      </span>Source<span class="w"> </span><span class="p">:</span><span class="w"> </span>Address<span class="p">;</span>
+<span class="w">      </span>Type_Length_TPID<span class="w"> </span><span class="p">:</span><span class="w"> </span>Type_Length
+<span class="w">         </span><span class="k">then</span><span class="w"> </span>TPID
+<span class="w">            </span><span class="k">with</span><span class="w"> </span>First<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span>Type_Length_TPID<span class="p">&#39;</span><span class="k">First</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span>Type_Length_TPID<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">16#8100#</span>
+<span class="w">         </span><span class="k">then</span><span class="w"> </span>Payload
+<span class="w">            </span><span class="k">with</span><span class="w"> </span>Size<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span>Type_Length_TPID<span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="m">8</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span>Type_Length_TPID<span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="m">1500</span>
+<span class="w">         </span><span class="k">then</span><span class="w"> </span>Ether_Type
+<span class="w">            </span><span class="k">with</span><span class="w"> </span>First<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span>Type_Length_TPID<span class="p">&#39;</span><span class="k">First</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span>Type_Length_TPID<span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="m">1536</span><span class="w"> </span><span class="o o-Text">and</span><span class="w"> </span>Type_Length_TPID<span class="w"> </span><span class="o">/=</span><span class="w"> </span><span class="m">16#8100#</span><span class="p">;</span>
+<span class="w">      </span>TPID<span class="w"> </span><span class="p">:</span><span class="w"> </span>TPID<span class="p">;</span>
+<span class="w">      </span>TCI<span class="w"> </span><span class="p">:</span><span class="w"> </span>TCI<span class="p">;</span>
+<span class="w">      </span>Ether_Type<span class="w"> </span><span class="p">:</span><span class="w"> </span>Ether_Type<span class="p">;</span>
+<span class="w">      </span>Payload<span class="w"> </span><span class="p">:</span><span class="w"> </span>Opaque
+<span class="w">         </span><span class="k">then</span><span class="w"> </span><span class="k">null</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span>Payload<span class="p">&#39;</span><span class="k">Size</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="m">8</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="m">46</span><span class="w"> </span><span class="o o-Text">and</span><span class="w"> </span>Payload<span class="p">&#39;</span><span class="k">Size</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="m">8</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="m">1500</span><span class="p">;</span>
+<span class="w">   </span><span class="k">end</span><span class="w"> </span><span class="k">message</span>
+</pre></div>
+</div>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="k">type</span><span class="w"> </span>Empty_Message<span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">message</span>
+</pre></div>
+</div>
+</section>
+<section id="type-refinements">
+<h1>Type Refinements<a class="headerlink" href="#type-refinements" title="Permalink to this headline"></a></h1>
+<p>A type refinement describes the relation of an opaque field in a message type to another message type.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-type_refinement"><span id="grammar-token-type-refinement"></span>type_refinement</strong> ::=  &quot;for&quot; refined_<a class="reference internal" href="#grammar-token-qualified_name"><code class="xref docutils literal notranslate"><span class="pre">qualified_name</span></code></a> &quot;use&quot;
+                     &quot;(&quot;
+                     refined_field_<a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a>
+                     &quot;=&gt;&quot; message_<a class="reference internal" href="#grammar-token-qualified_name"><code class="xref docutils literal notranslate"><span class="pre">qualified_name</span></code></a>
+                     &quot;)&quot;
+                     [ &quot;if&quot; <a class="reference internal" href="#grammar-token-bool_expression"><code class="xref docutils literal notranslate"><span class="pre">bool_expression</span></code></a> ]
+</pre>
+<p><strong>Static Semantics</strong></p>
+<p>A type refinement describes under which condition a specific message can be expected inside of a payload field.
+Only fields of type <code class="docutils literal notranslate"><span class="pre">Opaque</span></code> can be refined.
+Types defined in other packages are referenced by a qualified name in the form <code class="docutils literal notranslate"><span class="pre">Package_Name::Message_Type_Name</span></code>.
+The condition can refer to fields of the refined type.
+To indicate that a refined field is empty (i.e. does not exist) under a certain condition, a null message can be used as message type.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="k">for</span><span class="w"> </span>Ethernet<span class="p">::</span>Frame<span class="w"> </span><span class="k">use</span><span class="w"> </span><span class="p">(</span>Payload<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span>IPv4<span class="p">::</span>Packet<span class="p">)</span>
+<span class="w">   </span><span class="k">if</span><span class="w"> </span>Ether_Type<span class="w"> </span><span class="o">=</span><span class="w"> </span>Ethernet<span class="p">::</span>IPV4
+</pre></div>
+</div>
+</section>
+<section id="type-derivations">
+<h1>Type Derivations<a class="headerlink" href="#type-derivations" title="Permalink to this headline"></a></h1>
+<p>A type derivation enables the creation of a new message type based on an existing message type.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-type_derivation"><span id="grammar-token-type-derivation"></span>type_derivation</strong> ::=  &quot;type&quot; <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;is&quot;
+                     &quot;new&quot; base_type_<a class="reference internal" href="#grammar-token-qualified_name"><code class="xref docutils literal notranslate"><span class="pre">qualified_name</span></code></a>
+</pre>
+<p><strong>Static Semantics</strong></p>
+<p>A derived message type derives its specification from a base type.
+Type refinements of a base message type are not inherited by the derived message type.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="k">type</span><span class="w"> </span>Specific_Extension<span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">new</span><span class="w"> </span>Extension
+</pre></div>
+</div>
+</section>
+<section id="sequence-types">
+<h1>Sequence Types<a class="headerlink" href="#sequence-types" title="Permalink to this headline"></a></h1>
+<p>A sequence type represents a list of similar elements.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-sequence_type"><span id="grammar-token-sequence-type"></span>sequence_type</strong> ::=  &quot;type&quot; <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;is&quot; &quot;sequence&quot;
+                   &quot;of&quot; element_<a class="reference internal" href="#grammar-token-qualified_name"><code class="xref docutils literal notranslate"><span class="pre">qualified_name</span></code></a>
+</pre>
+<p><strong>Static Semantics</strong></p>
+<p>A sequence consists of a number of elements with the same type.
+Scalar types as well as message types can be used as element type.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="k">type</span><span class="w"> </span>Options<span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">sequence</span><span class="w"> </span><span class="k">of</span><span class="w"> </span>Option
+</pre></div>
+</div>
+</section>
+<section id="state-machines">
+<h1>State Machines<a class="headerlink" href="#state-machines" title="Permalink to this headline"></a></h1>
+<p>A state machine defines the dynamic behavior of a protocol using a finite state machine.
+The first defined state is considered the initial state.
+The external interface of a state machine is defined by parameters.
+The declaration part enables the declaration of state machine global variables.
+The main part of a state machine definition is the state definitions.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-state_machine"><span id="grammar-token-state-machine"></span>state_machine</strong> ::=  &quot;generic&quot;
+                   { <a class="reference internal" href="#grammar-token-state_machine_parameter"><code class="xref docutils literal notranslate"><span class="pre">state_machine_parameter</span></code></a> }
+                   &quot;machine&quot; <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;is&quot;
+                   { <a class="reference internal" href="#grammar-token-state_machine_declaration"><code class="xref docutils literal notranslate"><span class="pre">state_machine_declaration</span></code></a> }
+                   &quot;begin&quot;
+                   <a class="reference internal" href="#grammar-token-state"><code class="xref docutils literal notranslate"><span class="pre">state</span></code></a>
+                   { <a class="reference internal" href="#grammar-token-state"><code class="xref docutils literal notranslate"><span class="pre">state</span></code></a> }
+                   &quot;end&quot; <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a>
+</pre>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="k">generic</span>
+<span class="w">   </span>X<span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="k">Channel</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="k">Readable</span><span class="p">,</span><span class="w"> </span><span class="k">Writable</span><span class="p">;</span>
+<span class="w">   </span><span class="k">with</span><span class="w"> </span><span class="k">function</span><span class="w"> </span>F<span class="w"> </span><span class="k">return</span><span class="w"> </span>T<span class="p">;</span>
+<span class="w">   </span><span class="k">with</span><span class="w"> </span><span class="k">function</span><span class="w"> </span>G<span class="w"> </span><span class="p">(</span>P<span class="w"> </span><span class="p">:</span><span class="w"> </span>T<span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span>Boolean<span class="p">;</span>
+<span class="k">machine</span><span class="w"> </span>S<span class="w"> </span><span class="k">is</span>
+<span class="w">   </span>Y<span class="w"> </span><span class="p">:</span><span class="w"> </span>Boolean<span class="w"> </span><span class="o">:=</span><span class="w"> </span>False<span class="p">;</span>
+<span class="k">begin</span>
+<span class="w">   </span><span class="k">state</span><span class="w"> </span>A
+<span class="w">      </span><span class="k">with</span><span class="w"> </span><span class="k">Desc</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="s s-Literal">&quot;rfc1149.txt+51:4-52:9&quot;</span>
+<span class="w">   </span><span class="k">is</span>
+<span class="w">      </span>Z<span class="w"> </span><span class="p">:</span><span class="w"> </span>Boolean<span class="w"> </span><span class="o">:=</span><span class="w"> </span>Y<span class="p">;</span>
+<span class="w">      </span>M<span class="w"> </span><span class="p">:</span><span class="w"> </span>TLV<span class="p">::</span>Message<span class="p">;</span>
+<span class="w">   </span><span class="k">begin</span>
+<span class="w">      </span>X<span class="p">&#39;</span><span class="k">Read</span><span class="w"> </span><span class="p">(</span>M<span class="p">);</span>
+<span class="w">   </span><span class="k">transition</span>
+<span class="w">      </span><span class="k">goto</span><span class="w"> </span><span class="k">null</span>
+<span class="w">         </span><span class="k">with</span><span class="w"> </span><span class="k">Desc</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="s s-Literal">&quot;rfc1149.txt+45:4-47:8&quot;</span>
+<span class="w">         </span><span class="k">if</span><span class="w"> </span>Z<span class="w"> </span><span class="o">=</span><span class="w"> </span>True
+<span class="w">            </span><span class="o o-Text">and</span><span class="w"> </span>G<span class="w"> </span><span class="p">(</span>F<span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>True
+<span class="w">      </span><span class="k">goto</span><span class="w"> </span>A
+<span class="w">   </span><span class="k">end</span><span class="w"> </span>A<span class="p">;</span>
+<span class="k">end</span><span class="w"> </span>S
+</pre></div>
+</div>
+<section id="state-machine-parameters">
+<h2>State Machine Parameters<a class="headerlink" href="#state-machine-parameters" title="Permalink to this headline"></a></h2>
+<p>Functions and channels can be defined as state machine parameters.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-state_machine_parameter"><span id="grammar-token-state-machine-parameter"></span>state_machine_parameter</strong> ::=  ( <a class="reference internal" href="#grammar-token-function_declaration"><code class="xref docutils literal notranslate"><span class="pre">function_declaration</span></code></a>
+                             | <a class="reference internal" href="#grammar-token-channel_declaration"><code class="xref docutils literal notranslate"><span class="pre">channel_declaration</span></code></a>
+                             ) &quot;;&quot;
+</pre>
+<section id="functions">
+<h3>Functions<a class="headerlink" href="#functions" title="Permalink to this headline"></a></h3>
+<p>Functions enable the execution of externally defined code.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-function_declaration"><span id="grammar-token-function-declaration"></span>function_declaration</strong> ::=  &quot;with&quot; &quot;function&quot; <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a>
+                          [ <a class="reference internal" href="#grammar-token-parameter_list"><code class="xref docutils literal notranslate"><span class="pre">parameter_list</span></code></a> ]
+                          &quot;return&quot; type_<a class="reference internal" href="#grammar-token-qualified_name"><code class="xref docutils literal notranslate"><span class="pre">qualified_name</span></code></a>
+</pre>
+<p><strong>Static Semantics</strong></p>
+<p>Allowed parameter types:</p>
+<ul class="simple">
+<li><p>Scalars</p></li>
+<li><p>Definite messages</p></li>
+<li><p>Opaque fields of messages</p></li>
+</ul>
+<p>Allowed return types:</p>
+<ul class="simple">
+<li><p>Scalars</p></li>
+<li><p>Definite messages</p></li>
+</ul>
+<p>Definite messages are messages with no optional fields and an explicit size (i.e. all size aspects contain no reference to <code class="docutils literal notranslate"><span class="pre">Message</span></code>).</p>
+<p><strong>SPARK</strong></p>
+<p>For each function declaration in the state machine specification a procedure declaration is added to the corresponding state machine package.
+The return type and parameters of a function are represented by the first and subsequent parameters of the generated procedure declaration.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="k">with</span><span class="w"> </span><span class="k">function</span><span class="w"> </span>Decrypt
+<span class="w">   </span><span class="p">(</span>Key_Update_Message<span class="w"> </span><span class="p">:</span><span class="w"> </span>Key_Update_Message<span class="p">;</span>
+<span class="w">    </span>Sequence_Number<span class="w">    </span><span class="p">:</span><span class="w"> </span>Sequence_Number<span class="p">;</span>
+<span class="w">    </span>Encrypted_Record<span class="w">   </span><span class="p">:</span><span class="w"> </span>Opaque<span class="p">)</span>
+<span class="k">return</span>
+<span class="w">   </span>TLS_Inner_Plaintext
+</pre></div>
+</div>
+</section>
+<section id="channels">
+<h3>Channels<a class="headerlink" href="#channels" title="Permalink to this headline"></a></h3>
+<p>Channels provide a way for communicating with other systems using messages.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-channel_declaration"><span id="grammar-token-channel-declaration"></span>channel_declaration</strong> ::=  <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;:&quot; &quot;Channel&quot; &quot;with&quot;
+                         <a class="reference internal" href="#grammar-token-channel_aspect"><code class="xref docutils literal notranslate"><span class="pre">channel_aspect</span></code></a>
+                         { &quot;,&quot; <a class="reference internal" href="#grammar-token-channel_aspect"><code class="xref docutils literal notranslate"><span class="pre">channel_aspect</span></code></a> }
+<strong id="grammar-token-channel_aspect"><span id="grammar-token-channel-aspect"></span>channel_aspect     </strong> ::=  &quot;Readable&quot; | &quot;Writable&quot;
+</pre>
+<p><strong>Static Semantics</strong></p>
+<p>Channels can be readable or writable (non-exclusive).</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span>Data_Channel<span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="k">Channel</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="k">Readable</span><span class="p">,</span><span class="w"> </span><span class="k">Writable</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="declarations">
+<h2>Declarations<a class="headerlink" href="#declarations" title="Permalink to this headline"></a></h2>
+<p>Variables and renamings can be globally declared (i.e. for the scope of the complete state machine).</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-state_machine_declaration"><span id="grammar-token-state-machine-declaration"></span>state_machine_declaration</strong> ::=  ( <a class="reference internal" href="#grammar-token-variable_declaration"><code class="xref docutils literal notranslate"><span class="pre">variable_declaration</span></code></a>
+                               | <a class="reference internal" href="#grammar-token-renaming_declaration"><code class="xref docutils literal notranslate"><span class="pre">renaming_declaration</span></code></a>
+                               ) &quot;;&quot;
+</pre>
+<section id="variable-declaration">
+<h3>Variable Declaration<a class="headerlink" href="#variable-declaration" title="Permalink to this headline"></a></h3>
+<p>A declared variable must have a type and can be optionally initialized using an expression.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-variable_declaration"><span id="grammar-token-variable-declaration"></span>variable_declaration</strong> ::=  variable_<a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a>
+                          &quot;:&quot; type_<a class="reference internal" href="#grammar-token-qualified_name"><code class="xref docutils literal notranslate"><span class="pre">qualified_name</span></code></a>
+                          [ &quot;:=&quot; initialization_<a class="reference internal" href="#grammar-token-expression"><code class="xref docutils literal notranslate"><span class="pre">expression</span></code></a> ]
+</pre>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span>Error_Sent<span class="w"> </span><span class="p">:</span><span class="w"> </span>Boolean<span class="w"> </span><span class="o">:=</span><span class="w"> </span>False
+</pre></div>
+</div>
+</section>
+<section id="renaming-declaration">
+<h3>Renaming Declaration<a class="headerlink" href="#renaming-declaration" title="Permalink to this headline"></a></h3>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-renaming_declaration"><span id="grammar-token-renaming-declaration"></span>renaming_declaration</strong> ::=  <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;:&quot; message_<a class="reference internal" href="#grammar-token-qualified_name"><code class="xref docutils literal notranslate"><span class="pre">qualified_name</span></code></a>
+                          &quot;renames&quot;
+                          message_variable_<a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a>
+                          &quot;.&quot; field_<a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a>
+</pre>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span>Client_Hello_Message<span class="w"> </span><span class="p">:</span><span class="w"> </span>TLS_Handshake<span class="p">::</span>Client_Hello<span class="w"> </span><span class="k">renames</span><span class="w"> </span>Client_Hello_Handshake_Message<span class="p">.</span>Payload
+</pre></div>
+</div>
+</section>
+</section>
+<section id="states">
+<h2>States<a class="headerlink" href="#states" title="Permalink to this headline"></a></h2>
+<p>A state defines the to be executed actions and the transitions to subsequent states.</p>
+<p>Variable declarations and renaming declarations in a state have a state-local scope, i.e., local declarations cannot be accessed from other states.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-state">state             </strong> ::=  &quot;state&quot; <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a>
+                        [ &quot;with&quot; <a class="reference internal" href="#grammar-token-description_aspect"><code class="xref docutils literal notranslate"><span class="pre">description_aspect</span></code></a> ]
+                        &quot;is&quot;
+                        { local_<a class="reference internal" href="#grammar-token-state_machine_declaration"><code class="xref docutils literal notranslate"><span class="pre">state_machine_declaration</span></code></a> }
+                        &quot;begin&quot;
+                        { <a class="reference internal" href="#grammar-token-state_action"><code class="xref docutils literal notranslate"><span class="pre">state_action</span></code></a> }
+                        &quot;transition&quot;
+                        { <a class="reference internal" href="#grammar-token-conditional_transition"><code class="xref docutils literal notranslate"><span class="pre">conditional_transition</span></code></a> }
+                        <a class="reference internal" href="#grammar-token-transition"><code class="xref docutils literal notranslate"><span class="pre">transition</span></code></a>
+                       [ &quot;exception&quot;
+                           <a class="reference internal" href="#grammar-token-transition"><code class="xref docutils literal notranslate"><span class="pre">transition</span></code></a> ]
+                        &quot;end&quot; <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;;&quot;
+<strong id="grammar-token-description_aspect"><span id="grammar-token-description-aspect"></span>description_aspect</strong> ::=  &quot;Desc&quot; &quot;=&gt;&quot; <a class="reference internal" href="#grammar-token-string"><code class="xref docutils literal notranslate"><span class="pre">string</span></code></a>
+</pre>
+<p><strong>Static Semantics</strong></p>
+<p>An exception transition must be defined just in case any action might lead to a critical (potentially non-recoverable) error:</p>
+<ul class="simple">
+<li><p>Insufficient memory for setting a field of a message</p></li>
+<li><p>Insufficient memory for appending an element to a sequence or extending a sequence by another sequence</p></li>
+</ul>
+<p>Exception transitions are currently also used for other cases.</p>
+<p>A local declaration must not hide a global declaration.</p>
+<p>The states where the actions include either <code class="docutils literal notranslate"><span class="pre">Read</span></code> or <code class="docutils literal notranslate"><span class="pre">Write</span></code> operations are referred to as <strong>IO states</strong>.
+See the sections <a class="reference internal" href="#read-attribute-statements">Read Attribute Statements</a> and <a class="reference internal" href="#write-attribute-statements">Write Attribute Statements</a> for more information about those operations.
+IO states cannot contain any declarations and they must not contain any other operations than channel IO.
+Each channel and each message can be read or written at most once in a given IO state.</p>
+<p><strong>Dynamic Semantics</strong></p>
+<p>After entering a state the declarations and actions of the state are executed.
+If a non-recoverable error occurs, the execution is aborted and the state is changed based on the exception transition.
+When all action were executed successfully, the conditions of the transitions are checked in the given order.
+If a condition is fulfilled, the corresponding transition is taken to change the state.
+If no condition could be fulfilled or no conditional transitions were defined, the default transition is used.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="k">state</span><span class="w"> </span>A
+<span class="w">   </span><span class="k">with</span><span class="w"> </span><span class="k">Desc</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="s s-Literal">&quot;rfc1149.txt+51:4-52:9&quot;</span>
+<span class="k">is</span>
+<span class="w">   </span>Z<span class="w"> </span><span class="p">:</span><span class="w"> </span>Boolean<span class="w"> </span><span class="o">:=</span><span class="w"> </span>Y<span class="p">;</span>
+<span class="w">   </span>M<span class="w"> </span><span class="p">:</span><span class="w"> </span>TLV<span class="p">::</span>Message<span class="p">;</span>
+<span class="k">begin</span>
+<span class="w">   </span>X<span class="p">&#39;</span><span class="k">Read</span><span class="w"> </span><span class="p">(</span>M<span class="p">);</span>
+<span class="k">transition</span>
+<span class="w">   </span><span class="k">goto</span><span class="w"> </span>B
+<span class="w">      </span><span class="k">with</span><span class="w"> </span><span class="k">Desc</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="s s-Literal">&quot;rfc1149.txt+45:4-47:8&quot;</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span>Z<span class="w"> </span><span class="o">=</span><span class="w"> </span>True<span class="w"> </span><span class="o o-Text">and</span><span class="w"> </span>G<span class="w"> </span><span class="p">(</span>F<span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>True
+<span class="w">   </span><span class="k">goto</span><span class="w"> </span>A
+<span class="k">end</span><span class="w"> </span>A
+</pre></div>
+</div>
+<section id="state-transitions">
+<h3>State Transitions<a class="headerlink" href="#state-transitions" title="Permalink to this headline"></a></h3>
+<p>State transitions define the conditions for the change to subsequent states.
+An arbitrary number of conditional transitions can be defined.
+The last transition in a state definition is the default transition, which does not contain any condition.
+The transition target must be either a state name or <cite>null</cite>, which represents the final state.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-conditional_transition"><span id="grammar-token-conditional-transition"></span>conditional_transition</strong> ::=  <a class="reference internal" href="#grammar-token-transition"><code class="xref docutils literal notranslate"><span class="pre">transition</span></code></a>
+                            &quot;if&quot;
+                            conditional_<a class="reference internal" href="#grammar-token-ext_bool_expression"><code class="xref docutils literal notranslate"><span class="pre">ext_bool_expression</span></code></a>
+<strong id="grammar-token-transition">transition            </strong> ::=  &quot;goto&quot; state_<a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a>
+                            [ &quot;with&quot; <a class="reference internal" href="#grammar-token-description_aspect"><code class="xref docutils literal notranslate"><span class="pre">description_aspect</span></code></a> ]
+</pre>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="k">goto</span><span class="w"> </span>B
+<span class="w">   </span><span class="k">with</span><span class="w"> </span><span class="k">Desc</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="s s-Literal">&quot;rfc1149.txt+45:4-47:8&quot;</span>
+<span class="w">   </span><span class="k">if</span><span class="w"> </span>Z<span class="w"> </span><span class="o">=</span><span class="w"> </span>True<span class="w"> </span><span class="o o-Text">and</span><span class="w"> </span>G<span class="w"> </span><span class="p">(</span>F<span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>True
+</pre></div>
+</div>
+</section>
+<section id="state-actions">
+<h3>State Actions<a class="headerlink" href="#state-actions" title="Permalink to this headline"></a></h3>
+<p>The state actions are executed after entering a state.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-state_action"><span id="grammar-token-state-action"></span>state_action</strong> ::=  ( <a class="reference internal" href="#grammar-token-message_field_assignment"><code class="xref docutils literal notranslate"><span class="pre">message_field_assignment</span></code></a>
+                  | <a class="reference internal" href="#grammar-token-assignment"><code class="xref docutils literal notranslate"><span class="pre">assignment</span></code></a>
+                  | <a class="reference internal" href="#grammar-token-append"><code class="xref docutils literal notranslate"><span class="pre">append</span></code></a>
+                  | <a class="reference internal" href="#grammar-token-extend"><code class="xref docutils literal notranslate"><span class="pre">extend</span></code></a>
+                  | <a class="reference internal" href="#grammar-token-reset"><code class="xref docutils literal notranslate"><span class="pre">reset</span></code></a>
+                  | <a class="reference internal" href="#grammar-token-read"><code class="xref docutils literal notranslate"><span class="pre">read</span></code></a>
+                  | <a class="reference internal" href="#grammar-token-write"><code class="xref docutils literal notranslate"><span class="pre">write</span></code></a>
+                  ) &quot;;&quot;
+</pre>
+<section id="assignment-statements">
+<h4>Assignment Statements<a class="headerlink" href="#assignment-statements" title="Permalink to this headline"></a></h4>
+<p>An assignment sets the value of variable.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-assignment">assignment</strong> ::=  variable_<a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;:=&quot; <a class="reference internal" href="#grammar-token-expression"><code class="xref docutils literal notranslate"><span class="pre">expression</span></code></a>
+</pre>
+<p><strong>Dynamic Semantics</strong></p>
+<p>An assignment always creates a copy of the original object.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span>Error_Sent<span class="w"> </span><span class="o">:=</span><span class="w"> </span>True
+</pre></div>
+</div>
+</section>
+<section id="message-field-assignment-statements">
+<h4>Message Field Assignment Statements<a class="headerlink" href="#message-field-assignment-statements" title="Permalink to this headline"></a></h4>
+<p>A message field assignment sets the value of a message field.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-message_field_assignment"><span id="grammar-token-message-field-assignment"></span>message_field_assignment</strong> ::=  variable_<a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;.&quot; field_<a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a>
+                              &quot;:=&quot; <a class="reference internal" href="#grammar-token-expression"><code class="xref docutils literal notranslate"><span class="pre">expression</span></code></a>
+</pre>
+<p><strong>Dynamic Semantics</strong></p>
+<p>Message fields must be set in order.
+Trying to set a message field which is not a valid next field leads to an exception transition.
+All subsequent fields of the set message field are invalidated.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span>Packet<span class="p">.</span>Length<span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="m">42</span>
+</pre></div>
+</div>
+</section>
+<section id="append-attribute-statements">
+<h4>Append Attribute Statements<a class="headerlink" href="#append-attribute-statements" title="Permalink to this headline"></a></h4>
+<p>An element is added to the end of a sequence using the Append attribute.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-append">append</strong> ::=  sequence_<a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;'&quot; &quot;Append&quot; &quot;(&quot; <a class="reference internal" href="#grammar-token-expression"><code class="xref docutils literal notranslate"><span class="pre">expression</span></code></a> &quot;)&quot;
+</pre>
+<p><strong>Dynamic Semantics</strong></p>
+<p>Appending an element to a sequence might lead to an exception transition.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span>Parameter_Request_List<span class="p">&#39;</span><span class="k">Append</span><span class="w"> </span><span class="p">(</span>DHCP<span class="p">::</span>Domain_Name_Option<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="extend-attribute-statements">
+<h4>Extend Attribute Statements<a class="headerlink" href="#extend-attribute-statements" title="Permalink to this headline"></a></h4>
+<p>The Extend attributes adds a sequence of elements to the end of a sequence.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-extend">extend</strong> ::=  sequence_<a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;'&quot; &quot;Extend&quot; &quot;(&quot; <a class="reference internal" href="#grammar-token-expression"><code class="xref docutils literal notranslate"><span class="pre">expression</span></code></a> &quot;)&quot;
+</pre>
+<p><strong>Dynamic Semantics</strong></p>
+<p>Extending a sequence might lead to an exception transition.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span>Parameter_Request_List<span class="p">&#39;</span><span class="k">Extend</span><span class="w"> </span><span class="p">(</span>Parameters<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="reset-attribute-statements">
+<h4>Reset Attribute Statements<a class="headerlink" href="#reset-attribute-statements" title="Permalink to this headline"></a></h4>
+<p>The state of a message or sequence can be cleared using the Reset attribute.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-reset">reset</strong> ::=  <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;'&quot; &quot;Reset&quot; [ &quot;(&quot; <a class="reference internal" href="#grammar-token-named_argument_list"><code class="xref docutils literal notranslate"><span class="pre">named_argument_list</span></code></a> &quot;)&quot; ]
+</pre>
+<p><strong>Static Semantics</strong></p>
+<p>When resetting a parameterized message, the intended values for the parameters of the message must be defined.</p>
+<p><strong>Dynamic Semantics</strong></p>
+<p>The existing state of a message or sequence is removed (and the corresponding buffer is cleared).</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span>Message<span class="p">&#39;</span><span class="k">Reset</span>
+</pre></div>
+</div>
+</section>
+<section id="read-attribute-statements">
+<h4>Read Attribute Statements<a class="headerlink" href="#read-attribute-statements" title="Permalink to this headline"></a></h4>
+<p>The read attribute statement is used to retrieve a message from a channel.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-read">read</strong> ::=  channel_<a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;'&quot; &quot;Read&quot; &quot;(&quot; <a class="reference internal" href="#grammar-token-expression"><code class="xref docutils literal notranslate"><span class="pre">expression</span></code></a> &quot;)&quot;
+</pre>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span>Data_Channel<span class="p">&#39;</span><span class="k">Read</span><span class="w"> </span><span class="p">(</span>Message<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="write-attribute-statements">
+<h4>Write Attribute Statements<a class="headerlink" href="#write-attribute-statements" title="Permalink to this headline"></a></h4>
+<p>A message can be sent through a channel using a write attribute statement.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-write">write</strong> ::=  channel_<a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;'&quot; &quot;Write&quot; &quot;(&quot; <a class="reference internal" href="#grammar-token-expression"><code class="xref docutils literal notranslate"><span class="pre">expression</span></code></a> &quot;)&quot;
+</pre>
+<p><strong>Dynamic Semantics</strong></p>
+<p>Writing an invalid message leads to an exception transition.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span>Data_Channel<span class="p">&#39;</span><span class="k">Write</span><span class="w"> </span><span class="p">(</span>Message<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="expressions">
+<h2>Expressions<a class="headerlink" href="#expressions" title="Permalink to this headline"></a></h2>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-expression">expression</strong> ::=  <a class="reference internal" href="#grammar-token-math_expression"><code class="xref docutils literal notranslate"><span class="pre">math_expression</span></code></a>
+                | <a class="reference internal" href="#grammar-token-ext_bool_expression"><code class="xref docutils literal notranslate"><span class="pre">ext_bool_expression</span></code></a>
+                | <a class="reference internal" href="#grammar-token-message_aggregate"><code class="xref docutils literal notranslate"><span class="pre">message_aggregate</span></code></a>
+                | <a class="reference internal" href="#grammar-token-attribute_reference"><code class="xref docutils literal notranslate"><span class="pre">attribute_reference</span></code></a>
+                | <a class="reference internal" href="#grammar-token-selected"><code class="xref docutils literal notranslate"><span class="pre">selected</span></code></a>
+                | <a class="reference internal" href="#grammar-token-seq_expression"><code class="xref docutils literal notranslate"><span class="pre">seq_expression</span></code></a>
+                | <a class="reference internal" href="#grammar-token-comprehension"><code class="xref docutils literal notranslate"><span class="pre">comprehension</span></code></a>
+                | <a class="reference internal" href="#grammar-token-conversion"><code class="xref docutils literal notranslate"><span class="pre">conversion</span></code></a>
+                | <a class="reference internal" href="#grammar-token-call"><code class="xref docutils literal notranslate"><span class="pre">call</span></code></a>
+                | <a class="reference internal" href="#grammar-token-case_expression"><code class="xref docutils literal notranslate"><span class="pre">case_expression</span></code></a>
+                | <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a>
+</pre>
+<section id="message-aggregates">
+<h3>Message Aggregates<a class="headerlink" href="#message-aggregates" title="Permalink to this headline"></a></h3>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-message_aggregate"><span id="grammar-token-message-aggregate"></span>message_aggregate                 </strong> ::=  message_<a class="reference internal" href="#grammar-token-qualified_name"><code class="xref docutils literal notranslate"><span class="pre">qualified_name</span></code></a> &quot;'&quot;
+                                        &quot;(&quot;
+                                        <a class="reference internal" href="#grammar-token-message_aggregate_association_list"><code class="xref docutils literal notranslate"><span class="pre">message_aggregate_association_list</span></code></a>
+                                        &quot;)&quot;
+<strong id="grammar-token-message_aggregate_association_list"><span id="grammar-token-message-aggregate-association-list"></span>message_aggregate_association_list</strong> ::=  <a class="reference internal" href="#grammar-token-named_argument_list"><code class="xref docutils literal notranslate"><span class="pre">named_argument_list</span></code></a>
+                                        | &quot;null&quot; &quot;message&quot;
+</pre>
+<p><strong>Dynamic Semantics</strong></p>
+<p>An invalid condition during message creation leads to an exception transition.
+Insufficient memory during the message creation leads to an exception transition.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span>TLS_Record<span class="p">::</span>TLS_Record<span class="p">&#39;(</span>Tag<span class="w">                   </span><span class="o">=&gt;</span><span class="w"> </span>TLS_Record<span class="p">::</span>Alert<span class="p">,</span>
+<span class="w">                        </span>Legacy_Record_Version<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span>TLS_Record<span class="p">::</span>TLS_1_2<span class="p">,</span>
+<span class="w">                        </span>Length<span class="w">                </span><span class="o">=&gt;</span><span class="w"> </span>Alert_Message<span class="p">&#39;</span><span class="k">Size</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="m">8</span><span class="p">,</span>
+<span class="w">                        </span>Fragment<span class="w">              </span><span class="o">=&gt;</span><span class="w"> </span>Alert_Message<span class="p">&#39;</span><span class="k">Opaque</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span>Null_Message<span class="p">&#39;(</span><span class="k">null</span><span class="w"> </span><span class="k">message</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="aggregates">
+<h3>Aggregates<a class="headerlink" href="#aggregates" title="Permalink to this headline"></a></h3>
+<p>An aggregate is a collection of elements.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-aggregate">aggregate</strong> ::=  &quot;[&quot; [ <a class="reference internal" href="#grammar-token-number"><code class="xref docutils literal notranslate"><span class="pre">number</span></code></a> { &quot;,&quot; <a class="reference internal" href="#grammar-token-number"><code class="xref docutils literal notranslate"><span class="pre">number</span></code></a> } ] &quot;]&quot;
+</pre>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="p">[]</span>
+</pre></div>
+</div>
+</section>
+<section id="attribute-expressions">
+<h3>Attribute Expressions<a class="headerlink" href="#attribute-expressions" title="Permalink to this headline"></a></h3>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-attribute_reference"><span id="grammar-token-attribute-reference"></span>attribute_reference </strong> ::=  <a class="reference internal" href="#grammar-token-expression"><code class="xref docutils literal notranslate"><span class="pre">expression</span></code></a>
+                          &quot;'&quot; <a class="reference internal" href="#grammar-token-attribute_designator"><code class="xref docutils literal notranslate"><span class="pre">attribute_designator</span></code></a>
+<strong id="grammar-token-attribute_designator"><span id="grammar-token-attribute-designator"></span>attribute_designator</strong> ::=  &quot;Opaque&quot; | &quot;Head&quot;
+</pre>
+<p><strong>Static Semantics</strong></p>
+<p>The byte representation of a message can be retrieved using the Opaque attribute.</p>
+<p>The Head attribute returns the first element of a sequence.</p>
+<p><strong>Dynamic Semantics</strong></p>
+<p>The use of the Opaque attribute on an invalid message or the use of the Head attribute on an empty sequence leads to an exception transition.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span>Message<span class="p">&#39;</span><span class="k">Opaque</span>
+</pre></div>
+</div>
+</section>
+<section id="selected-expressions">
+<h3>Selected Expressions<a class="headerlink" href="#selected-expressions" title="Permalink to this headline"></a></h3>
+<p>The Selected expression is used to get a value of a message field.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-selected">selected</strong> ::=  message_<a class="reference internal" href="#grammar-token-expression"><code class="xref docutils literal notranslate"><span class="pre">expression</span></code></a> &quot;.&quot; field_<a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a>
+</pre>
+<p><strong>Dynamic Semantics</strong></p>
+<p>Accesses to message fields that were detected as invalid during parsing lead to an exception transition.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span>Ethernet_Frame<span class="p">.</span>Payload
+</pre></div>
+</div>
+</section>
+<section id="list-comprehensions">
+<h3>List Comprehensions<a class="headerlink" href="#list-comprehensions" title="Permalink to this headline"></a></h3>
+<p>A list comprehension provides a way to create a new sequence based on an existing sequence.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-comprehension">comprehension</strong> ::=  &quot;[&quot;
+                   &quot;for&quot; <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;in&quot; iterable_<a class="reference internal" href="#grammar-token-expression"><code class="xref docutils literal notranslate"><span class="pre">expression</span></code></a>
+                   [ &quot;if&quot; condition_<a class="reference internal" href="#grammar-token-ext_bool_expression"><code class="xref docutils literal notranslate"><span class="pre">ext_bool_expression</span></code></a> ]
+                   &quot;=&gt;&quot; selector_<a class="reference internal" href="#grammar-token-expression"><code class="xref docutils literal notranslate"><span class="pre">expression</span></code></a>
+                   &quot;]&quot;
+</pre>
+<p><strong>Dynamic Semantics</strong></p>
+<p>An access to an invalid element in iterable <a class="reference external" href="#grammar-token-expression">expression</a> leads to an exception transition.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="k">for</span><span class="w"> </span>O<span class="w"> </span><span class="o o-Text">in</span><span class="w"> </span>Offer<span class="p">.</span>Options<span class="w"> </span><span class="k">if</span><span class="w"> </span>O<span class="p">.</span>Code<span class="w"> </span><span class="o">=</span><span class="w"> </span>DHCP<span class="p">::</span>DHCP_Message_Type_Option<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span>O<span class="p">.</span>DHCP_Message_Type<span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="quantified-expressions">
+<h3>Quantified Expressions<a class="headerlink" href="#quantified-expressions" title="Permalink to this headline"></a></h3>
+<p>Quantified expressions enable reasoning about properties of sequences.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-quantified_expression"><span id="grammar-token-quantified-expression"></span>quantified_expression</strong> ::=  &quot;for&quot; <a class="reference internal" href="#grammar-token-quantifier"><code class="xref docutils literal notranslate"><span class="pre">quantifier</span></code></a> <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a>
+                           &quot;in&quot; iterable_<a class="reference internal" href="#grammar-token-expression"><code class="xref docutils literal notranslate"><span class="pre">expression</span></code></a>
+                           &quot;=&gt;&quot;
+                           predicate_<a class="reference internal" href="#grammar-token-ext_bool_expression"><code class="xref docutils literal notranslate"><span class="pre">ext_bool_expression</span></code></a>
+<strong id="grammar-token-quantifier">quantifier           </strong> ::=  &quot;all&quot; | &quot;some&quot;
+</pre>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="k">for</span><span class="w"> </span><span class="k">all</span><span class="w"> </span>E<span class="w"> </span><span class="o o-Text">in</span><span class="w"> </span>Server_Hello_Message<span class="p">.</span>Extensions<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span>E<span class="p">.</span>Tag<span class="w"> </span><span class="o">/=</span><span class="w"> </span>TLS_Handshake<span class="p">::</span>ET_Supported_Versions
+</pre></div>
+</div>
+</section>
+<section id="calls">
+<h3>Calls<a class="headerlink" href="#calls" title="Permalink to this headline"></a></h3>
+<p>All functions which are declared in the state machine parameters can be called.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-call">call</strong> ::=  <a class="reference internal" href="#grammar-token-qualified_name"><code class="xref docutils literal notranslate"><span class="pre">qualified_name</span></code></a>
+          [ &quot;(&quot; argument_<a class="reference internal" href="#grammar-token-expression"><code class="xref docutils literal notranslate"><span class="pre">expression</span></code></a>
+            { &quot;,&quot; argument_<a class="reference internal" href="#grammar-token-expression"><code class="xref docutils literal notranslate"><span class="pre">expression</span></code></a> } &quot;)&quot; ]
+</pre>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span>Decrypt<span class="w"> </span><span class="p">(</span>Key_Update_Message<span class="p">,</span><span class="w"> </span>Sequence_Number<span class="p">,</span><span class="w"> </span>TLS_Record_Message<span class="p">.</span>Encrypted_Record<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="conversions">
+<h3>Conversions<a class="headerlink" href="#conversions" title="Permalink to this headline"></a></h3>
+<p>An opaque field of a message can be converted to a message.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-conversion">conversion</strong> ::=  message_<a class="reference internal" href="#grammar-token-qualified_name"><code class="xref docutils literal notranslate"><span class="pre">qualified_name</span></code></a>
+                &quot;(&quot; message_<a class="reference internal" href="#grammar-token-expression"><code class="xref docutils literal notranslate"><span class="pre">expression</span></code></a> &quot;.&quot; field_<a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;)&quot;
+</pre>
+<p><strong>Static Semantics</strong></p>
+<p>A conversion is only allowed if a refinement for the message field and the intended target type exists.</p>
+<p><strong>Dynamic Semantics</strong></p>
+<p>An invalid condition of a refinement leads to an exception transition.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span>Key_Update_Message<span class="w"> </span><span class="p">(</span>Handshake_Control_Message<span class="p">.</span>Data<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="case-expressions">
+<h3>Case Expressions<a class="headerlink" href="#case-expressions" title="Permalink to this headline"></a></h3>
+<p>A <a class="reference external" href="#grammar-token-case_expression">case expression</a> selects one of several alternative dependent <a class="reference external" href="#grammar-token-expression">expressions</a> for evaluation based on the value of a selecting <a class="reference external" href="#grammar-token-expression">expression</a>.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-case_expression"><span id="grammar-token-case-expression"></span>case_expression            </strong> ::=  &quot;(&quot; &quot;case&quot; selecting_<a class="reference internal" href="#grammar-token-expression"><code class="xref docutils literal notranslate"><span class="pre">expression</span></code></a>
+                                 &quot;is&quot; <a class="reference internal" href="#grammar-token-case_expression_alternative"><code class="xref docutils literal notranslate"><span class="pre">case_expression_alternative</span></code></a> { &quot;,&quot;
+                                 <a class="reference internal" href="#grammar-token-case_expression_alternative"><code class="xref docutils literal notranslate"><span class="pre">case_expression_alternative</span></code></a> } &quot;)&quot;
+<strong id="grammar-token-case_expression_alternative"><span id="grammar-token-case-expression-alternative"></span>case_expression_alternative</strong> ::=  &quot;when&quot; <a class="reference internal" href="#grammar-token-discrete_choice_list"><code class="xref docutils literal notranslate"><span class="pre">discrete_choice_list</span></code></a>
+                                 &quot;=&gt;&quot; dependent_<a class="reference internal" href="#grammar-token-expression"><code class="xref docutils literal notranslate"><span class="pre">expression</span></code></a>
+<strong id="grammar-token-discrete_choice_list"><span id="grammar-token-discrete-choice-list"></span>discrete_choice_list       </strong> ::=  <a class="reference internal" href="#grammar-token-discrete_choice"><code class="xref docutils literal notranslate"><span class="pre">discrete_choice</span></code></a>
+                                 { &quot;|&quot; <a class="reference internal" href="#grammar-token-discrete_choice"><code class="xref docutils literal notranslate"><span class="pre">discrete_choice</span></code></a> }
+<strong id="grammar-token-discrete_choice"><span id="grammar-token-discrete-choice"></span>discrete_choice            </strong> ::=  <a class="reference internal" href="#grammar-token-number"><code class="xref docutils literal notranslate"><span class="pre">number</span></code></a> | <a class="reference internal" href="#grammar-token-qualified_name"><code class="xref docutils literal notranslate"><span class="pre">qualified_name</span></code></a>
+</pre>
+<p><strong>Static Semantics</strong></p>
+<p>The type of all the dependent <a class="reference external" href="#grammar-token-expression">expression</a>s shall be compatible to the type of the <a class="reference external" href="#grammar-token-case_expression">case expression</a>.
+Each value of the type of the selecting <a class="reference external" href="#grammar-token-expression">expression</a> shall be covered by a <a class="reference external" href="#grammar-token-discrete_choice">discrete choice</a>.
+Two distinct <a class="reference external" href="#grammar-token-discrete_choice">discrete choices</a> of a <a class="reference external" href="#grammar-token-case_expression">case expression</a> shall not cover the same value.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="k">case</span><span class="w"> </span>Value<span class="w"> </span><span class="k">is</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span>T<span class="p">::</span>V1<span class="w"> </span><span class="o">|</span><span class="w"> </span>T<span class="p">::</span>V2<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">2</span><span class="p">,</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span>T<span class="p">::</span>V3<span class="w">         </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">4</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="packages">
+<h1>Packages<a class="headerlink" href="#packages" title="Permalink to this headline"></a></h1>
+<p>A package is used to structure a specification.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-package">package          </strong> ::=  &quot;package&quot; <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;is&quot;
+                       { <a class="reference internal" href="#grammar-token-basic_declaration"><code class="xref docutils literal notranslate"><span class="pre">basic_declaration</span></code></a> }
+                       &quot;end&quot; <a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;;&quot;
+<strong id="grammar-token-basic_declaration"><span id="grammar-token-basic-declaration"></span>basic_declaration</strong> ::=  ( <a class="reference internal" href="#grammar-token-integer_type"><code class="xref docutils literal notranslate"><span class="pre">integer_type</span></code></a>
+                        | <a class="reference internal" href="#grammar-token-enumeration_type"><code class="xref docutils literal notranslate"><span class="pre">enumeration_type</span></code></a>
+                        | <a class="reference internal" href="#grammar-token-message_type"><code class="xref docutils literal notranslate"><span class="pre">message_type</span></code></a>
+                        | <a class="reference internal" href="#grammar-token-type_refinement"><code class="xref docutils literal notranslate"><span class="pre">type_refinement</span></code></a>
+                        | <a class="reference internal" href="#grammar-token-type_derivation"><code class="xref docutils literal notranslate"><span class="pre">type_derivation</span></code></a>
+                        | <a class="reference internal" href="#grammar-token-sequence_type"><code class="xref docutils literal notranslate"><span class="pre">sequence_type</span></code></a>
+                        | <a class="reference internal" href="#grammar-token-state_machine"><code class="xref docutils literal notranslate"><span class="pre">state_machine</span></code></a> ) &quot;;&quot;
+</pre>
+<p><strong>Static Semantics</strong></p>
+<p>A package is a collection of types and state machines.
+By convention one protocol is specified in one package.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="k">package</span><span class="w"> </span>Ethernet<span class="w"> </span><span class="k">is</span>
+
+<span class="w">   </span><span class="k">type</span><span class="w"> </span>Address<span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">unsigned</span><span class="w"> </span><span class="m">48</span><span class="p">;</span>
+<span class="w">   </span><span class="k">type</span><span class="w"> </span>Type_Length<span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">range</span><span class="w"> </span><span class="m">46</span><span class="w"> </span><span class="o">..</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="o">**</span><span class="w"> </span><span class="m">16</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="k">with</span><span class="w"> </span>Size<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">16</span><span class="p">;</span>
+<span class="w">   </span><span class="k">type</span><span class="w"> </span>TPID<span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">range</span><span class="w"> </span><span class="m">16#8100#</span><span class="w"> </span><span class="o">..</span><span class="w"> </span><span class="m">16#8100#</span><span class="w"> </span><span class="k">with</span><span class="w"> </span>Size<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">16</span><span class="p">;</span>
+<span class="w">   </span><span class="k">type</span><span class="w"> </span>TCI<span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">unsigned</span><span class="w"> </span><span class="m">16</span><span class="p">;</span>
+<span class="w">   </span><span class="k">type</span><span class="w"> </span>Ether_Type<span class="w"> </span><span class="k">is</span>
+<span class="w">      </span><span class="p">(</span>ET_IPv4<span class="w">            </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">16#0800#</span><span class="p">,</span>
+<span class="w">       </span>ET_ARP<span class="w">             </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">16#0806#</span><span class="p">,</span>
+<span class="w">       </span>ET_VLAN_Tag<span class="w">        </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">16#8100#</span><span class="p">,</span>
+<span class="w">       </span>ET_IPv6<span class="w">            </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">16#86DD#</span><span class="p">,</span>
+<span class="w">       </span>ET_VLAN_Tag_Double<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">16#9100#</span><span class="p">)</span>
+<span class="w">   </span><span class="k">with</span><span class="w"> </span>Size<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">16</span><span class="p">,</span><span class="w"> </span>Always_Valid<span class="p">;</span>
+
+<span class="w">   </span><span class="k">type</span><span class="w"> </span>Frame<span class="w"> </span><span class="k">is</span>
+<span class="w">      </span><span class="k">message</span>
+<span class="w">         </span>Destination<span class="w"> </span><span class="p">:</span><span class="w"> </span>Address<span class="p">;</span>
+<span class="w">         </span>Source<span class="w"> </span><span class="p">:</span><span class="w"> </span>Address<span class="p">;</span>
+<span class="w">         </span>Type_Length_TPID<span class="w"> </span><span class="p">:</span><span class="w"> </span>Type_Length
+<span class="w">            </span><span class="k">then</span><span class="w"> </span>TPID
+<span class="w">               </span><span class="k">with</span><span class="w"> </span>First<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span>Type_Length_TPID<span class="p">&#39;</span><span class="k">First</span>
+<span class="w">               </span><span class="k">if</span><span class="w"> </span>Type_Length_TPID<span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">16#8100#</span>
+<span class="w">            </span><span class="k">then</span><span class="w"> </span>Payload
+<span class="w">               </span><span class="k">with</span><span class="w"> </span>Size<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span>Type_Length_TPID<span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="m">8</span>
+<span class="w">               </span><span class="k">if</span><span class="w"> </span>Type_Length_TPID<span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="m">1500</span>
+<span class="w">            </span><span class="k">then</span><span class="w"> </span>Ether_Type
+<span class="w">               </span><span class="k">with</span><span class="w"> </span>First<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span>Type_Length_TPID<span class="p">&#39;</span><span class="k">First</span>
+<span class="w">               </span><span class="k">if</span><span class="w"> </span>Type_Length_TPID<span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="m">1536</span><span class="w"> </span><span class="o o-Text">and</span><span class="w"> </span>Type_Length_TPID<span class="w"> </span><span class="o">/=</span><span class="w"> </span><span class="m">16#8100#</span><span class="p">;</span>
+<span class="w">         </span>TPID<span class="w"> </span><span class="p">:</span><span class="w"> </span>TPID<span class="p">;</span>
+<span class="w">         </span>TCI<span class="w"> </span><span class="p">:</span><span class="w"> </span>TCI<span class="p">;</span>
+<span class="w">         </span>Ether_Type<span class="w"> </span><span class="p">:</span><span class="w"> </span>Ether_Type<span class="p">;</span>
+<span class="w">         </span>Payload<span class="w"> </span><span class="p">:</span><span class="w"> </span>Opaque
+<span class="w">            </span><span class="k">then</span><span class="w"> </span><span class="k">null</span>
+<span class="w">               </span><span class="k">if</span><span class="w"> </span>Payload<span class="p">&#39;</span><span class="k">Size</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="m">8</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="m">46</span><span class="w"> </span><span class="o o-Text">and</span><span class="w"> </span>Payload<span class="p">&#39;</span><span class="k">Size</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="m">8</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="m">1500</span><span class="p">;</span>
+<span class="w">      </span><span class="k">end</span><span class="w"> </span><span class="k">message</span><span class="p">;</span>
+
+<span class="w">   </span><span class="k">generic</span>
+<span class="w">      </span>Input<span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="k">Channel</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="k">Readable</span><span class="p">;</span>
+<span class="w">      </span>Output<span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="k">Channel</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="k">Writable</span><span class="p">;</span>
+<span class="w">   </span><span class="k">machine</span><span class="w"> </span>Validator<span class="w"> </span><span class="k">is</span>
+<span class="w">      </span>Frame<span class="w"> </span><span class="p">:</span><span class="w"> </span>Ethernet<span class="p">::</span>Frame<span class="p">;</span>
+<span class="w">   </span><span class="k">begin</span>
+<span class="w">      </span><span class="k">state</span><span class="w"> </span>Validate
+<span class="w">      </span><span class="k">is</span>
+<span class="w">      </span><span class="k">begin</span>
+<span class="w">         </span>Input<span class="p">&#39;</span><span class="k">Read</span><span class="w"> </span><span class="p">(</span>Frame<span class="p">);</span>
+<span class="w">      </span><span class="k">transition</span>
+<span class="w">         </span><span class="k">goto</span><span class="w"> </span>Forward
+<span class="w">            </span><span class="k">if</span><span class="w"> </span>Frame<span class="p">&#39;</span><span class="k">Valid</span>
+<span class="w">         </span><span class="k">goto</span><span class="w"> </span>Validate
+<span class="w">      </span><span class="k">exception</span>
+<span class="w">         </span><span class="k">goto</span><span class="w"> </span><span class="k">null</span>
+<span class="w">      </span><span class="k">end</span><span class="w"> </span>Validate<span class="p">;</span>
+
+<span class="w">      </span><span class="k">state</span><span class="w"> </span>Forward
+<span class="w">      </span><span class="k">is</span>
+<span class="w">      </span><span class="k">begin</span>
+<span class="w">         </span>Output<span class="p">&#39;</span><span class="k">Write</span><span class="w"> </span><span class="p">(</span>Frame<span class="p">);</span>
+<span class="w">      </span><span class="k">transition</span>
+<span class="w">         </span><span class="k">goto</span><span class="w"> </span>Validate
+<span class="w">      </span><span class="k">end</span><span class="w"> </span>Forward<span class="p">;</span>
+<span class="w">   </span><span class="k">end</span><span class="w"> </span>Validator<span class="p">;</span>
+
+<span class="k">end</span><span class="w"> </span>Ethernet<span class="p">;</span>
+</pre></div>
+</div>
+</section>
+<section id="context-clauses">
+<h1>Context Clauses<a class="headerlink" href="#context-clauses" title="Permalink to this headline"></a></h1>
+<p>The context clause is used to specify the relation to other packages and consists of a list of with clauses.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-context">context</strong> ::=  { &quot;with&quot; package_<a class="reference internal" href="#grammar-token-name"><code class="xref docutils literal notranslate"><span class="pre">name</span></code></a> &quot;;&quot; }
+</pre>
+<p><strong>Static Semantics</strong></p>
+<p>For each package referenced in a file, a corresponding with clause has to be added to the beginning of the file.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="k">with</span><span class="w"> </span>Ethernet<span class="p">;</span>
+<span class="k">with</span><span class="w"> </span>IPv4<span class="p">;</span>
+</pre></div>
+</div>
+</section>
+<section id="files">
+<h1>Files<a class="headerlink" href="#files" title="Permalink to this headline"></a></h1>
+<p>A RecordFlux specification file is recognized by the file extension <code class="docutils literal notranslate"><span class="pre">.rflx</span></code>.
+Each specification file contains exactly one package.
+The file name must match the package name in lower case characters.</p>
+<p><strong>Syntax</strong></p>
+<pre>
+<strong id="grammar-token-file">file</strong> ::=  <a class="reference internal" href="#grammar-token-context"><code class="xref docutils literal notranslate"><span class="pre">context</span></code></a> <a class="reference internal" href="#grammar-token-package"><code class="xref docutils literal notranslate"><span class="pre">package</span></code></a>
+</pre>
+<p><strong>Example</strong></p>
+<p>File: <code class="docutils literal notranslate"><span class="pre">in_ethernet.rflx</span></code>.</p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="k">with</span><span class="w"> </span>Ethernet<span class="p">;</span>
+<span class="k">with</span><span class="w"> </span>IPv4<span class="p">;</span>
+
+<span class="k">package</span><span class="w"> </span>In_Ethernet<span class="w"> </span><span class="k">is</span>
+
+<span class="w">   </span><span class="k">for</span><span class="w"> </span>Ethernet<span class="p">::</span>Frame<span class="w"> </span><span class="k">use</span><span class="w"> </span><span class="p">(</span>Payload<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span>IPv4<span class="p">::</span>Packet<span class="p">)</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span>Ether_Type<span class="w"> </span><span class="o">=</span><span class="w"> </span>Ethernet<span class="p">::</span>ET_IPv4<span class="p">;</span>
+
+<span class="k">end</span><span class="w"> </span>In_Ethernet<span class="p">;</span>
+</pre></div>
+</div>
+<span class="target" id="non-terminal"></span></section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Language Reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023-2024, AdaCore.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

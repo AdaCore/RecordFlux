@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Appendix &mdash; RecordFlux</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="GNU Free Documentation License" href="gfdl.html" />
+    <link rel="prev" title="Overview" href="20-overview.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #12284c" >
+            <a href="index.html" class="icon icon-home"> RecordFlux
+            <img src="_static/adacore-logo-white.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                0.25.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="10-introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="20-overview.html">Overview</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Appendix</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#command-line-options">Command Line Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#specification-files">Specification Files</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#style-checks">Style Checks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#integration-files">Integration Files</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#external-io-buffers">External IO Buffers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reporting-errors">Reporting Errors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#background">Background</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#gnu-fdl">GNU FDL</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gfdl.html">GNU Free Documentation License</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #12284c" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">RecordFlux</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Appendix</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/90-appendix.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="appendix">
+<h1>Appendix<a class="headerlink" href="#appendix" title="Permalink to this headline"></a></h1>
+<section id="command-line-options">
+<h2>Command Line Options<a class="headerlink" href="#command-line-options" title="Permalink to this headline"></a></h2>
+<p>The following command line options are available for the <cite>rflx</cite> command:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>usage: rflx [-h] [-q] [--version] [--no-caching] [--no-verification]
+            [--max-errors NUM] [--workers NUM] [--unsafe] [--legacy-errors]
+            {check,generate,optimize,graph,validate,install,convert,run_ls,doc}
+            ...
+
+positional arguments:
+  {check,generate,optimize,graph,validate,install,convert,run_ls,doc}
+    check               check specification
+    generate            generate code
+    optimize            optimize generated state machine code
+    graph               generate graphs
+    validate            validate specification against a set of known valid or
+                        invalid messages
+    install             set up RecordFlux IDE integration
+    convert             convert foreign specifications into RecordFlux
+                        specifications
+    run_ls              run language server
+    doc                 open documentation
+
+options:
+  -h, --help            show this help message and exit
+  -q, --quiet           disable logging to standard output
+  --version
+  --no-caching          ignore verification cache
+  --no-verification     skip time-consuming verification of model
+  --max-errors NUM      exit after at most NUM errors
+  --workers NUM         parallelize proofs among NUM workers (default: NPROC)
+  --unsafe              allow unsafe options (WARNING: may lead to erronous
+                        behavior)
+  --legacy-errors       use old error message format
+</pre></div>
+</div>
+<p>The <cite>rflx check</cite> subcommand has the following options:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>usage: rflx check [-h] SPECIFICATION_FILE [SPECIFICATION_FILE ...]
+
+positional arguments:
+  SPECIFICATION_FILE  specification file
+
+options:
+  -h, --help          show this help message and exit
+</pre></div>
+</div>
+<p>The <cite>rflx generate</cite> subcommand has the following options:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>usage: rflx generate [-h] [-p PREFIX] [-n] [-d OUTPUT_DIRECTORY]
+                     [--debug {built-in,external}]
+                     [--ignore-unsupported-checksum]
+                     [--integration-files-dir INTEGRATION_FILES_DIR]
+                     [--reproducible]
+                     [SPECIFICATION_FILE ...]
+
+positional arguments:
+  SPECIFICATION_FILE    specification file
+
+options:
+  -h, --help            show this help message and exit
+  -p PREFIX, --prefix PREFIX
+                        add prefix to generated packages (default: RFLX)
+  -n, --no-library      omit generating library files
+  -d OUTPUT_DIRECTORY   output directory
+  --debug {built-in,external}
+                        enable adding of debug output to generated code
+  --ignore-unsupported-checksum
+                        ignore checksum aspects during code generation
+  --integration-files-dir INTEGRATION_FILES_DIR
+                        directory for the .rfi files
+  --reproducible        ensure reproducible output
+</pre></div>
+</div>
+<p>The <cite>rflx graph</cite> subcommand has the following options:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>usage: rflx graph [-h] [-f {dot,jpg,pdf,png,raw,svg}] [-i REGEX]
+                  [-d OUTPUT_DIRECTORY]
+                  SPECIFICATION_FILE [SPECIFICATION_FILE ...]
+
+positional arguments:
+  SPECIFICATION_FILE    specification file
+
+options:
+  -h, --help            show this help message and exit
+  -f {dot,jpg,pdf,png,raw,svg}, --format {dot,jpg,pdf,png,raw,svg}
+                        output format (default: svg)
+  -i REGEX, --ignore REGEX
+                        ignore states with names matching regular expression
+  -d OUTPUT_DIRECTORY   output directory
+</pre></div>
+</div>
+<p>The <cite>rflx validate</cite> subcommand has the following options:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>usage: rflx validate [-h] [--split-disjunctions] [-v VALID_SAMPLE_PATH]
+                     [-i INVALID_SAMPLE_PATH] [-c CHECKSUM_MODULE]
+                     [-o OUTPUT_FILE] [--abort-on-error] [--coverage]
+                     [--target-coverage PERCENTAGE]
+                     SPECIFICATION_FILE MESSAGE_IDENTIFIER
+
+positional arguments:
+  SPECIFICATION_FILE    specification file
+  MESSAGE_IDENTIFIER    identifier of the top-level message (e.g.,
+                        Package::Message)
+
+options:
+  -h, --help            show this help message and exit
+  --split-disjunctions  split disjunctions before model validation (may have
+                        severe performance impact)
+  -v VALID_SAMPLE_PATH  known valid sample file or directory
+  -i INVALID_SAMPLE_PATH
+                        known invalid sample file or directory
+  -c CHECKSUM_MODULE    name of the module containing the checksum functions
+  -o OUTPUT_FILE        path to output file for validation report in JSON
+                        format (file must not exist)
+  --abort-on-error      abort with exitcode 1 if a message is classified as a
+                        false positive or false negative
+  --coverage            enable coverage calculation and print the combined
+                        link coverage of all provided messages
+  --target-coverage PERCENTAGE
+                        abort with exitcode 1 if the coverage threshold is not
+                        reached
+</pre></div>
+</div>
+<p>The <cite>rflx install</cite> subcommand has the following options:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>usage: rflx install [-h] [--gnat-studio-dir GNAT_STUDIO_DIR]
+                    {gnatstudio,vscode,nvim,vim}
+
+positional arguments:
+  {gnatstudio,vscode,nvim,vim}
+
+options:
+  -h, --help            show this help message and exit
+  --gnat-studio-dir GNAT_STUDIO_DIR
+                        path to the GNAT Studio settings directory (default:
+                        $HOME/.gnatstudio)
+</pre></div>
+</div>
+<p>The <cite>rflx convert</cite> subcommand has the following options:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>usage: rflx convert [-h] [--reproducible] {iana} ...
+
+positional arguments:
+  {iana}
+    iana          convert IANA registry into RecordFlux specifications
+
+options:
+  -h, --help      show this help message and exit
+  --reproducible  ensure reproducible output
+</pre></div>
+</div>
+<p>The <cite>rflx run_ls</cite> subcommand has the following options:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>usage: rflx run_ls [-h]
+
+options:
+  -h, --help  show this help message and exit
+</pre></div>
+</div>
+<p>The <cite>rflx doc</cite> subcommand has the following options:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>usage: rflx doc [-h] {lrm,ug}
+
+positional arguments:
+  {lrm,ug}    documentation to open: Language Reference Manual (lrm), User&#39;s
+              Guide (ug)
+
+options:
+  -h, --help  show this help message and exit
+</pre></div>
+</div>
+</section>
+<section id="specification-files">
+<h2>Specification Files<a class="headerlink" href="#specification-files" title="Permalink to this headline"></a></h2>
+<section id="style-checks">
+<h3>Style Checks<a class="headerlink" href="#style-checks" title="Permalink to this headline"></a></h3>
+<p>By default, the style of specification files is checked.
+Error messages about style violations have a style check identifier appended to the message in the following form &quot;[style:&lt;identifier&gt;]&quot;.
+For example: &quot;[style:line-length]&quot;.
+Style checks can be disabled for individual files by adding a pragma to the first line of the file.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="c">-- style: disable = line-length, blank-lines</span>
+
+<span class="k">package</span><span class="w"> </span>P<span class="w"> </span><span class="k">is</span>
+
+<span class="k">end</span><span class="w"> </span>P<span class="p">;</span>
+</pre></div>
+</div>
+<p>It is also possible to disable all style checks by using the identifier <code class="docutils literal notranslate"><span class="pre">all</span></code>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="c">-- style: disable = all</span>
+
+<span class="k">package</span><span class="w"> </span>P<span class="w"> </span><span class="k">is</span>
+
+<span class="k">end</span><span class="w"> </span>P<span class="p">;</span>
+</pre></div>
+</div>
+</section>
+<section id="integration-files">
+<h3>Integration Files<a class="headerlink" href="#integration-files" title="Permalink to this headline"></a></h3>
+<p>For each RecordFlux specification file with the <code class="docutils literal notranslate"><span class="pre">.rflx</span></code> file extension, users may provide a file with the same name but the <code class="docutils literal notranslate"><span class="pre">.rfi</span></code> file extension.
+This is useful to specify buffer sizes for state machines.
+This file is in the YAML data format.
+Buffer sizes are provided in bytes.
+If no such file is provided, RecordFlux uses a default buffer size of 4096 bytes.</p>
+<p><strong>Integration file structure</strong></p>
+<p>The following example of an integration file defines, for the state machine <code class="docutils literal notranslate"><span class="pre">My_State_Machine</span></code>, a default buffer size of 4096 bytes, a buffer size of 2048 bytes for the global variable <code class="docutils literal notranslate"><span class="pre">My_Global_Var</span></code>, and a buffer size of 1024 bytes for the variable <code class="docutils literal notranslate"><span class="pre">My_State_Variable</span></code> defined in the state <code class="docutils literal notranslate"><span class="pre">My_State</span></code>.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">Machine</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">My_State_Machine</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">Buffer_Size</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">Default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4096</span>
+<span class="w">      </span><span class="nt">Global</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">My_Global_Var</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2048</span>
+<span class="w">      </span><span class="nt">Local</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">My_State</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">My_State_Variable</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1024</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="external-io-buffers">
+<h2>External IO Buffers<a class="headerlink" href="#external-io-buffers" title="Permalink to this headline"></a></h2>
+<p>By default, all message buffers of a state machine are stored inside the state machine's <code class="docutils literal notranslate"><span class="pre">Context</span></code> type.
+The <code class="docutils literal notranslate"><span class="pre">Read</span></code> and <code class="docutils literal notranslate"><span class="pre">Write</span></code> primitives give access to a message buffer when the state machine reaches an IO state.
+An alternative is to use externally defined buffers.
+This approach can save memory and prevent copy operations, but it removes some safety guarantees (see the notes at the end of the section).</p>
+<p>External IO buffers can be enabled for a state machine by setting the <code class="docutils literal notranslate"><span class="pre">External_IO_Buffers</span></code> option in the integration file.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">Machine</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">My_State_Machine</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">External_IO_Buffers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+</pre></div>
+</div>
+<p>If external IO buffers are enabled, the buffer for all messages that are accessed in any IO state must be allocated externally and provided during the initialization of the state machine context as arguments to the <code class="docutils literal notranslate"><span class="pre">Initialize</span></code> procedure.
+When an IO state is reached, the corresponding buffer of the accessed message can be removed from the state machine context.
+The buffer must be added again before the state machine can be continued.</p>
+<div class="highlight-ada notranslate"><div class="highlight"><pre><span></span><span class="kr">if</span> <span class="n">Buffer_Accessible</span> <span class="p">(</span><span class="n">Next_State</span> <span class="p">(</span><span class="n">Ctx</span><span class="p">),</span> <span class="n">B_Request</span><span class="p">)</span> <span class="kr">then</span>
+   <span class="n">Remove_Buffer</span> <span class="p">(</span><span class="n">Ctx</span><span class="p">,</span> <span class="n">B_Request</span><span class="p">,</span> <span class="n">Request_Buffer</span><span class="p">);</span>
+
+   <span class="p">...</span>
+
+   <span class="n">Add_Buffer</span> <span class="p">(</span><span class="n">Ctx</span><span class="p">,</span> <span class="n">B_Request</span><span class="p">,</span> <span class="n">Request_Buffer</span><span class="p">,</span> <span class="n">Written_Last</span> <span class="p">(</span><span class="n">Ctx</span><span class="p">,</span> <span class="n">B_Request</span><span class="p">));</span>
+<span class="kr">end</span> <span class="kr">if</span><span class="p">;</span>
+
+<span class="n">Run</span> <span class="p">(</span><span class="n">Ctx</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Before a buffer can be removed or added, it must be checked that the buffer is accessible.
+The buffer is accessible if the next state of the state machine will perform either a read or write operation on the given buffer.
+The function <code class="docutils literal notranslate"><span class="pre">Buffer_Accessible</span></code> can be used to check this condition.
+If all read or write operations on a given channel are used with a single message buffer, then the function <code class="docutils literal notranslate"><span class="pre">Needs_Data</span></code> or <code class="docutils literal notranslate"><span class="pre">Has_Data</span></code>, respectively, is sufficient to determine this condition.
+Each external buffer is uniquely identified by an enumeration literal of the <code class="docutils literal notranslate"><span class="pre">External_Buffer</span></code> type.
+In the example shown above, <code class="docutils literal notranslate"><span class="pre">B_Request</span></code> identifies the buffer of a message called <code class="docutils literal notranslate"><span class="pre">Request</span></code>.
+When adding a buffer, the index of the last written byte has to be provided.
+If the buffer has not been changed, <code class="docutils literal notranslate"><span class="pre">Written_Last</span></code> can be used to set it to the same value as before.</p>
+<p><strong>CAUTION:</strong>
+The message buffer must only be modified if the state machine expects data, i.e., <code class="docutils literal notranslate"><span class="pre">Needs_Data</span></code> is true.
+Changing the contents of the buffer at other times may cause the state machine to behave unexpectedly.
+This property cannot be guaranteed by the generated SPARK contracts.</p>
+</section>
+<section id="reporting-errors">
+<h2>Reporting Errors<a class="headerlink" href="#reporting-errors" title="Permalink to this headline"></a></h2>
+<p>Please report issues on GitHub:</p>
+<p><a class="reference external" href="https://github.com/AdaCore/RecordFlux/issues/new?labels=bug">https://github.com/AdaCore/RecordFlux/issues/new?labels=bug</a></p>
+<p>If a tool invocation produces a bug box, please include its complete content and all input files in the report.</p>
+<p>As an AdaCore customer, please open a ticket in GNAT Tracker.</p>
+</section>
+<section id="background">
+<h2>Background<a class="headerlink" href="#background" title="Permalink to this headline"></a></h2>
+<p>More information about the theoretical background of RecordFlux can be found in our paper:</p>
+<blockquote>
+<div><p>Reiher T., Senier A., Castrillon J., Strufe T. (2020) RecordFlux: Formal Message Specification and Generation of Verifiable Binary Parsers. In: Arbab F., Jongmans SS. (eds) Formal Aspects of Component Software. FACS 2019. Lecture Notes in Computer Science, vol 12018. Springer, Cham (<a class="reference external" href="https://doi.org/10.1007/978-3-030-40914-2_9">paper</a>, <a class="reference external" href="https://arxiv.org/abs/1910.02146">preprint</a>)</p>
+</div></blockquote>
+</section>
+<section id="gnu-fdl">
+<h2>GNU FDL<a class="headerlink" href="#gnu-fdl" title="Permalink to this headline"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gfdl.html">GNU Free Documentation License</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gfdl.html#preamble">PREAMBLE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gfdl.html#applicability-and-definitions">APPLICABILITY AND DEFINITIONS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gfdl.html#verbatim-copying">VERBATIM COPYING</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gfdl.html#copying-in-quantity">COPYING IN QUANTITY</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gfdl.html#modifications">MODIFICATIONS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gfdl.html#combining-documents">COMBINING DOCUMENTS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gfdl.html#collections-of-documents">COLLECTIONS OF DOCUMENTS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gfdl.html#aggregation-with-independent-works">AGGREGATION WITH INDEPENDENT WORKS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gfdl.html#translation">TRANSLATION</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gfdl.html#termination">TERMINATION</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gfdl.html#future-revisions-of-this-license">FUTURE REVISIONS OF THIS LICENSE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gfdl.html#addendum-how-to-use-this-license-for-your-documents">ADDENDUM: How to use this License for your documents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="20-overview.html" class="btn btn-neutral float-left" title="Overview" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="gfdl.html" class="btn btn-neutral float-right" title="GNU Free Documentation License" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023-2024, AdaCore.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

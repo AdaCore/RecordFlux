@@ -24,7 +24,9 @@ sys.path.insert(0, str(Path("../..").resolve()))
 project = "RecordFlux"
 copyright = f"2023-{datetime.now().year}, AdaCore"  # noqa: A001, DTZ005
 author = "AdaCore"
-recordflux_version = __version__
+
+# Ignore development versions in document creation
+recordflux_version = __version__.split(".dev")[0]
 version = recordflux_version
 release = recordflux_version
 

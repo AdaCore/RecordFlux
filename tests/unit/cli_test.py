@@ -946,6 +946,24 @@ def test_main_run_ls(monkeypatch: pytest.MonkeyPatch) -> None:
     assert any(called)
 
 
+def test_main_doc(monkeypatch: pytest.MonkeyPatch) -> None:
+    received_args: list[list[str]] = []
+
+    def mock_run(args: list[str], check: bool) -> None:  # noqa: ARG001
+        nonlocal received_args
+        received_args.append(args)
+
+    with monkeypatch.context() as p:
+        p.setattr(cli, "DOC_DIR", "/mock/doc/dir")
+        p.setattr(subprocess, "run", mock_run)
+        assert cli.main(["rflx", "doc", "ug"]) == 0
+        assert cli.main(["rflx", "doc", "lrm"]) == 0
+        assert received_args == [
+            ["xdg-open", "file:///mock/doc/dir/user_guide/index.html"],
+            ["xdg-open", "file:///mock/doc/dir/language_reference/index.html"],
+        ]
+
+
 class TestDuplicateArgs:
     """
     Test the rejection of duplicate options in the CLI.

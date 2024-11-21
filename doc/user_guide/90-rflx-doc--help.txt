@@ -1,0 +1,8 @@
+usage: rflx doc [-h] {lrm,ug}
+
+positional arguments:
+  {lrm,ug}    documentation to open: Language Reference Manual (lrm), User's
+              Guide (ug)
+
+options:
+  -h, --help  show this help message and exit

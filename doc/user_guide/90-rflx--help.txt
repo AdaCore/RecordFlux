@@ -1,10 +1,10 @@
 usage: rflx [-h] [-q] [--version] [--no-caching] [--no-verification]
             [--max-errors NUM] [--workers NUM] [--unsafe] [--legacy-errors]
-            {check,generate,optimize,graph,validate,install,convert,run_ls}
+            {check,generate,optimize,graph,validate,install,convert,run_ls,doc}
             ...
 
 positional arguments:
-  {check,generate,optimize,graph,validate,install,convert,run_ls}
+  {check,generate,optimize,graph,validate,install,convert,run_ls,doc}
     check               check specification
     generate            generate code
     optimize            optimize generated state machine code
@@ -15,6 +15,7 @@ positional arguments:
     convert             convert foreign specifications into RecordFlux
                         specifications
     run_ls              run language server
+    doc                 open documentation
 
 options:
   -h, --help            show this help message and exit

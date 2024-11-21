@@ -385,7 +385,12 @@ check_poetry: $(RFLX)
 check_unit_test_file_coverage:
 	$(POETRY) run tools/check_unit_test_file_coverage.py --source-dir $(MAKEFILE_DIR)/rflx/ --test-dir $(MAKEFILE_DIR)/tests/unit/ --ignore ide/vscode/node_modules/flatted/python
 
-check_doc: $(RFLX)
+check_doc: $(RFLX) build_html_doc
+	# Make sure checked-in docs are up to date.
+	# Trailing CRs are being ignored as Sphinx generates HTML files without the newline at the end of the file (required by POSIX).
+	# Git fixes the issue and that would otherwise make the comparison fail.
+	diff -x .buildinfo -x objects.inv --strip-trailing-cr -ur doc/user_guide/build/html/ rflx/doc/user_guide/ || (echo "Error: packaged documentation is out of date. Run 'make generate_doc' to update." >&2; exit 1)
+	diff -x .buildinfo -x objects.inv --strip-trailing-cr -ur doc/language_reference/build/html/ rflx/doc/language_reference/ || (echo "Error: packaged documentation is out of date. Run 'make generate_doc' to update." >&2; exit 1)
 	$(POETRY) run tools/check_doc.py -d doc -x doc/user_guide/gfdl.rst
 	$(POETRY) run $(MAKE) -C doc/user_guide check_help
 	$(POETRY) run tools/check_grammar.py --document doc/language_reference/language_reference.rst --verbal-map doc/language_reference/verbal_mapping.json examples/specs/*.rflx examples/apps/*/specs/*.rflx tests/data/specs/*.rflx tests/data/specs/parse_only/*.rflx
@@ -556,13 +561,21 @@ show_fuzz_parser_results: $(RFLX)
 git_hooks:
 	install -m 755 tools/pre-{commit,push} .git/hooks/
 
-.PHONY: generate generate_apps
+.PHONY: generate generate_apps generate_doc
 
 generate: $(RFLX)
 	$(POETRY) run tools/generate_spark_test_code.py
 
 generate_apps: $(RFLX)
 	$(foreach app,$(APPS),$(POETRY) run $(MAKE) -C examples/apps/$(app) generate || exit;)
+
+generate_doc: build_html_doc
+	@rm -rf rflx/doc
+	@mkdir -p rflx/doc
+	@cp -a doc/user_guide/build/html rflx/doc/user_guide
+	@cp -a doc/language_reference/build/html rflx/doc/language_reference
+	@# Do not distribute Sphinx build artifacts
+	@find rflx/doc/user_guide rflx/doc/language_reference -type f \( -name ".buildinfo" -o -name "objects.inv" \) -exec rm -v {} \;
 
 .PHONY: python_wheels_archive anod_build_dependencies anod_poetry_dependencies
 

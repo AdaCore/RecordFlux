@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Overview &mdash; RecordFlux</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Appendix" href="90-appendix.html" />
+    <link rel="prev" title="Introduction" href="10-introduction.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #12284c" >
+            <a href="index.html" class="icon icon-home"> RecordFlux
+            <img src="_static/adacore-logo-white.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                0.25.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="10-introduction.html">Introduction</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#the-protocol-verification-process">The Protocol Verification Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-recordflux-toolset">The RecordFlux Toolset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#first-steps">First Steps</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#example-a-formally-verified-message-parser">Example: A Formally-Verified Message Parser</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#files-packages-and-names">Files, Packages and Names</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#scalar-types">Scalar Types</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#message-types">Message Types</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#verifying-the-specification-and-generating-code">Verifying the Specification and Generating Code</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#using-the-generated-code">Using the Generated Code</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#proving-and-running-the-result">Proving and Running the Result</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="90-appendix.html">Appendix</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #12284c" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">RecordFlux</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Overview</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/20-overview.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="overview">
+<h1>Overview<a class="headerlink" href="#overview" title="Permalink to this headline"></a></h1>
+<p>This section provides an overview of the protocol verification process, the parts of RecordFlux involved in working with binary communication protocols as well as some initial examples.
+For a complete description of the RecordFlux language refer to the <a class="reference external" href="../recordflux_lr/">RecordFlux Language Reference</a>.</p>
+<section id="the-protocol-verification-process">
+<h2>The Protocol Verification Process<a class="headerlink" href="#the-protocol-verification-process" title="Permalink to this headline"></a></h2>
+<p>Communication protocols don’t usually have a formal specification today, but are typically specified in imprecise English language texts.
+There are efforts to establish a formal process to specify, e.g., internet protocols, but until such a process has been defined and widely adopted, additional work is needed to create formal specifications from informal ones.
+This section outlines a typical process starting from an informal specification leading to a formally verified protocol implementation.</p>
+<img alt="_images/RecordFlux-Workflow.png" src="_images/RecordFlux-Workflow.png" />
+<p>The process starts with the optional <em>Conversion</em> step, where the protocol in question or part of it is translated from a machine-readable input specification into a formal RecordFlux specification.
+As mentioned above, only few protocols offer such a specification today.
+However, the <a class="reference external" href="https://www.iana.org/">Internet Assigned Numbers Authority (IANA)</a> maintains a repository of machine-readable <a class="reference external" href="https://www.iana.org/numbers">Number Resources</a> for a variety of protocols.
+Those definitions can be automatically converted into RecordFlux specifications to improve one of the most tedious tasks of protocol formalization, namely the correct translation of long lists of name / constant pairs.</p>
+<p>A main activity when creating a formally verified protocol implementation is clearly the actual <em>Specification</em> of the machine readable formal definition of the protocol.
+Working from a paper specification, the RecordFlux user can use the tool's language to express basic data types, the format of messages and the behavior of communicating entities.
+To improve maintainability and to structure the specification in a coherent way, multiple specification documents can reference each other to form the overall specification.
+The language is designed to be modular: protocols do not need to “know” each other, and two protocols can be associated with each other independent of their respective specifications.
+In accordance with many protocol layering approaches, this allows for the creation of protocol libraries with reusable building blocks.</p>
+<p>During specification development one question is of central importance: Does the formal specification correspond to the protocol?
+The process of ensuring that the correct thing has been specified is called <em>Validation</em>.
+As even the source specification may be vague, incorrect, contradictory or simply different from how the protocol is being implemented in practice, checking the formal specification against the output of existing implementations or protocol samples is of great value.
+The RecordFlux toolset provides ways to do exactly this: check whether a valid protocol sample is accepted by the specification, or whether an invalid sample is correctly rejected.
+The validation will typically be done while developing the formal specification, such that its validity is established incrementally.</p>
+<p>Similar in its goals, but different in terms of process and implementation is the optional <em>Simulation</em> step.
+While for validation the focus is mostly on the correctness of message formats, simulation allows for direct interaction with existing implementations.
+To validate the formal specification, it can be loaded in a Python program and used to receive, check and send messages adhering to the protocol.
+While the main objective is to detect unexpected behavior, it can also be used to build Python tools accompanying the formally verified protocol stack with little effort.
+Of course the generated code could be used to interact with existing software, too.
+However, rapid prototyping and the vast source of third-party libraries make a Python environment a much more efficient choice.</p>
+<p>The <em>Model Verification</em> step answers another question: Does the formally specified protocol have the desired properties?
+It’s worth noting that this is different from the goals of validation.
+Validation is to ensure that we do the right thing, verification is to ensure that we do the thing right.
+The model verification built into RecordFlux will typically be done iteratively during specification development.
+It ensures a number of static properties, such as determinism of the message parser or that generated code can always be proven to contain no runtime errors.
+There are also user-defined properties that are verified at the model level, e.g. that user-defined transitions are not statically false.</p>
+<p>When the RecordFlux model has successfully been verified, the Code Generation phase transforms it into SPARK source code.
+It can be combined with hand-written SPARK, Ada, or C code and compiled into binaries using the GNAT compiler.
+The code generation process can be tailored towards resource-constrained, embedded systems with precise control over memory allocation and buffer sizes.
+As only few basic runtime functions are required, the generated code is suitable for environments with minimal runtimes.</p>
+<p>An explicit design goal of RecordFlux is that all code generated from a successfully verified model can automatically be proven correct, without a need for user modifications or interactive proofs.
+This is done in the Program Verification step where the generated code, together with the hand written code it may be integrated in, is verified using the SPARK toolset.</p>
+</section>
+<section id="the-recordflux-toolset">
+<h2>The RecordFlux Toolset<a class="headerlink" href="#the-recordflux-toolset" title="Permalink to this headline"></a></h2>
+<img alt="_images/RecordFlux-Architecture.png" src="_images/RecordFlux-Architecture.png" />
+<p>As outlined above, a domain expert creates the formal representation of a protocol in the RecordFlux language.
+Having a text representation, RecordFlux specifications can be produced with any IDE or text editor, managed in version control systems, or compared using text comparison tools.
+However, the RecordFlux Modeller provides additional capabilities tailored to protocol specification development.
+A graphical representation of messages and state machines helps users to understand the structure of more complex specifications.
+The specification can be edited side-by-side with generated code, handwritten code, and other relevant artifacts.
+All specifications, or only a single specification file, can be checked, and SPARK code can be generated directly from within the Modeller.</p>
+<img alt="_images/RecordFlux-GNAT_Studio-Modeller.png" src="_images/RecordFlux-GNAT_Studio-Modeller.png" />
+<p>All functionality in the Modeller is also available on the command line through the <cite>rflx</cite> command.
+This is RecordFlux’s main CLI, which has a number of subcommands of the form <cite>rflx &lt;subcommand&gt;</cite>.
+Some functionality is available only on the command line.
+See the output of <cite>rflx --help</cite> for a list of all subcommands and global options and use <cite>rflx &lt;subcommand&gt; --help</cite> to show options specific to a particular subcommand.</p>
+<p>The Converter, available through the <cite>rflx convert</cite> subcommand of the RecordFlux CLI, provides the possibility to convert IANA Number Resources into RecordFlux specifications.
+Given a Number Resources file in XML format and an output directory, the converter produces a RecordFlux specification containing representations of the respective number definitions.</p>
+<p>To check whether a given specification is correct, the Verifier performs a number of formal verification steps.
+The tool is available from within the Modeller (<cite>RecordFlux &gt; Check</cite> or <cite>RecordFlux &gt; Check All</cite>) but can also be run from the command line using the <cite>rflx check</cite> interface.
+The CLI exits with a non-zero status code in case of errors and thus can be easily integrated into a CI/CD pipeline.
+With the command line interface, arbitrarily many (unrelated) specifications can be checked at once.</p>
+<p>Similar to the Verifier, the Generator is available from within the Modeller as well as on the command line through the <cite>rflx generate</cite> interface.
+As only successfully verified specifications are guaranteed to lead to provable SPARK code, the Generator automatically performs the verification, unless this is suppressed using the <cite>--no-verification</cite> switch (e.g. for known-good specifications that have been checked in a CI/CD pipeline).
+SPARK source files are generated into the directory specified by the <cite>-d</cite> switch on the command line.
+The result can be included in the list of source directories and analyzed by <cite>gnatprove</cite> as usual (see the <a class="reference external" href="https://docs.adacore.com/live/wave/spark2014/html/spark2014_ug/">SPARK User’s Guide</a> for details).</p>
+<p>The Optimizer reduces the size of the generated state machine code.
+In order to use the Optimizer, a project file for the SPARK code must be provided by the user and passed as an argument to <cite>rflx optimize</cite>.</p>
+<p>The Validator is available through the <cite>rflx validate</cite> subcommand on the command line.
+It can be used to check whether a message specification correctly formalizes real-world data, or vice versa, whether a given data sample corresponds to the specification.
+Two types of samples can be used: valid samples which must be accepted by a specification (passed with the <cite>-v</cite> option) and invalid samples which must be rejected (passed with the <cite>-i</cite> option).
+All samples must be raw binary files without any metadata.
+There are two ways how samples can be provided to the tool and the same rules apply for both <cite>-v</cite> and <cite>-i</cite>.
+If there are several samples of the same kind in one directory and the samples have a <cite>.raw</cite> file extension, then it is sufficient to just provide this directory.
+Otherwise, the paths of the individual sample files must be provided one by one.
+In the latter case the sample file can have any extension or even have no extension.
+However, if it has an extension, then it must be included in the path as well.
+There can be as many <cite>-v</cite> and <cite>-i</cite> options given to the tool as needed.
+However, each of those options must have exactly one argument.
+Raw packets can, e.g., be exported from packet analyzers like Wireshark or extracted from a PCAP file using <a class="reference external" href="https://github.com/AdaCore/RecordFlux/blob/main/tools/extract_packets.py">this script</a>.
+To facilitate execution within a CI/CD pipeline, the <cite>--abort-on-error</cite> switch causes the tool to exit with an error code if any samples are rejected.
+Upon completion, the Validator will produce a report, with an option to display how much of a message has been covered:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>rflx<span class="w"> </span>validate<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--coverage<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-i<span class="w"> </span>tests/examples/data/http_2/frame/invalid<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-v<span class="w"> </span>tests/examples/data/http_2/frame/valid<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>examples/specs/http_2.rflx<span class="w"> </span>HTTP_2::Frame
+
+<span class="go">Parsing examples/specs/http_2.rflx</span>
+<span class="go">Processing HTTP_2</span>
+<span class="go">[...]</span>
+<span class="go">Verifying HTTP_2::Frame</span>
+<span class="go">tests/examples/data/http_2/frame/valid/GOAWAY_58.raw                             PASSED</span>
+<span class="go">tests/examples/data/http_2/frame/valid/GOAWAY_66.raw                             PASSED</span>
+<span class="go">tests/examples/data/http_2/frame/valid/HEADERS_26.raw                            PASSED</span>
+<span class="go">[...]</span>
+<span class="go">tests/examples/data/http_2/frame/valid/PING_44.raw                               PASSED</span>
+<span class="go">tests/examples/data/http_2/frame/valid/PING_45.raw                               PASSED</span>
+<span class="go">tests/examples/data/http_2/frame/valid/PING_48.raw                               PASSED</span>
+<span class="go">tests/examples/data/http_2/frame/valid/PING_49.raw                               PASSED</span>
+<span class="go">tests/examples/data/http_2/frame/valid/PUSH_PROMISE_63.raw                       PASSED</span>
+<span class="go">tests/examples/data/http_2/frame/valid/RST_STREAM_64.raw                         PASSED</span>
+<span class="go">tests/examples/data/http_2/frame/valid/SETTINGS_0.raw                            PASSED</span>
+<span class="go">[...]</span>
+<span class="go">tests/examples/data/http_2/frame/valid/WINDOW_UPDATE_10.raw                      PASSED</span>
+<span class="go">[...]</span>
+
+<span class="go">--------------------------------------------------------------------------------</span>
+<span class="go">                     RecordFlux Validation Coverage Report</span>
+<span class="go">Directory: .</span>
+<span class="go">--------------------------------------------------------------------------------</span>
+<span class="go">File                                          Links       Used        Coverage</span>
+<span class="go">http_2.rflx                                      56         37          66.07%</span>
+<span class="go">--------------------------------------------------------------------------------</span>
+<span class="go">TOTAL                                            56         37          66.07%</span>
+<span class="go">--------------------------------------------------------------------------------</span>
+
+<span class="go">================================================================================</span>
+<span class="go">                                Uncovered Links</span>
+<span class="go">================================================================================</span>
+
+<span class="go">                                  http_2.rflx</span>
+<span class="go">--------------------------------------------------------------------------------</span>
+<span class="go">http_2.rflx:141:13: missing link     Stream_Identifier     -&gt;      Pad_Length</span>
+<span class="go">http_2.rflx:143:13: missing link     Stream_Identifier     -&gt;   Application_Data</span>
+<span class="go">http_2.rflx:146:13: missing link     Stream_Identifier     -&gt;    Exclusive_Flag</span>
+<span class="go">http_2.rflx:151:13: missing link     Stream_Identifier     -&gt;    Exclusive_Flag</span>
+<span class="go">http_2.rflx:170:13: missing link        Pad_Length         -&gt;   Application_Data</span>
+<span class="go">[...]</span>
+<span class="go">http_2.rflx:69:13: missing link Settings_Value_Enable_Push -&gt;        Final</span>
+</pre></div>
+</div>
+<p>If more complex validation beyond checking messages is required, the Simulator can be used.
+It allows loading RecordFlux message specifications into a Python program and using the resulting model to parse and generate messages at runtime.
+While the code does not benefit from the formal guarantees of generated SPARK code, errors can be caught at runtime.
+This makes the Simulator a useful tool during specification development to validate a specification against an existing real-world implementation.
+An example of using the Simulator can be found in <a class="reference external" href="https://github.com/AdaCore/RecordFlux/blob/main/examples/apps/ping/ping.py">examples/apps/ping/ping.py</a> in the RecordFlux source repository.</p>
+<a class="reference internal image-reference" href="_images/DHCP_Client_Session.png"><img alt="_images/DHCP_Client_Session.png" src="_images/DHCP_Client_Session.png" style="height: 10cm;" /></a>
+<p>The Visualizer can be used to create graphical representations of a formal RecordFlux specification.
+It is available on the command line through the <cite>rflx graph</cite> command.
+It creates images for all messages and state machines found in the specifications passed on the command line and stores them in the output directory specified by the <cite>-d</cite> switch.
+By default, SVG images are created, but the <cite>-f</cite> switch may be used to select alternative formats like JPG, PNG or PDF.
+The <cite>-i</cite> switch may be used to filter out state machine states which must not be included in the output, which can be helpful, for example, to eliminate error states which may complicate the non-error case unnecessarily.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>rflx<span class="w"> </span>graph<span class="w"> </span>-d<span class="w"> </span>out<span class="w"> </span>dhcp_client/specs/dhcp_client.rflx
+
+<span class="go">Parsing dhcp_client/specs/dhcp_client.rflx</span>
+<span class="go">Parsing dhcp_client/specs/ipv4.rflx</span>
+<span class="go">Parsing dhcp_client/specs/dhcp.rflx</span>
+<span class="go">Processing IPv4</span>
+<span class="go">Processing DHCP</span>
+<span class="go">Processing DHCP_Client</span>
+<span class="go">Creating out/IPv4_Option.svg</span>
+<span class="go">Creating out/IPv4_Packet.svg</span>
+<span class="go">Creating out/DHCP_Static_Route.svg</span>
+<span class="go">Creating out/DHCP_Option.svg</span>
+<span class="go">Creating out/DHCP_Message.svg</span>
+<span class="go">Creating out/DHCP_Client_Session.svg</span>
+</pre></div>
+</div>
+</section>
+<section id="first-steps">
+<h2>First Steps<a class="headerlink" href="#first-steps" title="Permalink to this headline"></a></h2>
+<p>The example used here is a minimal binary publish-subscribe (&quot;Pub-Sub&quot;) protocol (i.e., a message broker).
+In the following sections we will first formally describe the message format using RecordFlux, generate SPARK code, and build a simple server which we then prove to contain no runtime errors.
+In a subsequent section, we will also define the protocol behavior using the RecordFlux language which will give us an abstract formal definition of the protocol and further reduce the amount of hand-written code.</p>
+<p>In our example protocol, there is only one single implicit channel that clients can subscribe to.
+Once subscribed, a client may publish messages which the broker distributes to all other currently subscribed clients.
+A client does not receive messages published by itself.
+When finished, clients can unsubscribe from the broker and will no longer be able to publish or receive messages.</p>
+<p>A number of status messages are used to communicate the result of an operation from the broker to the clients.
+The <cite>SUCCESS</cite> message indicates that a <cite>SUBSCRIBE</cite>, <cite>PUBLISH</cite> or <cite>UNSUBSCRIBE</cite> operation completed successfully.
+An <cite>ERROR_NOT_SUBSCRIBED</cite> message is emitted when a client tries to publish or unsubscribe while not currently subscribed, implying that a client has to be subscribed to publish.
+An <cite>ERROR_NO_SUBSCRIBERS</cite> is sent by the broker if no other clients are subscribed when publishing information, which is considered an error in this example.
+An <cite>ERROR_MESSAGE_TOO_LONG</cite> message is emitted when the published message exceeds an implementation-defined length, which may be shorter than the maximum possible message length.
+An <cite>ERROR</cite> message is sent back in all other cases.</p>
+<section id="example-a-formally-verified-message-parser">
+<h3>Example: A Formally-Verified Message Parser<a class="headerlink" href="#example-a-formally-verified-message-parser" title="Permalink to this headline"></a></h3>
+<p>The messages of our example publish-subscribe protocol are a binary format which is encoded as follows:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 15%" />
+<col style="width: 40%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Length [bits]</p></th>
+<th class="head"><p>Domain</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Identifier</p></td>
+<td><p>12</p></td>
+<td><p>1 &lt;= <cite>Identifier</cite> &lt;= 4000</p></td>
+<td><p>Unique client identifier</p></td>
+</tr>
+<tr class="row-odd"><td><p><cite>Command</cite></p></td>
+<td><p>4</p></td>
+<td><p><cite>SUBSCRIBE</cite> = 1,
+<cite>PUBLISH</cite> = 3,
+<cite>UNSUBSCRIBE</cite> = 4,
+<cite>ERROR</cite> = 11,
+<cite>ERROR_NOT_SUBSCRIBED</cite> = 12,
+<cite>ERROR_NO_SUBSCRIBERS</cite> = 13,
+<cite>ERROR_MESSAGE_TOO_LONG</cite> = 14,
+<cite>SUCCESS</cite> = 15</p></td>
+<td><p>Message type</p></td>
+</tr>
+<tr class="row-even"><td><p><cite>Length</cite></p></td>
+<td><p>8</p></td>
+<td><p>0 &lt;= <cite>Length</cite> &lt; 2^8</p></td>
+<td><p>Length of published
+payload in bytes,
+present only when
+<cite>Command</cite> = <cite>PUBLISH</cite></p></td>
+</tr>
+<tr class="row-odd"><td><p>Payload</p></td>
+<td><p>8 * Length</p></td>
+<td><p>Arbitrary bytes</p></td>
+<td><p>Payload of published
+data, present only when
+<cite>Command</cite> = <cite>PUBLISH</cite>
+and <cite>Length</cite> &gt; 0</p></td>
+</tr>
+</tbody>
+</table>
+<p>As we can see, the message has several interesting properties which our formal specification needs to cover: Some of the fields are not multiple of 8 bits (<cite>Identifier</cite>, <cite>Command</cite>) or not byte aligned (<cite>Command</cite>).
+While representable in the available bit width, not all values are valid for all fields.
+For <cite>Identifier</cite>, the values 0 and 4001 .. 4095 are invalid and must be rejected.
+Likewise, the <cite>Command</cite> field has invalid values (e.g., 2) which do not represent a valid message type.
+There are also optional fields like <cite>Length</cite> and <cite>Payload</cite>, which are present only for messages where the <cite>Command</cite> field has the value 3 (i.e. <cite>PUBLISH</cite>).
+Lastly, the <cite>Payload</cite> field has a variable length determined by <cite>Length</cite> field.</p>
+<section id="files-packages-and-names">
+<h4>Files, Packages and Names<a class="headerlink" href="#files-packages-and-names" title="Permalink to this headline"></a></h4>
+<p>Let’s formalize our Pub-Sub message format in the RecordFlux language.
+RecordFlux types (scalar types as well as messages) are defined in modules known as packages, whose syntax is inspired by SPARK.
+There is exactly one package per file; the file name has to be the same as the package name, folded to lowercase, and the file extension is “rflx”.
+We will use the name “Pub Sub” for our example protocol and create a file named <cite>pub_sub.rflx</cite> for the specification:</p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="k">package</span><span class="w"> </span>Pub_Sub<span class="w"> </span><span class="k">is</span>
+<span class="w">   </span><span class="c">-- Type specifications (basic types, messages) go here</span>
+<span class="k">end</span><span class="w"> </span>Pub_Sub<span class="p">;</span>
+</pre></div>
+</div>
+<p>Single line comments, as in SPARK or SQL, start with a double hyphen (<cite>--</cite>) and comprise all text until the end of the line.
+There are no block comments in the RecordFlux language.</p>
+<p>Names follow mostly the same rules as for the SPARK language: Letters A-Z, a-z, digits and underscores can be used.
+A name must not begin with an underscore or a digit, and must not end with an underscore; consecutive underscores are also prohibited.
+Names in RecordFlux are case-insensitive, i.e. <cite>Pub_Sub</cite> and <cite>pub_sub</cite> refer to the same thing.
+Future versions of RecordFlux will also be case-preserving, hence it is already considered good practice to use identical casing for all appearances of a name.</p>
+</section>
+<section id="scalar-types">
+<h4>Scalar Types<a class="headerlink" href="#scalar-types" title="Permalink to this headline"></a></h4>
+<p>To limit the size and allowed values of a numeric field in a message, we need to define a type that has the desired properties.
+For the <cite>Identifier</cite> field we define a type that can represent values from 1 to 4000, inclusive, and whose instances occupy 12 bits:</p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="k">type</span><span class="w"> </span>Identifier<span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">range</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="o">..</span><span class="w"> </span><span class="m">16#F_A0#</span><span class="w"> </span><span class="k">with</span><span class="w"> </span>Size<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">12</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Numbers, like in SPARK, are base 10 by default, but can be represented in arbitrary bases by using the <cite>&lt;base&gt;#&lt;value&gt;#</cite> notation.
+In the above example we represent the upper limit of 4000 by its hexadecimal representation <cite>16#F_A0#</cite>.
+Note, that single underscores (<cite>_</cite>) can be introduced into numeric literals in arbitrary positions to improve readability.</p>
+<p>As for the package name, “<cite>Identifier</cite>” adheres to the naming rules stated above.
+The range declares the lower, and upper bounds of a field of this type and the Size attribute defines the precise storage space of the type in bits.
+For consistency, sizes in RecordFlux specifications are always defined in bits – without exception.
+In the message definition below we will see how to deal with protocols that define lengths in terms of bytes.</p>
+<p>Of course the upper bound must be consistent with the available space defined in the Size attribute.
+If we were to define the above type with an upper bound of 5000 (which obviously does not fit into 12 bits), the RecordFlux toolset would flag our specification as illegal:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Processing Pub_Sub</span>
+<span class="go">pub_sub.rflx:3:9: model: error: size of &quot;Identifier&quot; too small</span>
+</pre></div>
+</div>
+<p>We could proceed and define the Type field of our protocol as a 4 bit numeric value, similar to the Identifier field.
+While we could even express the fact that the type field must not be zero by choosing 1 as the lower limit, there would still be values that will be accepted (e.g. 2) but which are invalid according to the protocol specification.
+An enumeration type is much better suited to represent discrete choices as in the Command field:</p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="k">type</span><span class="w"> </span>Command<span class="w"> </span><span class="k">is</span>
+<span class="p">(</span>
+<span class="w">   </span>SUBSCRIBE<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">1</span><span class="p">,</span>
+<span class="w">   </span>PUBLISH<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">3</span><span class="p">,</span>
+<span class="w">   </span>UNSUBSCRIBE<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">4</span><span class="p">,</span>
+<span class="w">   </span>ERROR<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">11</span><span class="p">,</span>
+<span class="w">   </span>ERROR_NOT_SUBSCRIBED<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">12</span><span class="p">,</span>
+<span class="w">   </span>ERROR_NO_SUBSCRIBERS<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">13</span><span class="p">,</span>
+<span class="w">   </span>ERROR_MESSAGE_TOO_LONG<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">14</span><span class="p">,</span>
+<span class="w">   </span>SUCCESS<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">15</span>
+<span class="p">)</span><span class="w"> </span><span class="k">with</span><span class="w"> </span>Size<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">4</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>As before, the <cite>type</cite> keyword introduces a type named <cite>Command</cite> with a storage size of 4 bits.
+The possible choices for the enumeration type are listed in parenthesis as pairs of name and value, separated by an arrow (<cite>=&gt;</cite>).
+Fields with an enumeration type are only considered valid if their value matches one of the enumeration choices and are rejected otherwise.
+Refer to the section on <cite>Always_Valid</cite> enumeration types in the Language Reference on how to handle fields where all values are valid, but only some have names.</p>
+<p>As with integer ranges, the RecordFlux toolset will protect the user from including values in the specification that cannot be represented in the available space.
+If we changed the value of <cite>SUCCESS</cite> to <cite>8#42#</cite> (octal 42 / decimal 34), which does not fit into 4 bits, we get an error:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Processing Pub_Sub</span>
+<span class="go">pub_sub.rflx:5:9: model: error: size of &quot;Command&quot; too small</span>
+</pre></div>
+</div>
+</section>
+<section id="message-types">
+<h4>Message Types<a class="headerlink" href="#message-types" title="Permalink to this headline"></a></h4>
+<p>With the package and the interesting scalar types in place, we can formalize the actual message structure.
+As can be seen in the format description, our pub-sub protocol message has the interesting property that some fields are only present under certain conditions.
+Formalizing such a message is easy in the RecordFlux language and hints at an important property of its messages:
+While simple messages may appear similar to SPARK records, or structs of linear fields in other languages, they are in fact arbitrarily complex directed acyclic graphs of fields.
+The edges of those messages carry information about conditions, the starting position and bit size of subsequent fields, which may in fact depend on previous fields in the graph:</p>
+<img alt="_images/Message-Example.png" src="_images/Message-Example.png" />
+<p>Just like scalars, messages are also types.
+The specification for our pub-sub message is as follows:</p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="k">type</span><span class="w"> </span>Length<span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">unsigned</span><span class="w"> </span><span class="m">8</span><span class="p">;</span>
+</pre></div>
+</div>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span><span class="k">type</span><span class="w"> </span>Message<span class="w"> </span><span class="k">is</span>
+<span class="w">   </span><span class="k">message</span>
+<span class="w">      </span>Identifier<span class="w"> </span><span class="p">:</span><span class="w"> </span>Identifier<span class="p">;</span>
+<span class="w">      </span>Command<span class="w"> </span><span class="p">:</span><span class="w"> </span>Command
+<span class="w">         </span><span class="k">then</span><span class="w"> </span>Length
+<span class="w">            </span><span class="k">if</span><span class="w"> </span>Command<span class="w"> </span><span class="o">=</span><span class="w"> </span>PUBLISH
+<span class="w">         </span><span class="k">then</span><span class="w"> </span><span class="k">null</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span>Command<span class="w"> </span><span class="o">/=</span><span class="w"> </span>PUBLISH<span class="p">;</span>
+<span class="w">      </span>Length<span class="w"> </span><span class="p">:</span><span class="w"> </span>Length<span class="p">;</span>
+<span class="w">      </span>Payload<span class="w"> </span><span class="p">:</span><span class="w"> </span>Opaque
+<span class="w">         </span><span class="k">with</span><span class="w"> </span>Size<span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="m">8</span><span class="w"> </span><span class="o">*</span><span class="w"> </span>Length<span class="p">;</span>
+<span class="w">   </span><span class="k">end</span><span class="w"> </span><span class="k">message</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>This contains quite a few new constructs – let’s unpack them one by one.
+The <cite>Length</cite> type is an integer type as we have used it for the <cite>Identifier</cite> previously.
+It’s worth noting that the ranges of integers may contain arbitrary expression, such as exponentiation (<cite>**</cite>) or subtraction (<cite>-</cite>) in the example above.</p>
+<p>A message is encompassed by a <cite>message ... end message</cite> block which contains a list of fields, edges, and conditions making up the message graph.
+Readers familiar with other languages may notice that we call our message “<cite>Message</cite>” which appears to conflict with the <cite>message</cite> keyword.
+The same is true for the message field “<cite>Identifier</cite>” which has the same name as the previously defined type.
+Contrary to other languages (and SPARK in particular), RecordFlux’ language allows the use of keywords as type names, and keywords and type names as identifiers to give the user the greatest possible flexibility when formalizing an existing protocol.</p>
+<p>Similar to records in SPARK, message fields are delimited by a colon (<cite>:</cite>) and terminated by a semicolon (<cite>;</cite>).
+Thus <cite>Field_Name : Field_Type;</cite> declares a field with the name “<cite>Field_Name</cite>” of type “<cite>Field_Type</cite>”.
+It gets interesting for optional fields: the <cite>then</cite> keyword creates an edge to another field explicitly, usually in conjunction with a condition marked by the <cite>if</cite> keyword.
+In our example, the <cite>Length</cite> field follows the <cite>Command</cite> field if (and only if) the <cite>Command</cite> field contains the value <cite>PUBLISH</cite>.
+As in SPARK, and unlike other languages, RecordFlux uses a single equal sign for comparison.
+For enumeration types like <cite>Command</cite>, the enumeration element name has to be used rather than its numeric field value.</p>
+<p>When no <cite>then</cite> keyword is present for a field, there is an implicit <cite>then</cite> keyword with the next field as a target, e.g. an implicit “<cite>then Payload</cite>” for the Length field in the above example.
+Multiple <cite>then</cite>-clauses are allowed for a single field to define multiple edges to other fields under different conditions.
+There may even be multiple edges (i.e. <cite>then</cite> keywords) leading to the same field; e.g., to model separate conditions that may cause a field to be present.
+To indicate that a message ends when a specific condition is true, the <cite>null</cite> keyword can be used in a <cite>then</cite> clause.
+In the above example, the message is considered complete when Command does not have the value <cite>PUBLISH</cite> (<cite>then null if Command /= PUBLISH</cite>).
+If none of the <cite>then</cite>-clauses match for a given input, the message is considered invalid and rejected.</p>
+<p>Among other things, the RecordFlux Verifier ensures that <cite>then</cite>-clauses are mutually exclusive, i.e. the resulting parser is deterministic.
+If we changed the above example to contain two <cite>then</cite>-clauses for Command which are not mutually exclusive, our specification would get rejected:</p>
+<div class="highlight-rflx notranslate"><div class="highlight"><pre><span></span>Command<span class="w"> </span><span class="p">:</span><span class="w"> </span>Command
+<span class="w">   </span><span class="k">then</span><span class="w"> </span>Length
+<span class="w">      </span><span class="k">if</span><span class="w"> </span>Command<span class="w"> </span><span class="o">=</span><span class="w"> </span>PUBLISH
+<span class="w">   </span><span class="k">then</span><span class="w"> </span>Length
+<span class="w">      </span><span class="k">if</span><span class="w"> </span>Command<span class="w"> </span><span class="o">=</span><span class="w"> </span>PUBLISH<span class="w"> </span><span class="o o-Text">or</span><span class="w"> </span>Command<span class="w"> </span><span class="o">=</span><span class="w"> </span>UNSUBSCRIBE<span class="p">;</span>
+</pre></div>
+</div>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Processing Pub_Sub</span>
+<span class="go">pub_sub.rflx:21:10: model: error: conflicting conditions for field &quot;Command&quot;</span>
+<span class="go">pub_sub.rflx:23:19: model: info: condition 0 (Command -&gt; Length): Command = Pub_Sub::PUBLISH</span>
+<span class="go">pub_sub.rflx:25:19: model: info: condition 1 (Command -&gt; Length): Command = Pub_Sub::PUBLISH or Command = Pub_Sub::UNSUBSCRIBE</span>
+</pre></div>
+</div>
+<p>Another noteworthy aspect of our example is the <cite>Payload</cite> field.
+It is of type <cite>Opaque</cite>, one of RecordFlux’s few built-in types defining a sequence of arbitrarily many bytes.
+While the content of opaque fields is not defined, their length can be specified using a <cite>Size</cite> attribute.
+In our case, it defines the total length of the <cite>Payload</cite> field to be eight times the value of the <cite>Length</cite> field, since the <cite>Length</cite> field specifies the number of bytes and all RecordFlux field sizes are in bits.</p>
+</section>
+<section id="verifying-the-specification-and-generating-code">
+<h4>Verifying the Specification and Generating Code<a class="headerlink" href="#verifying-the-specification-and-generating-code" title="Permalink to this headline"></a></h4>
+<p>With the formal specification in place, we can use the RecordFlux verifier to prove the formal model of our specification.
+On the command line, use the <cite>rflx check</cite> subcommand with the specification file as its only parameter:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>rflx<span class="w"> </span>check<span class="w"> </span>specs/pub_sub.rflx
+<span class="go">Parsing specs/pub_sub.rflx</span>
+<span class="go">Processing Pub_Sub</span>
+</pre></div>
+</div>
+<p>The RecordFlux Modeller can also be used to create and check specifications.
+A simple project file named <cite>pub_sub.gpr</cite> located in the root directory of our example project configures directories for hand-written code (<cite>src</cite>), generated code (<cite>generated</cite>) and specifications (<cite>specs</cite>).
+It also enables support for the RecordFlux specification language and sets the output directory for generated code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">project</span> <span class="n">Pub_Sub</span> <span class="ow">is</span>
+
+   <span class="k">for</span> <span class="n">Languages</span> <span class="n">use</span> <span class="p">(</span><span class="s2">&quot;Ada&quot;</span><span class="p">,</span> <span class="s2">&quot;RecordFlux&quot;</span><span class="p">);</span>
+   <span class="k">for</span> <span class="n">Source_Dirs</span> <span class="n">use</span> <span class="p">(</span><span class="s2">&quot;src&quot;</span><span class="p">,</span> <span class="s2">&quot;generated&quot;</span><span class="p">,</span> <span class="s2">&quot;specs&quot;</span><span class="p">);</span>
+
+   <span class="n">package</span> <span class="n">Recordflux</span> <span class="ow">is</span>
+      <span class="k">for</span> <span class="n">Output_Dir</span> <span class="n">use</span> <span class="s2">&quot;generated&quot;</span><span class="p">;</span>
+   <span class="n">end</span> <span class="n">Recordflux</span><span class="p">;</span>
+
+<span class="n">end</span> <span class="n">Pub_Sub</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>In GNAT Studio, the <cite>RecordFlux &gt; Check</cite> menu entry can then be used to verify a specification, the <cite>Check All</cite> entry verifies all RecordFlux specifications in a project at once.
+To generate SPARK from the formal specification, either use <cite>RecordFlux &gt; Generate</cite> from within GNAT Studio, or <cite>rflx generate</cite> on the command line (the output directory must be specified using the <cite>-d</cite> switch, as the <cite>rflx</cite> command line tool does not yet read this information from the project file):</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>rflx<span class="w"> </span>generate<span class="w"> </span>-d<span class="w"> </span>generated<span class="w"> </span>specs/pub_sub.rflx
+<span class="go">Parsing specs/pub_sub.rflx</span>
+<span class="go">Processing Pub_Sub</span>
+<span class="go">Generating Pub_Sub::Identifier</span>
+<span class="go">Generating Pub_Sub::Command</span>
+<span class="go">Generating Pub_Sub::Length</span>
+<span class="go">Generating Pub_Sub::Message</span>
+<span class="go">Creating generated/rflx-pub_sub.ads</span>
+<span class="go">Creating generated/rflx-pub_sub-message.ads</span>
+<span class="go">Creating generated/rflx-pub_sub-message.adb</span>
+<span class="go">Creating generated/rflx-rflx_arithmetic.ads</span>
+<span class="go">Creating generated/rflx-rflx_builtin_types-conversions.ads</span>
+<span class="go">Creating generated/rflx-rflx_builtin_types.ads</span>
+<span class="go">Creating generated/rflx-rflx_generic_types.ads</span>
+<span class="go">Creating generated/rflx-rflx_generic_types-generic_operators.ads</span>
+<span class="go">Creating generated/rflx-rflx_generic_types-generic_operations.ads</span>
+<span class="go">Creating generated/rflx-rflx_message_sequence.ads</span>
+<span class="go">Creating generated/rflx-rflx_scalar_sequence.ads</span>
+<span class="go">Creating generated/rflx-rflx_types.ads</span>
+<span class="go">Creating generated/rflx-rflx_types-operators.ads</span>
+<span class="go">Creating generated/rflx-rflx_types-operations.ads</span>
+<span class="go">Creating generated/rflx-rflx_arithmetic.adb</span>
+<span class="go">Creating generated/rflx-rflx_generic_types-generic_operations.adb</span>
+<span class="go">Creating generated/rflx-rflx_message_sequence.adb</span>
+<span class="go">Creating generated/rflx-rflx_scalar_sequence.adb</span>
+<span class="go">Creating generated/rflx.ads</span>
+</pre></div>
+</div>
+<p>The generated code can be integrated into an existing SPARK package hierarchy by passing the <cite>--prefix=Root.Package</cite> parameter to the generate command.
+Note, that the root packages are assumed to exist and the code generator will not generate them:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>rflx<span class="w"> </span>generate<span class="w"> </span>--prefix<span class="o">=</span>My_Package<span class="w"> </span>-d<span class="w"> </span>generated<span class="w"> </span>specs/pub_sub.rflx
+<span class="go">Parsing specs/pub_sub.rflx</span>
+<span class="go">Processing Pub_Sub</span>
+<span class="go">Generating Pub_Sub::Identifier</span>
+<span class="go">Generating Pub_Sub::Command</span>
+<span class="go">Generating Pub_Sub::Length</span>
+<span class="go">Generating Pub_Sub::Message</span>
+<span class="go">Creating generated/my_package-pub_sub.ads</span>
+<span class="go">Creating generated/my_package-pub_sub-message.ads</span>
+<span class="go">[...]</span>
+</pre></div>
+</div>
+</section>
+<section id="using-the-generated-code">
+<h4>Using the Generated Code<a class="headerlink" href="#using-the-generated-code" title="Permalink to this headline"></a></h4>
+<p>To allow us to focus on the protocol part of our implementation, we will assume two SPARK packages: a packet <cite>Socket</cite> for communication with clients and a packet <cite>DB</cite> for handling client subscriptions.
+The communication packet has the following specification:</p>
+<div class="highlight-ada notranslate"><div class="highlight"><pre><span></span><span class="kn">with</span> <span class="n">RFLX.RFLX_Types</span><span class="p">;</span>
+
+<span class="kd">package</span> <span class="nc">Socket</span>
+   <span class="nc">with</span> <span class="nc">SPARK_Mode</span><span class="p">,</span> <span class="nc">Abstract_State</span> <span class="p">=&gt;</span> <span class="nc">Network</span>
+<span class="kr">is</span>
+   <span class="n">Initialized</span> <span class="p">:</span> <span class="kt">Boolean</span> <span class="p">:=</span> <span class="kc">False</span> <span class="kn">with</span> <span class="n">Ghost</span><span class="p">;</span>
+
+   <span class="kd">procedure</span> <span class="nf">Initialize</span> <span class="p">(</span><span class="nv">Port</span> <span class="p">: </span><span class="nv">Natural</span><span class="p">)</span>
+      <span class="kn">with</span> <span class="n">Global</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">In_Out</span> <span class="p">=&gt;</span> <span class="n">Initialized</span><span class="p">,</span> <span class="n">Output</span> <span class="p">=&gt;</span> <span class="n">Network</span><span class="p">),</span>
+           <span class="n">Pre</span>    <span class="p">=&gt;</span> <span class="ow">not</span> <span class="n">Initialized</span><span class="p">,</span>
+           <span class="n">Post</span>   <span class="p">=&gt;</span> <span class="n">Initialized</span><span class="p">;</span>
+
+   <span class="kd">procedure</span> <span class="nf">Send</span> <span class="p">(</span><span class="nv">Data</span> <span class="p">: </span><span class="nv">RFLX</span><span class="p">.</span><span class="nv">RFLX_Types</span><span class="p">.</span><span class="nv">Bytes</span><span class="p">)</span>
+      <span class="kn">with</span> <span class="n">Global</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">Input</span> <span class="p">=&gt;</span> <span class="n">Initialized</span><span class="p">,</span> <span class="n">In_Out</span> <span class="p">=&gt;</span> <span class="n">Network</span><span class="p">),</span>
+           <span class="n">Pre</span>    <span class="p">=&gt;</span> <span class="n">Initialized</span><span class="p">;</span>
+
+   <span class="kd">procedure</span> <span class="nf">Receive</span> <span class="p">(</span><span class="nv">Data</span>    <span class="p">: </span><span class="nv">out</span> <span class="nv">RFLX</span><span class="p">.</span><span class="nv">RFLX_Types</span><span class="p">.</span><span class="nv">Bytes</span><span class="p">;</span>
+                      <span class="nv">Success</span> <span class="p">: </span><span class="nv">out</span> <span class="nv">Boolean</span><span class="p">)</span>
+      <span class="kn">with</span> <span class="n">Global</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">Input</span> <span class="p">=&gt;</span> <span class="n">Initialized</span><span class="p">,</span> <span class="n">In_Out</span> <span class="p">=&gt;</span> <span class="n">Network</span><span class="p">),</span>
+           <span class="n">Pre</span>    <span class="p">=&gt;</span> <span class="n">Initialized</span><span class="p">;</span>
+<span class="kr">end</span> <span class="nf">Socket</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>The library implements a shared communication channel based on the UDP protocol.
+Here it is simply for demonstration purposes: a realistic implementation would allow multiple connections and more detailed error handling.
+The Initialize procedure must be called once with the UDP port number to use before sending or receiving any data.
+This is enforced by the SPARK contracts.
+The <cite>Send</cite> procedure sends out the complete buffer passed in through the <cite>Data</cite> parameter.
+The <cite>Receive</cite> procedure fills its <cite>Data</cite> parameter with the received packet and signals success through the <cite>Success</cite> parameter.</p>
+<p>The communication package already uses code generated from the protocol specification.
+The <cite>RFLX.RFLX_Types</cite> package is the default instance of the generic types package <cite>RFLX.RFLX_Generic_Types</cite> which contains basic definitions for scalar types, indexes, offsets and arrays of bytes which are used throughout the generated code.
+Instantiations with custom types are possible, but in this example our communication library uses the default type for byte buffers <cite>RFLX.RFLX_Types.Bytes</cite> directly.</p>
+<p>Our second helper package for handling subscribers to our pub-sub protocol also uses generated code.
+For every RecordFlux package, a corresponding SPARK package is generated within the <cite>RFLX</cite> hierarchy.
+Consequently, the package <cite>RFLX.Pub_Sub</cite> contains code generated for the (scalar) type definition from the <cite>Pub_Sub</cite> package.
+To avoid unnecessary type conversions, we use the generated type <cite>RFLX.Pub_Sub.Identifier</cite> in the database package:</p>
+<div class="highlight-ada notranslate"><div class="highlight"><pre><span></span><span class="kn">with</span> <span class="n">RFLX.Pub_Sub</span><span class="p">;</span>
+
+<span class="kd">package</span> <span class="nc">DB</span> <span class="nc">with</span>
+   <span class="nc">SPARK_Mode</span><span class="p">,</span> <span class="nc">Abstract_State</span> <span class="p">=&gt;</span> <span class="nc">Subscribers</span>
+<span class="kr">is</span>
+
+   <span class="kd">function</span> <span class="nf">Is_Subscribed</span> <span class="p">(</span><span class="nv">ID</span> <span class="p">: </span><span class="nv">RFLX</span><span class="p">.</span><span class="nv">Pub_Sub</span><span class="p">.</span><span class="nv">Identifier</span><span class="p">)</span> <span class="kr">return</span> <span class="kt">Boolean</span>
+      <span class="kn">with</span> <span class="n">Global</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">Input</span> <span class="p">=&gt;</span> <span class="n">Subscribers</span><span class="p">);</span>
+
+   <span class="kd">procedure</span> <span class="nf">Unsubscribe</span> <span class="p">(</span><span class="nv">ID</span> <span class="p">: </span><span class="nv">RFLX</span><span class="p">.</span><span class="nv">Pub_Sub</span><span class="p">.</span><span class="nv">Identifier</span><span class="p">)</span>
+      <span class="kn">with</span> <span class="n">Global</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">In_Out</span> <span class="p">=&gt;</span> <span class="n">Subscribers</span><span class="p">),</span>
+           <span class="n">Pre</span>    <span class="p">=&gt;</span> <span class="n">Is_Subscribed</span> <span class="p">(</span><span class="n">ID</span><span class="p">);</span>
+
+   <span class="kd">procedure</span> <span class="nf">Subscribe</span> <span class="p">(</span><span class="nv">ID</span> <span class="p">: </span><span class="nv">RFLX</span><span class="p">.</span><span class="nv">Pub_Sub</span><span class="p">.</span><span class="nv">Identifier</span><span class="p">)</span>
+      <span class="kn">with</span> <span class="n">Global</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">In_Out</span> <span class="p">=&gt;</span> <span class="n">Subscribers</span><span class="p">),</span>
+           <span class="n">Post</span>   <span class="p">=&gt;</span> <span class="n">Is_Subscribed</span> <span class="p">(</span><span class="n">ID</span><span class="p">);</span>
+
+   <span class="kd">type</span> <span class="kt">Identifiers</span> <span class="kr">is</span> <span class="kr">array</span> <span class="p">(</span><span class="kt">Natural</span> <span class="kr">range</span> <span class="p">&lt;&gt;)</span>
+      <span class="kr">of</span> <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">Identifier</span><span class="p">;</span>
+
+   <span class="kd">function</span> <span class="nf">Current_Subscribers</span> <span class="nf">return</span> <span class="nf">Identifiers</span>
+      <span class="nf">with</span> <span class="nf">Global</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="nv">Input</span> <span class="p">=&gt;</span> <span class="nv">Subscribers</span><span class="p">);</span>
+<span class="kr">end</span> <span class="nf">DB</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>The subprograms allow for subscribing, unsubscribing and checking whether a specific identifier is currently subscribed.
+Contracts ensure that unsubscribing is possible only for subscribed entities.
+The <cite>Current_Subscribers</cite> function returns a list of currently subscribed identifiers.</p>
+<p>With the helper packages described, we can implement the actual logic of the message broker in SPARK.
+The broker itself is very simple, consisting only of a single Run procedure which is expected to run in a loop in the main program:</p>
+<div class="highlight-ada notranslate"><div class="highlight"><pre><span></span><span class="kn">with</span> <span class="n">Socket</span><span class="p">;</span>
+
+<span class="kd">package</span> <span class="nc">Broker</span>
+   <span class="nc">with</span> <span class="nc">SPARK_Mode</span>
+<span class="kr">is</span>
+   <span class="kd">procedure</span> <span class="nf">Run</span> <span class="nf">with</span>
+      <span class="nf">Pre</span> <span class="p">=&gt;</span> <span class="nf">Socket</span><span class="p">.</span><span class="nf">Initialized</span><span class="p">;</span>
+<span class="kr">end</span> <span class="nf">Broker</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Before we go into the details of the <cite>Run</cite> subprogram, we implement a helper procedure <cite>Send_Status</cite> to construct and send status and error messages.
+The procedure will be private within the body of the <cite>Broker</cite> package and create a simple message (i.e. one that does not have <cite>PUBLISH</cite> as a command).
+This helps simplifying our state machine logic and also demonstrates the principles of message generation:</p>
+<div class="highlight-ada notranslate"><div class="highlight"><pre><span></span><span class="kd">package</span> <span class="kd">body</span> <span class="nc">Broker</span> <span class="nc">with</span> <span class="nc">SPARK_Mode</span>
+<span class="kr">is</span>
+   <span class="kn">use</span> <span class="n">type</span> <span class="n">RFLX</span><span class="p">.</span><span class="n">RFLX_Types</span><span class="p">.</span><span class="n">Bytes_Ptr</span><span class="p">;</span>
+   <span class="kn">use</span> <span class="n">type</span> <span class="n">RFLX</span><span class="p">.</span><span class="n">RFLX_Types</span><span class="p">.</span><span class="n">Index</span><span class="p">;</span>
+
+   <span class="kd">subtype</span> <span class="kt">Status</span> <span class="kr">is</span> <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">Command</span>
+   <span class="kr">range</span> <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">ERROR</span> <span class="p">..</span> <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">SUCCESS</span><span class="p">;</span>
+
+   <span class="kd">procedure</span> <span class="nf">Send_Status</span> <span class="p">(</span><span class="nv">Id</span> <span class="p">: </span><span class="nv">RFLX</span><span class="p">.</span><span class="nv">Pub_Sub</span><span class="p">.</span><span class="nv">Identifier</span><span class="p">;</span> <span class="nv">St</span> <span class="p">: </span><span class="nv">Status</span><span class="p">)</span>
+      <span class="kn">with</span> <span class="n">Pre</span> <span class="p">=&gt;</span> <span class="n">Socket</span><span class="p">.</span><span class="n">Initialized</span><span class="p">;</span>
+
+   <span class="kd">procedure</span> <span class="nf">Send_Status</span> <span class="p">(</span><span class="nv">Id</span> <span class="p">: </span><span class="nv">RFLX</span><span class="p">.</span><span class="nv">Pub_Sub</span><span class="p">.</span><span class="nv">Identifier</span><span class="p">;</span>
+                          <span class="nv">St</span> <span class="p">: </span><span class="nv">Status</span><span class="p">)</span>
+   <span class="kr">is</span>
+      <span class="n">Context</span> <span class="p">:</span> <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">Message</span><span class="p">.</span><span class="n">Context</span><span class="p">;</span>
+      <span class="n">Buffer</span> <span class="p">:</span> <span class="n">RFLX</span><span class="p">.</span><span class="n">RFLX_Types</span><span class="p">.</span><span class="n">Bytes_Ptr</span> <span class="p">:=</span>
+         <span class="kr">new</span> <span class="n">Types</span><span class="p">.</span><span class="n">Bytes</span><span class="p">&#39;(</span><span class="mi">1</span> <span class="p">..</span> <span class="mi">4_096</span> <span class="p">=&gt;</span> <span class="mi">0</span><span class="p">);</span>
+   <span class="kr">begin</span>
+      <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">Message</span><span class="p">.</span><span class="n">Initialize</span> <span class="p">(</span><span class="n">Context</span><span class="p">,</span> <span class="n">Buffer</span><span class="p">);</span>
+      <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">Message</span><span class="p">.</span><span class="n">Set_Identifier</span> <span class="p">(</span><span class="n">Context</span><span class="p">,</span> <span class="n">Id</span><span class="p">);</span>
+      <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">Message</span><span class="p">.</span><span class="n">Set_Command</span> <span class="p">(</span><span class="n">Context</span><span class="p">,</span> <span class="n">St</span><span class="p">);</span>
+      <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">Message</span><span class="p">.</span><span class="n">Take_Buffer</span> <span class="p">(</span><span class="n">Context</span><span class="p">,</span> <span class="n">Buffer</span><span class="p">);</span>
+      <span class="n">Socket</span><span class="p">.</span><span class="n">Send</span> <span class="p">(</span><span class="n">Buffer</span><span class="p">.</span><span class="kr">all</span><span class="p">);</span>
+      <span class="n">RFLX</span><span class="p">.</span><span class="n">RFLX_Types</span><span class="p">.</span><span class="n">Free</span> <span class="p">(</span><span class="n">Buffer</span><span class="p">);</span>
+   <span class="kr">end</span> <span class="nf">Send_Status</span><span class="p">;</span>
+   <span class="c1">-- ...</span>
+<span class="kr">end</span> <span class="nf">Broker</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>The <cite>Send_Status</cite> procedure receives the identifier of the client to address the message to.
+Status is a subtype of the generated <cite>RFLX.Pub_Sub.Command</cite> enumeration type which corresponds directly to the <cite>Command</cite> enumeration in our RecordFlux specification.
+We have chosen the enumeration type in a way that the subtype comprises only commands for simple status messages.
+SPARK will then verify that we do not accidentally pass, e.g., <cite>PUBLISH</cite> to <cite>Send_Status</cite>.</p>
+<p>Working with messages always requires a context.
+Among other things, the context holds a pointer to the actual message, the current state of the message serialization or parsing, and the actual field values for scalar types.
+The raw message data is held in a buffer of the previously mentioned <cite>Bytes</cite> type.
+After initializing the context with a pointer to that buffer using the <cite>Initialize</cite> procedure, the generated <cite>Set_&lt;FieldName&gt;</cite> procedures can be used to set the value of scalar message fields.
+For example, to set the <cite>Identifier</cite> field of Message in the <cite>Pub_Sub</cite> specification, the procedure <cite>RFLX.Pub_Sub.Message.Set_Identifier (Context, Value)</cite> would be used.</p>
+<p>The SPARK contracts on the generated subprograms ensure that required initialization is performed, and that fields are set in the correct order.
+If we forgot to call Initialize, <cite>gnatprove</cite> would emit an error:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">broker.adb:28:27: medium: precondition might fail, cannot prove RFLX.Pub_Sub.Message.Has_Buffer (Ctx)</span>
+</pre></div>
+</div>
+<p>SPARK also proves that message fields are set in the right order.
+While it may not result in a problem for the scalar values in our message specification, field position may depend on previous fields and setting them out of order could result in incorrect messages.
+Hence, the order is always enforced.
+If we set <cite>Command</cite> before <cite>Identifier</cite>, we’d get another error:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">broker.adb:28:27: medium: precondition might fail, cannot prove RFLX.Pub_Sub.Message.Valid_Next (Ctx, RFLX.Pub_Sub.Message.f_command)</span>
+</pre></div>
+</div>
+<p>To actually use the generated message, we first need to retrieve the pointer to the message buffer from the context.
+When calling <cite>Initialize</cite>, the pointer is stored inside the context and SPARKs borrow checker ensures that it cannot be accessed outside the context anymore.
+To retrieve it, the <cite>Take_Buffer</cite> procedure can be used.
+After that, the message buffer may be passed to our <cite>Socket.Send</cite> procedure.
+Note, that after taking the buffer, the context will essentially be only usable to retrieve scalar values.
+The SPARK contracts ensure that no fields are set, and no value of a non-scalar field is retrieved, before the context is reinitialized.</p>
+<p>Finally, the memory allocated in the <cite>Send_Status</cite> procedure needs to be freed.
+RecordFlux generates a <cite>Free</cite> procedure for the built-in type <cite>Bytes_Ptr</cite>.
+Again, SPARK ensures that no memory leak can occur.
+If we forgot to call <cite>Free</cite>, an error would be generated:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">broker.adb:24:07: medium: resource or memory leak might occur at end of scope</span>
+</pre></div>
+</div>
+<p>With a way to send status messages easily, we can look into the implementation of our main subprogram <cite>Run</cite>:</p>
+<div class="highlight-ada notranslate"><div class="highlight"><pre><span></span><span class="kd">procedure</span> <span class="nf">Run</span> <span class="kr">is</span>
+   <span class="n">Context</span> <span class="p">:</span> <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">Message</span><span class="p">.</span><span class="n">Context</span><span class="p">;</span>
+   <span class="n">Buffer</span> <span class="p">:</span> <span class="n">RFLX</span><span class="p">.</span><span class="n">RFLX_Types</span><span class="p">.</span><span class="n">Bytes_Ptr</span> <span class="p">:=</span>
+      <span class="kr">new</span> <span class="n">RFLX</span><span class="p">.</span><span class="n">RFLX_Types</span><span class="p">.</span><span class="n">Bytes</span><span class="p">&#39;(</span><span class="mi">1</span> <span class="p">..</span> <span class="mi">4_096</span> <span class="p">=&gt;</span> <span class="mi">0</span><span class="p">);</span>
+   <span class="n">Success</span> <span class="p">:</span> <span class="kt">Boolean</span><span class="p">;</span>
+
+   <span class="kn">use</span> <span class="n">type</span> <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">Length</span><span class="p">;</span>
+<span class="kr">begin</span>
+   <span class="n">Socket</span><span class="p">.</span><span class="n">Receive</span> <span class="p">(</span><span class="n">Buffer</span><span class="p">.</span><span class="kr">all</span><span class="p">,</span> <span class="n">Success</span><span class="p">);</span>
+   <span class="kr">if</span> <span class="ow">not</span> <span class="n">Success</span> <span class="kr">then</span>
+      <span class="n">RFLX</span><span class="p">.</span><span class="n">RFLX_Types</span><span class="p">.</span><span class="n">Free</span> <span class="p">(</span><span class="n">Buffer</span><span class="p">);</span>
+      <span class="kr">return</span><span class="p">;</span>
+   <span class="kr">end</span> <span class="kr">if</span><span class="p">;</span>
+
+   <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">Message</span><span class="p">.</span><span class="n">Initialize</span>
+      <span class="p">(</span><span class="n">Context</span><span class="p">,</span>
+       <span class="n">Buffer</span><span class="p">,</span>
+       <span class="n">RFLX</span><span class="p">.</span><span class="n">RFLX_Types</span><span class="p">.</span><span class="n">To_Last_Bit_Index</span> <span class="p">(</span><span class="n">Buffer</span><span class="p">&#39;</span><span class="na">Last</span><span class="p">));</span>
+   <span class="c1">-- ...</span>
+<span class="kr">end</span> <span class="nf">Run</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Like before, we have a context variable and a pointer to the buffer which is used to receive a message from the network.
+We also initialize the context using the <cite>Initialize</cite> procedure.
+The difference here, is the third parameter (<cite>Written_Last</cite>), which we pass to <cite>Initialize</cite>.
+It determines the last bit of the message.
+When we generated a message, the default value <cite>0</cite> was used to indicate that we started with an empty message which got populated by the <cite>Set_&lt;FieldName&gt;</cite> procedures.
+When parsing the received data, we have to use the end of the message instead.
+The <cite>To_Last_Bit_Index</cite> function can be used to convert the byte size of the buffer into a bit index as required by <cite>Initialize</cite>.</p>
+<p>Once we have initialized the context with the received data, we can call <cite>Verify_Message</cite> to perform the verification of the received message.
+The <cite>Well_Formed_Message</cite> function is then used to retrieve the result of this operation:</p>
+<div class="highlight-ada notranslate"><div class="highlight"><pre><span></span><span class="kd">procedure</span> <span class="nf">Run</span> <span class="kr">is</span>
+   <span class="c1">-- ...</span>
+<span class="kr">begin</span>
+   <span class="c1">-- ...</span>
+   <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">Message</span><span class="p">.</span><span class="n">Verify_Message</span> <span class="p">(</span><span class="n">Context</span><span class="p">);</span>
+   <span class="kr">if</span> <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">Message</span><span class="p">.</span><span class="n">Well_Formed_Message</span> <span class="p">(</span><span class="n">Context</span><span class="p">)</span> <span class="kr">then</span>
+      <span class="kr">declare</span>
+         <span class="n">Id</span> <span class="p">:</span> <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">Identifier</span> <span class="p">:=</span>
+            <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">Message</span><span class="p">.</span><span class="n">Get_Identifier</span> <span class="p">(</span><span class="n">Context</span><span class="p">);</span>
+         <span class="n">Cmd</span> <span class="p">:</span> <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">Command</span> <span class="p">:=</span>
+            <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">Message</span><span class="p">.</span><span class="n">Get_Command</span> <span class="p">(</span><span class="n">Context</span><span class="p">);</span>
+      <span class="kr">begin</span>
+         <span class="kr">case</span> <span class="n">Cmd</span> <span class="kr">is</span>
+            <span class="kr">when</span> <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">SUBSCRIBE</span> <span class="p">=&gt;</span>
+               <span class="n">DB</span><span class="p">.</span><span class="n">Subscribe</span> <span class="p">(</span><span class="n">Id</span><span class="p">);</span>
+               <span class="n">Send_Status</span> <span class="p">(</span><span class="n">Id</span><span class="p">,</span> <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">SUCCESS</span><span class="p">);</span>
+            <span class="kr">when</span> <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">UNSUBSCRIBE</span> <span class="p">=&gt;</span>
+               <span class="kr">if</span> <span class="n">DB</span><span class="p">.</span><span class="n">Is_Subscribed</span> <span class="p">(</span><span class="n">Id</span><span class="p">)</span> <span class="kr">then</span>
+                  <span class="n">DB</span><span class="p">.</span><span class="n">Unsubscribe</span> <span class="p">(</span><span class="n">Id</span><span class="p">);</span>
+                  <span class="n">Send_Status</span>
+                     <span class="p">(</span><span class="n">Id</span><span class="p">,</span>
+                      <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">SUCCESS</span><span class="p">);</span>
+               <span class="kr">else</span>
+                  <span class="n">Send_Status</span>
+                     <span class="p">(</span><span class="n">Id</span><span class="p">,</span>
+                      <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">ERROR_NOT_SUBSCRIBED</span><span class="p">);</span>
+               <span class="kr">end</span> <span class="kr">if</span><span class="p">;</span>
+            <span class="kr">when</span> <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">PUBLISH</span> <span class="p">=&gt;</span>
+               <span class="kr">if</span> <span class="n">DB</span><span class="p">.</span><span class="n">Is_Subscribed</span> <span class="p">(</span><span class="n">Id</span><span class="p">)</span> <span class="kr">then</span>
+                  <span class="kr">declare</span>
+                     <span class="n">Length</span> <span class="p">:</span> <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">Length</span>
+                        <span class="p">:=</span> <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">Message</span><span class="p">.</span><span class="n">Get_Length</span> <span class="p">(</span><span class="n">Context</span><span class="p">);</span>
+                     <span class="n">Subscribers</span> <span class="p">:</span> <span class="n">DB</span><span class="p">.</span><span class="n">Identifiers</span>
+                        <span class="p">:=</span> <span class="n">DB</span><span class="p">.</span><span class="n">Current_Subscribers</span><span class="p">;</span>
+                  <span class="kr">begin</span>
+                     <span class="kr">if</span> <span class="n">Subscribers</span><span class="p">&#39;</span><span class="na">Length</span> <span class="o">&lt;=</span> <span class="mi">1</span> <span class="kr">then</span>
+                        <span class="n">Send_Status</span>
+                           <span class="p">(</span><span class="n">Id</span><span class="p">,</span>
+                            <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">ERROR_NO_SUBSCRIBERS</span><span class="p">);</span>
+                     <span class="kr">elsif</span> <span class="n">Length</span> <span class="o">&gt;</span> <span class="mi">4_000</span> <span class="kr">then</span>
+                        <span class="n">Send_Status</span>
+                           <span class="p">(</span><span class="n">Id</span><span class="p">,</span>
+                            <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">ERROR_MESSAGE_TOO_LONG</span><span class="p">);</span>
+                     <span class="kr">else</span>
+                        <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">Message</span><span class="p">.</span><span class="n">Take_Buffer</span> <span class="p">(</span><span class="n">Context</span><span class="p">,</span> <span class="n">Buffer</span><span class="p">);</span>
+                        <span class="kr">for</span> <span class="n">Subscriber</span> <span class="ow">in</span> <span class="n">Subscribers</span><span class="p">&#39;</span><span class="na">Range</span> <span class="kr">loop</span>
+                           <span class="n">Socket</span><span class="p">.</span><span class="n">Send</span> <span class="p">(</span><span class="n">Buffer</span><span class="p">.</span><span class="kr">all</span><span class="p">);</span>
+                        <span class="kr">end</span> <span class="kr">loop</span><span class="p">;</span>
+                     <span class="kr">end</span> <span class="kr">if</span><span class="p">;</span>
+                  <span class="kr">end</span><span class="p">;</span>
+               <span class="kr">else</span>
+                  <span class="n">Send_Status</span>
+                     <span class="p">(</span><span class="n">Id</span><span class="p">,</span>
+                      <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">ERROR_NOT_SUBSCRIBED</span><span class="p">);</span>
+               <span class="kr">end</span> <span class="kr">if</span><span class="p">;</span>
+            <span class="kr">when</span> <span class="kr">others</span> <span class="p">=&gt;</span>
+               <span class="n">Send_Status</span>
+                  <span class="p">(</span><span class="n">Id</span><span class="p">,</span>
+                   <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">ERROR</span><span class="p">);</span>
+         <span class="kr">end</span> <span class="kr">case</span><span class="p">;</span>
+      <span class="kr">end</span><span class="p">;</span>
+   <span class="kr">end</span> <span class="kr">if</span><span class="p">;</span>
+   <span class="c1">-- ...</span>
+<span class="kr">end</span> <span class="nf">Run</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>If the message is well-formed, fields can be accessed using the generated <cite>Get_&lt;FieldName&gt;</cite> functions.
+Even for a well-formed message the SPARK contracts make sure that no missing fields are accessed.
+If our code tried to access the <cite>Length</cite> field in a received message where the <cite>Command</cite> field is not set to <cite>PUBLISH</cite>, this would be detected statically:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">broker.adb:81:51: medium: precondition might fail</span>
+</pre></div>
+</div>
+<p>As before, we need to take the buffer out of the context and free it to avoid resource leaks.
+As we may have forwarded a publish message, we need to check whether the buffer is still in the context.
+This can be done by <cite>Has_Buffer</cite> function:</p>
+<div class="highlight-ada notranslate"><div class="highlight"><pre><span></span><span class="kd">procedure</span> <span class="nf">Run</span> <span class="kr">is</span>
+   <span class="c1">-- ...</span>
+<span class="kr">begin</span>
+   <span class="c1">-- ...</span>
+   <span class="kr">if</span> <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">Message</span><span class="p">.</span><span class="n">Has_Buffer</span> <span class="p">(</span><span class="n">Context</span><span class="p">)</span> <span class="kr">then</span>
+      <span class="n">RFLX</span><span class="p">.</span><span class="n">Pub_Sub</span><span class="p">.</span><span class="n">Message</span><span class="p">.</span><span class="n">Take_Buffer</span> <span class="p">(</span><span class="n">Context</span><span class="p">,</span> <span class="n">Buffer</span><span class="p">);</span>
+   <span class="kr">end</span> <span class="kr">if</span><span class="p">;</span>
+   <span class="n">RFLX</span><span class="p">.</span><span class="n">RFLX_Types</span><span class="p">.</span><span class="n">Free</span> <span class="p">(</span><span class="n">Buffer</span><span class="p">);</span>
+<span class="kr">end</span> <span class="nf">Run</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>A very simple main procedure which initializes the networking library and calls <cite>Run</cite> in a loop concludes our example:</p>
+<div class="highlight-ada notranslate"><div class="highlight"><pre><span></span><span class="kn">with</span> <span class="n">Socket</span><span class="p">;</span>
+<span class="kn">with</span> <span class="n">Broker</span><span class="p">;</span>
+
+<span class="kd">procedure</span> <span class="nf">Main</span> <span class="kr">is</span>
+<span class="kr">begin</span>
+   <span class="n">Socket</span><span class="p">.</span><span class="n">Initialize</span> <span class="p">(</span><span class="n">Port</span> <span class="p">=&gt;</span> <span class="mi">8_888</span><span class="p">);</span>
+   <span class="kr">loop</span>
+      <span class="n">Broker</span><span class="p">.</span><span class="n">Run</span><span class="p">;</span>
+   <span class="kr">end</span> <span class="kr">loop</span><span class="p">;</span>
+<span class="kr">end</span> <span class="nf">Main</span><span class="p">;</span>
+</pre></div>
+</div>
+</section>
+<section id="proving-and-running-the-result">
+<h4>Proving and Running the Result<a class="headerlink" href="#proving-and-running-the-result" title="Permalink to this headline"></a></h4>
+<p>To prove our program using <cite>gnatprove</cite>, we need to extend our project file to configure the proof process:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>project Pub_Sub is
+   – ...
+   package Prove is
+      for Proof_Switches (&quot;Ada&quot;) use (
+         &quot;-j0&quot;,
+         &quot;--prover=z3,cvc5,altergo,colibri&quot;,
+         &quot;--steps=0&quot;,
+         &quot;--timeout=180&quot;,
+         &quot;--memlimit=2000&quot;,
+         &quot;--checks-as-errors=on&quot;,
+         &quot;--warnings=error&quot;,
+         &quot;--counterexamples=off&quot;
+      );
+   end Prove;
+   for Main use (&quot;main.adb&quot;);
+end Pub_Sub;
+</pre></div>
+</div>
+<p>Depending on the complexity of the message specifications, code generated by RecordFlux will require significant time and resources to prove successfully.
+The <cite>-j0</cite> option instructs <cite>gnatprove</cite> to use all available CPU cores for parallel proof.
+The more cores are available, the better.
+The number of cores used can be limited by choosing a number greater than 0.
+A non-standard order of provers is selected using the <cite>--provers</cite> switch.
+Different provers or a different order may work as well, but the above example shows the combination we have found to be most effective.
+We also found it helpful to disable the step limit (<cite>--steps=0</cite>) as the default limit is too low and the steps required by different solvers vary greatly.
+Disabling counter examples reduces the proof overhead and is advisable for the generated code.
+If proofs fail for generated code, adapting <cite>--timeout</cite> or <cite>--memlimit</cite> may be necessary.
+For details on the options, consult the <a class="reference external" href="https://docs.adacore.com/live/wave/spark2014/html/spark2014_ug/">SPARK User’s Guide</a>.</p>
+<p>With the proof options in place, we can run <cite>gnatprove</cite> on the code:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>gnatprove<span class="w"> </span>-P<span class="w"> </span>pub_sub.gpr
+<span class="go">Phase 1 of 2: generation of Global contracts ...</span>
+<span class="go">Phase 2 of 2: flow analysis and proof ...</span>
+<span class="go">Summary logged in obj/gnatprove/gnatprove.out</span>
+</pre></div>
+</div>
+<p>Finally, we can build and run the example:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>gprbuild<span class="w"> </span>-P<span class="w"> </span>pub_sub.gpr
+<span class="go">Compile</span>
+<span class="go">[Ada] main.adb</span>
+<span class="go">[Ada] broker.adb</span>
+<span class="go">[Ada] socket.adb</span>
+<span class="go">[Ada] db.adb</span>
+<span class="go">Bind</span>
+<span class="go">[gprbind] main.bexch</span>
+<span class="go">[Ada] main.ali</span>
+<span class="go">Link</span>
+<span class="go">[link] main.adb</span>
+
+<span class="gp">$ </span>./obj/main
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="10-introduction.html" class="btn btn-neutral float-left" title="Introduction" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="90-appendix.html" class="btn btn-neutral float-right" title="Appendix" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023-2024, AdaCore.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

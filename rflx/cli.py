@@ -13,6 +13,7 @@ from enum import Enum
 from importlib.abc import Traversable
 from multiprocessing import cpu_count
 from pathlib import Path
+from typing import Final
 
 from rflx.common import assert_never
 from rflx.converter import iana
@@ -33,6 +34,7 @@ from rflx.validator import ValidationError, Validator
 from rflx.version import version
 
 DEFAULT_PREFIX = "RFLX"
+DOC_DIR: Final[Path] = Path(str(importlib.resources.files("rflx"))) / "doc"
 
 py_logging.basicConfig(level=py_logging.INFO, format="%(message)s")
 
@@ -424,6 +426,14 @@ def main(  # noqa: PLR0915
     parser_run_ls = subparsers.add_parser("run_ls", help="run language server")
     parser_run_ls.set_defaults(func=run_language_server)
 
+    parser_doc = subparsers.add_parser("doc", help="open documentation")
+    parser_doc.add_argument(
+        "DOCUMENT",
+        help="documentation to open: Language Reference Manual (lrm), User's Guide (ug)",
+        choices=["lrm", "ug"],
+    )
+    parser_doc.set_defaults(func=doc)
+
     args = parser.parse_args(argv[1:])
 
     if args.version:
@@ -708,6 +718,18 @@ def run_language_server(args: argparse.Namespace) -> None:
 
     server.workers = args.workers
     server.start_io()
+
+
+def doc(args: argparse.Namespace) -> None:
+    assert args.DOCUMENT in ["lrm", "ug"]
+
+    base_folders = {"lrm": "language_reference", "ug": "user_guide"}
+    base_folder = base_folders[args.DOCUMENT]
+
+    subprocess.run(
+        ["xdg-open", f"file://{DOC_DIR}/{base_folder}/index.html"],
+        check=True,
+    )
 
 
 def vscode_extension() -> Traversable:

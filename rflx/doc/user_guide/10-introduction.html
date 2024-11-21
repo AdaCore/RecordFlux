@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Introduction &mdash; RecordFlux</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Overview" href="20-overview.html" />
+    <link rel="prev" title="User&#39;s Guide" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #12284c" >
+            <a href="index.html" class="icon icon-home"> RecordFlux
+            <img src="_static/adacore-logo-white.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                0.25.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#binary-data-formats-and-communication-protocols">Binary Data Formats and Communication Protocols</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#problems-solved-by-recordflux">Problems solved by RecordFlux</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#system-requirements">System requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#recordflux">RecordFlux</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vs-code-extension">VS Code Extension</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gnat-studio-modeller-plugin">GNAT Studio Modeller Plugin</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="20-overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="90-appendix.html">Appendix</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #12284c" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">RecordFlux</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Introduction</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/10-introduction.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h1>
+<p>This document describes RecordFlux, a domain-specific language (DSL) and toolset for the creation of verifiable communication protocol implementations.
+After stating the problems RecordFlux helps solving, the manual outlines the required prerequisites and explains how to install and set up the tool.
+Subsequent sections give an introduction to the protocol verification process, describe the available tools and how they work together, and present introductory examples for message as well as protocol state machine formalization.</p>
+<section id="binary-data-formats-and-communication-protocols">
+<h2>Binary Data Formats and Communication Protocols<a class="headerlink" href="#binary-data-formats-and-communication-protocols" title="Permalink to this headline"></a></h2>
+<p><a class="reference external" href="https://asset-group.github.io/disclosures/braktooth/">BrakTooth</a>, <a class="reference external" href="https://www.forescout.com/research-labs/infra-halt/">Infra:Halt</a>, or <a class="reference external" href="https://heartbleed.com/">Heartbleed</a> are just a few of the high-profile security vulnerabilities related to communication protocols that have made it into the news in recent years.
+In fact, there are many more, but not all of them have a logo, a dedicated website and get the same amount of attention.
+Nonetheless, they have important aspects in common: they may be exploited to target critical infrastructure, they can create a serious supply chain security issue by affecting millions of devices in various configurations, and they are typically hard to prevent, identify or mitigate.
+This is especially problematic as paradigms like Edge Computing, Predictive Maintenance or Autonomous Driving require ever more complex protocols and increased communication.</p>
+<p>The reasons for those severe and recurring security vulnerabilities are manifold.
+Interaction between software components is governed by protocol and format specifications.
+Most of those specifications are incomplete, ambiguous, and even contradictory English language documents which need to be translated into software implementations manually.
+In addition to logic errors introduced during mandraulic translation phases, critical flaws are often poorly mitigated by widespread unsafe programming languages.
+It is not possible to express or check precise invariants characterizing the desired behavior, either at the source code or specification level.
+Consequently, many implementations contain severe security vulnerabilities waiting to be discovered and exploited by malicious actors.</p>
+<p>Using standardized formats and protocols and relying on widespread implementations with good quality assurance can help to lower the risk of zero-day exploits.
+However, high profile vulnerabilities in commonly used protocol stacks, as found in <a class="reference external" href="https://www.jsof-tech.com/disclosures/ripple20/">Ripple20</a> or <a class="reference external" href="https://www.forescout.com/research-labs/amnesia33/">Amnesia:33</a>, demonstrate that this by no means guarantees good security.</p>
+<p>While standard implementations receive at least a certain level of scrutiny by the open source community and independent researchers, the situation is even worse for custom data formats and protocol implementations.
+Specifications (if present at all) and implementations are often only reviewed by a few people.
+Ad hoc design decisions resulting from urgent project needs complicate parsers and state machine implementations.
+Common pitfalls, which experienced protocol designers and implementers learn to avoid, like failing to check the length of a received message or making sure that privileged protocol states cannot be reached without prior authorization, can easily cause severe security problems in one-off in-house protocol implementations.</p>
+</section>
+<section id="problems-solved-by-recordflux">
+<h2>Problems solved by RecordFlux<a class="headerlink" href="#problems-solved-by-recordflux" title="Permalink to this headline"></a></h2>
+<p>With the <a class="reference external" href="http://docs.adacore.com/live/wave/spark2014/html/spark2014_ug/index.html">SPARK language and toolset</a>, programs can be proven to contain no runtime errors and to respect at all times the contracts with which the code is annotated.
+This process is highly automated and has been used successfully in mission critical software, for example in Aerospace &amp; Defense, Avionics and Confidential Computing.
+However, the precision and trustworthiness that is gained comes at the price of additional effort for designing the software within the provable feature set of SPARK, specifying contracts, and guiding automatic theorem provers towards successful verification.
+The amount of code necessary for real-world data format and protocol implementations can often exceed the limit of what is formally provable with a manual implementation.</p>
+<p>The RecordFlux toolset addresses this challenge by providing a high-level language tailored towards data formats and communication protocols which is precise and expressive enough to generate complex, formally-provable source code automatically.
+Its domain-specific language is used to precisely describe complex binary data formats and communication protocols.
+Through the toolset, users can formally verify specifications, generate provable SPARK code, and validate specifications using communication traces and existing implementations.</p>
+<p>The formal specification in RecordFlux’ language serves as a single source of truth in this process.
+Due to its abstract nature and its specialized support for binary formats and communication protocols, RecordFlux specifications can be written and understood by domain experts who are not necessarily programmers or verification engineers.
+The SPARK code that is generated from a valid RecordFlux specification can automatically be proven at the SPARK &quot;gold&quot; level.
+It contains no runtime errors like buffer overruns and integer overflows, and key properties – namely the behavior of the program with respect to the RecordFlux specification – are shown to be fulfilled at any time.</p>
+<p>The RecordFlux language is expressive enough to define complex real-world binary messages and data formats.
+It can be used to precisely specify permitted value ranges, invariants that need to be maintained at all times, and complex dependencies between the elements of messages.
+The behavior of a protocol can be formally described by finite state machines which tightly integrate with the formal message specification.
+While abstract communication channels are used to define the integration with external components, external functions can be used to integrate with hand written code in a safe manner.</p>
+<p>The automated correctness proofs performed at the specification level (i.e. before generating any source code) guarantee the following properties for message specifications:</p>
+<ul class="simple">
+<li><p>Determinism (no contradictory conditions)</p></li>
+<li><p>Liveness (no cycles)</p></li>
+<li><p>Reachability (no unused fields)</p></li>
+<li><p>Coherency (no overlaps)</p></li>
+<li><p>Completeness (no holes)</p></li>
+</ul>
+<p>Consequently, the resulting message parsers and message serializers are – by construction – free from many issues that plague manual implementations of communication protocols.
+As functional correctness is proven statically, parsers guarantee that received messages comply with their specification, serializers ensure the creation of correct messages and state machines provide the specified protocol behavior.</p>
+<p>The extensive integrity guarantees ensured for the generated code do not compromise performance and the compiled code has a small enough footprint to be usable in resource constrained, deeply embedded systems.</p>
+</section>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline"></a></h2>
+<p>The RecordFlux toolset generates code in the <a class="reference external" href="https://www.adacore.com/sparkpro">SPARK language</a>, a formally analyzable subset of Ada 2012.
+AdaCore's <cite>gnatprove</cite> tool can be used to verify the source code produced by RecordFlux.
+While most of the generated code can be proven automatically, integrating it into a SPARK application requires good knowledge of the SPARK concepts, language and tools.
+The <a class="reference external" href="http://docs.adacore.com/live/wave/spark2014/html/spark2014_rm/index.html">SPARK Reference Manual</a> and the <a class="reference external" href="http://docs.adacore.com/live/wave/spark2014/html/spark2014_ug/index.html">SPARK Toolset User's Guide</a> give an overview of the SPARK language, process and toolset.
+This manual assumes familiarity with SPARK and a working setup of the SPARK tools.
+AdaCore’s interactive training platform <a class="reference external" href="https://learn.adacore.com/">learn.adacore.com</a> features extensive course material on SPARK, among other relevant topics such as mixed-language and embedded development.</p>
+<p>While SPARK can be used to statically verify properties of the generated source code without compiling it, the GNAT compiler is required to produce a binary that can be deployed onto a target.
+RecordFlux makes very few assumptions on the target platform and the generated code can thus be used on various CPU architectures, native as well as cross configurations, and anything ranging from network servers to embedded systems.
+This manual assumes a working GNAT installation for the target platform as well as familiarity with the respective GNAT tools.
+See the <a class="reference external" href="https://www.adacore.com/documentation#GNAT">GNAT documentation</a> for details.</p>
+<p>RecordFlux is integrated into GNAT Studio, AdaCore’s lightweight multi-language IDE.
+For the integration, a working GNAT Studio installation and a correctly set up RecordFlux plug-in are required.
+See the <a class="reference external" href="#gnat-studio-modeller-plugin">Installation section</a> for details.
+The use of GNAT Studio is not mandatory – all RecordFlux features can also be used on the command line.</p>
+<p>The RecordFlux Simulator is a library which can be used to load RecordFlux specifications and dynamically interact with data or servers implementing the respective protocol from within a Python program.
+It is an optional component which does not require code generation or compilation.
+When used, it requires familiarity with Python 3 and of course a working Python environment.</p>
+</section>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline"></a></h2>
+<section id="system-requirements">
+<h3>System requirements<a class="headerlink" href="#system-requirements" title="Permalink to this headline"></a></h3>
+<p>RecordFlux is supported on 64-bit Linux systems and should work on a variety of Linux distributions.
+The officially supported distributions are:</p>
+<ul class="simple">
+<li><p>Red Hat Enterprise Linux 7, 8, and 9</p></li>
+<li><p>SuSE Linux Enterprise Server 12 and 15</p></li>
+<li><p>Ubuntu 20.04 LTS and 22.04 LTS</p></li>
+</ul>
+<p>The software has successfully been used on various other versions of Linux, including Arch Linux and Debian.</p>
+<p>For installing RecordFlux itself, a <em>native</em> GNAT compiler for the host system must be installed.
+The following versions of GNAT are supported:</p>
+<ul class="simple">
+<li><p>GNAT Pro 22.2, 23.2, 24.2 and 25.0</p></li>
+<li><p>GNAT Community 2021</p></li>
+<li><p>FSF GNAT 11.2, 12.2, 13.2 or 14.1</p></li>
+</ul>
+<p>A working installation of Rust 1.77 or newer must be installed.
+Rust 1.77 can be installed using <a class="reference external" href="https://rustup.rs/">rustup</a>:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>curl<span class="w"> </span>--proto<span class="w"> </span><span class="s1">&#39;=https&#39;</span><span class="w"> </span>--tlsv1.2<span class="w"> </span>-sSf<span class="w"> </span>https://sh.rustup.rs<span class="w"> </span><span class="p">|</span><span class="w"> </span>sh<span class="w"> </span>-s<span class="w"> </span>--<span class="w"> </span>-q<span class="w"> </span>-y<span class="w"> </span>--profile<span class="w"> </span>default<span class="w"> </span>--target<span class="w"> </span>x86_64-unknown-linux-gnu<span class="w"> </span>--default-toolchain<span class="w"> </span><span class="m">1</span>.77
+</pre></div>
+</div>
+<p>The latest release of GNAT Pro for Rust is also supported.</p>
+<p>For compiling the generated code, one of the following versions of GNAT is required:</p>
+<ul class="simple">
+<li><p>GNAT Pro 21.2, 22.2, 23.2, 24.2 and 25.0</p></li>
+<li><p>GNAT Community 2021</p></li>
+<li><p>FSF GNAT 11.2, 12.2, 13.2 or 14.1</p></li>
+</ul>
+<p>A successful installation of the native toolchain can be verified on the command line as follows:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>gprbuild<span class="w"> </span>--version
+<span class="go">GPRBUILD Pro AA.BB (YYYYMMDD) (x86_64-pc-linux-gnu)</span>
+<span class="go">Copyright (C) 2004-2022, AdaCore</span>
+<span class="go">...</span>
+</pre></div>
+</div>
+<p>The following external dependencies must be installed:</p>
+<ul class="simple">
+<li><p>GMP, <cite>libgmp-dev</cite> (Debian/Ubuntu), <cite>gmp-devel</cite> (Fedora) or <cite>gmp</cite> (Arch Linux)</p></li>
+<li><p>Graphviz (if graph visualization is used), <cite>graphviz</cite> in most distributions.</p></li>
+</ul>
+<p>If FSF GNAT is used, the <a class="reference external" href="https://docs.adacore.com/live/wave/gnatcoll-iconv/html/gnatcoll-iconv_ug/index.html">GNATcoll iconv binding</a> must also be installed.</p>
+<p>To run RecordFlux one of the following Python versions is needed:</p>
+<ul class="simple">
+<li><p>Python 3.9</p></li>
+<li><p>Python 3.10</p></li>
+<li><p>Python 3.11</p></li>
+<li><p>Python 3.12</p></li>
+</ul>
+<p>In addition, the Python package installer <cite>pip</cite> is needed to install RecordFlux from the Python Package Index (PyPI).
+The tool can be installed using either the system package manager (<cite>python3-pip</cite> on Debian/Ubuntu/Fedora, <cite>python-pip</cite> on Arch Linux) or any other way described in the pip <a class="reference external" href="https://pip.pypa.io/en/stable/installation/">installation guide</a>.</p>
+<p>For the formal verification of the generated code, one of the following SPARK Pro versions is required:</p>
+<ul class="simple">
+<li><p>SPARK Pro 24.2 or 25.0</p></li>
+</ul>
+<p>If you plan to use the RecordFlux Modeller, GNAT Studio needs to be installed and set up.</p>
+</section>
+<section id="recordflux">
+<h3>RecordFlux<a class="headerlink" href="#recordflux" title="Permalink to this headline"></a></h3>
+<p>Installing RecordFlux using pip requires an internet connection with access to the <a class="reference external" href="https://pypi.org/">Python Package Index (PyPI)</a> and a working GNAT installation.
+The following command will install RecordFlux and all required dependencies:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>pip3<span class="w"> </span>install<span class="w"> </span>RecordFlux
+</pre></div>
+</div>
+<p>Alternatively, RecordFlux can be installed system-wide (run as root user) or into a virtual environment (run from within an activated <cite>venv</cite>).
+To check whether the installation was successful and the RecordFlux executable is in your path, request the version from the CLI:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>rflx<span class="w"> </span>--version
+<span class="go">RecordFlux 0.9.0</span>
+<span class="go">RecordFlux-parser 0.13.0</span>
+<span class="go">...</span>
+</pre></div>
+</div>
+<p>Once installed, the following command can be used to upgrade RecordFlux to the latest available version:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>pip3<span class="w"> </span>install<span class="w"> </span>RecordFlux<span class="w"> </span>--upgrade
+</pre></div>
+</div>
+</section>
+<section id="vs-code-extension">
+<h3>VS Code Extension<a class="headerlink" href="#vs-code-extension" title="Permalink to this headline"></a></h3>
+<p>The VS Code extension adds support for the RecordFlux language to VS Code.
+After the installation of RecordFlux, the extension can be installed using the CLI:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>rflx<span class="w"> </span>install<span class="w"> </span>vscode
+</pre></div>
+</div>
+</section>
+<section id="gnat-studio-modeller-plugin">
+<h3>GNAT Studio Modeller Plugin<a class="headerlink" href="#gnat-studio-modeller-plugin" title="Permalink to this headline"></a></h3>
+<p>The RecordFlux Modeller is integrated into GNAT Studio as a plugin which needs to be installed before use.
+After installation of RecordFlux, run the installation procedure on the command line:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>rflx<span class="w"> </span>install<span class="w"> </span>gnatstudio
+</pre></div>
+</div>
+<p>Should your GNAT Studio settings directory be different from <cite>$HOME/.gnatstudio</cite>, the installation path can be changed using the parameter <cite>--gnat-studio-dir</cite>.</p>
+<p>For the installation to become effective, GNAT Studio must be restarted.
+If the installation was successful, a RecordFlux menu will be available:</p>
+<img alt="_images/RecordFlux-GNAT_Studio-Menu.png" src="_images/RecordFlux-GNAT_Studio-Menu.png" />
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="User&#39;s Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="20-overview.html" class="btn btn-neutral float-right" title="Overview" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023-2024, AdaCore.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

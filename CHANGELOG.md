@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Style check for unsigned integer syntax (eng/recordflux/RecordFlux#1775)
 - Support for SPARK Pro 25.0 (eng/recordflux/RecordFlux#1823)
 - Support for GNAT Pro 25.0 (eng/recordflux/RecordFlux#1823)
+- `rflx doc` subcommand to open packaged HTML documentation (eng/recordflux/RecordFlux#1822)
 
 ### Fixed
 
