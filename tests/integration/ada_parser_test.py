@@ -25,7 +25,7 @@ def read_spec_and_body(spec_file: Path) -> tuple[str, str]:
         else ""
     )
 
-    return (spec.rstrip("\n"), body.rstrip("\n"))
+    return (spec, body)
 
 
 @pytest.mark.parametrize(

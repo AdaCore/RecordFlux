@@ -1532,7 +1532,7 @@ class PackageDeclaration(Declaration):
             f"package {self.identifier.ada_str}{aspect_specification(self.aspects)}\nis\n\n"
             f"{declarative_items(self.declarations)}"
             f"{declarative_items(self.private_declarations, private=True)}"
-            f"end {self.identifier.ada_str};"
+            f"end {self.identifier.ada_str};\n"
         )
 
 
@@ -1561,7 +1561,7 @@ class PackageBody(Declaration):
 
         return (
             f"package body {self.identifier.ada_str}{aspect_specification(self.aspects)}\nis\n\n"
-            f"{declarative_items(self.declarations)}{statements}end {self.identifier.ada_str};"
+            f"{declarative_items(self.declarations)}{statements}end {self.identifier.ada_str};\n"
         )
 
 
@@ -1590,7 +1590,7 @@ class GenericPackageInstantiation(PackageDeclaration):
             associations = f" ({associations})"
         return (
             f"package {self.identifier.ada_str} is new {self.generic_package.ada_str}"
-            f"{associations};"
+            f"{associations};\n"
         )
 
 

@@ -675,11 +675,11 @@ def test_formal_package_declaration() -> None:
 def test_generic_package_instantiation() -> None:
     assert (
         str(ada.GenericPackageInstantiation("A", "B", [(None, "C"), (None, "D")]))
-        == "package A is new B (C, D);"
+        == "package A is new B (C, D);\n"
     )
     assert (
         str(ada.GenericPackageInstantiation("A", "B", [("P1", "C"), ("P2", "D")]))
-        == "package A is new B (P1 => C, P2 => D);"
+        == "package A is new B (P1 => C, P2 => D);\n"
     )
 
 
@@ -1008,7 +1008,8 @@ def test_declarative_items() -> None:
 
            X : Boolean;
 
-        end P;""",
+        end P;
+        """,
     )
 
 
@@ -1026,7 +1027,8 @@ def test_declarative_items() -> None:
             package P
             is
 
-            end P;""",
+            end P;
+            """,
         ),
         (
             ada.PackageUnit(
@@ -1041,7 +1043,8 @@ def test_declarative_items() -> None:
             package P
             is
 
-            end P;""",
+            end P;
+            """,
         ),
         (
             ada.PackageUnit(
@@ -1057,7 +1060,8 @@ def test_declarative_items() -> None:
             package P
             is
 
-            end P;""",
+            end P;
+            """,
         ),
         (
             ada.PackageUnit(
@@ -1088,7 +1092,8 @@ def test_declarative_items() -> None:
             package P
             is
 
-            end P;""",
+            end P;
+            """,
         ),
     ],
 )
