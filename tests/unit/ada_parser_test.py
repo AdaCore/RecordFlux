@@ -792,8 +792,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
     [
         (
             """\
-            package P
-            is
+            package P is
 
             end P;
             """,
@@ -801,8 +800,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                function F (P : Boolean) return Natural is
                  (if P then 0 else 42);
@@ -813,8 +811,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                pragma Assert (if X > 5 then True else False);
 
@@ -824,8 +821,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                function Fits_Into_Upper (V : U64; Bits, Lower : Natural) return Boolean is
                  (if
@@ -844,17 +840,14 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
             end P;
             """,
             """\
-            package body P
-            is
+            package body P is
 
-               function Mask_Upper (V : U64; Mask : Natural) return U64
-               is
+               function Mask_Upper (V : U64; Mask : Natural) return U64 is
                begin
                   return V
                          and 2**Mask - 1;
@@ -874,8 +867,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                function F (Val : Integer) return Boolean is
                  (case Val is
@@ -892,8 +884,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                type T is new Natural;
 
@@ -903,8 +894,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                type T is new Natural range 1 .. 42;
 
@@ -914,8 +904,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                type A is array (I range <>) of B;
 
@@ -925,8 +914,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                type P is access T;
 
@@ -936,8 +924,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                type T is range 1 .. U'Last * 8;
 
@@ -948,8 +935,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         (
             """\
             generic
-            package P
-            is
+            package P is
 
             end P;
             """,
@@ -959,8 +945,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             """\
             generic
                type PT is private;
-            package P
-            is
+            package P is
 
             end P;
             """,
@@ -970,8 +955,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             """\
             generic
                with procedure P (P1 : T);
-            package P
-            is
+            package P is
 
             end P;
             """,
@@ -981,8 +965,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             """\
             generic
                with function F (P1 : T) return U;
-            package P
-            is
+            package P is
 
             end P;
             """,
@@ -992,8 +975,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             """\
             generic
                E : T;
-            package P
-            is
+            package P is
 
             end P;
             """,
@@ -1006,8 +988,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
                with procedure P (P1 : T);
                with function F (P1 : T) return U;
                E : T;
-            package P
-            is
+            package P is
 
             end P;
             """,
@@ -1017,8 +998,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             """\
             generic
                with function F (P1 : T := 42) return U;
-            package P
-            is
+            package P is
 
             end P;
             """,
@@ -1028,8 +1008,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             """\
             generic
                type PT (D : T) is private;
-            package P
-            is
+            package P is
 
             end P;
             """,
@@ -1037,8 +1016,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                use type T;
 
@@ -1048,8 +1026,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                use type T, U, V;
 
@@ -1061,8 +1038,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                type PT is private;
 
@@ -1072,8 +1048,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                type PT (D1 : T; D2 : T) is private;
 
@@ -1083,8 +1058,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                type PT (D1 : T; D2 : T := 42) is private;
 
@@ -1094,8 +1068,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                procedure F (C : T)
                with
@@ -1108,8 +1081,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                procedure F (C : out T; B : in out T; D : in T)
                with
@@ -1122,8 +1094,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                procedure F (C : T)
                with
@@ -1136,8 +1107,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                procedure S (C : T)
                with
@@ -1150,8 +1120,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                procedure S (C : T)
                with
@@ -1167,8 +1136,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                procedure P (C : T)
                with
@@ -1181,8 +1149,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                G1, G2, G3 : Integer;
 
@@ -1197,8 +1164,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                procedure P (C : T; D : in out T; E : out T)
                with
@@ -1222,8 +1188,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                type T (D : U) is private
                with
@@ -1237,8 +1202,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                type T is private;
 
@@ -1252,8 +1216,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                type Color is (Red, Green, Blue);
 
@@ -1263,8 +1226,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                type Color is (Red, Green, Blue)
                with
@@ -1277,8 +1239,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                type R is
                   record
@@ -1291,8 +1252,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                type N is null record;
 
@@ -1302,8 +1262,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                type T (D : U) is private
                with
@@ -1317,17 +1276,14 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
             end P;
             """,
             """\
-            package body P
-            is
+            package body P is
 
-               procedure Proc (V : T)
-               is
+               procedure Proc (V : T) is
                begin
                   C (V);
                end Proc;
@@ -1337,17 +1293,14 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
             end P;
             """,
             """\
-            package body P
-            is
+            package body P is
 
-               procedure Proc (R : out T)
-               is
+               procedure Proc (R : out T) is
                begin
                   R := 42;
                end Proc;
@@ -1357,17 +1310,14 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
             end P;
             """,
             """\
-            package body P
-            is
+            package body P is
 
-               procedure Proc (R : out T)
-               is
+               procedure Proc (R : out T) is
                begin
                   R := (F1 => 1, F2 => 2, F3 => 3);
                end Proc;
@@ -1377,17 +1327,14 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
             end P;
             """,
             """\
-            package body P
-            is
+            package body P is
 
-               procedure Proc (R : out T)
-               is
+               procedure Proc (R : out T) is
                begin
                   R := B (1 .. B'Last - 1);
                end Proc;
@@ -1397,17 +1344,14 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
             end P;
             """,
             """\
-            package body P
-            is
+            package body P is
 
-               procedure Proc (R : out T)
-               is
+               procedure Proc (R : out T) is
                begin
                   declare
                      X : T := 1;
@@ -1421,17 +1365,14 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
             end P;
             """,
             """\
-            package body P
-            is
+            package body P is
 
-               procedure Proc (R : out T)
-               is
+               procedure Proc (R : out T) is
                   X : T;
                begin
                   for I in 1 .. 10 loop
@@ -1445,17 +1386,14 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
             end P;
             """,
             """\
-            package body P
-            is
+            package body P is
 
-               procedure Proc (R : out T)
-               is
+               procedure Proc (R : out T) is
                   X : T;
                begin
                   for I in reverse 1 .. 10 loop
@@ -1469,17 +1407,14 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
             end P;
             """,
             """\
-            package body P
-            is
+            package body P is
 
-               procedure Proc (R : out T; I : Natural)
-               is
+               procedure Proc (R : out T; I : Natural) is
                   X : T;
                begin
                   X (I) := T'Val (R);
@@ -1491,17 +1426,14 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
             end P;
             """,
             """\
-            package body P
-            is
+            package body P is
 
-               procedure Proc (R : out T; I : Natural)
-               is
+               procedure Proc (R : out T; I : Natural) is
                begin
                   case I is
                      when 1 =>
@@ -1518,17 +1450,14 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
             end P;
             """,
             """\
-            package body P
-            is
+            package body P is
 
-               function F (I : Natural) return Natural
-               is
+               function F (I : Natural) return Natural is
                begin
                   return I + 1;
                end F;
@@ -1538,8 +1467,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                procedure S (C : T)
                with
@@ -1555,8 +1483,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             """\
             generic
                type T is range <>;
-            package P
-            is
+            package P is
 
             end P;
             """,
@@ -1566,8 +1493,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             """\
             generic
                type T is (<>);
-            package P
-            is
+            package P is
 
             end P;
             """,
@@ -1577,8 +1503,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             """\
             generic
                type T is array (I) of E;
-            package P
-            is
+            package P is
 
             end P;
             """,
@@ -1588,8 +1513,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             """\
             generic
                type T is array (I range <>) of E;
-            package P
-            is
+            package P is
 
             end P;
             """,
@@ -1599,8 +1523,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             """\
             generic
                type T is access U;
-            package P
-            is
+            package P is
 
             end P;
             """,
@@ -1608,8 +1531,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                function "+" (L : Natural; R : Natural) return Natural is abstract;
 
@@ -1621,8 +1543,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                function F (L : Natural; R : Natural) return Natural renames U;
 
@@ -1634,8 +1555,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                function F is new G (X, 42);
 
@@ -1651,8 +1571,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                pragma Assert (L'Pos (L'Last) /= M'Pos (M'Last));
 
@@ -1666,8 +1585,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
         ),
         (
             """\
-            package P
-            is
+            package P is
 
                subtype I is L range 1 .. L'Last;
 
@@ -1680,8 +1598,7 @@ def test_roundtrip_model(unit: ada.PackageUnit) -> None:
             generic
                with package Q is new R (<>);
                with package S is new T (others => <>);
-            package P
-            is
+            package P is
 
             end P;
             """,
@@ -1703,8 +1620,7 @@ def test_roundtrip_text(spec: str, body: str | None) -> None:
     [
         (
             """\
-        package P
-        is
+        package P is
 
            type R is record
              F1, F2 : T;
@@ -1712,45 +1628,41 @@ def test_roundtrip_text(spec: str, body: str | None) -> None:
 
         end P;
         """,
-            "<stdin>:5:6: error: identifier lists unsupported for record component declaration",
+            "<stdin>:4:6: error: identifier lists unsupported for record component declaration",
         ),
         (
             """\
-        package P
-        is
+        package P is
 
            subtype S is T range <>;
 
         end P;
         """,
-            "<stdin>:4:4: error: signed integer constraint invalid for subtypes",
+            "<stdin>:3:4: error: signed integer constraint invalid for subtypes",
         ),
         (
             """\
-        package P
-        is
+        package P is
 
            type S is new T range <>;
 
         end P;
         """,
-            "<stdin>:4:14: error: signed integer constraint invalid for derived types",
+            "<stdin>:3:14: error: signed integer constraint invalid for derived types",
         ),
         (
             """\
-        package P
-        is
+        package P is
 
            X : T := (1, 2, P => 3);
 
         end P;
         """,
-            "<stdin>:4:13: error: invalid mixed positional and named aggregate",
+            "<stdin>:3:13: error: invalid mixed positional and named aggregate",
         ),
         (
             """\
-        package P
-        is
+        package P is
 
            type E is (E1, E2)
            with
@@ -1758,12 +1670,11 @@ def test_roundtrip_text(spec: str, body: str | None) -> None:
 
         end P;
         """,
-            "<stdin>:4:4: error: multiple size aspects",
+            "<stdin>:3:4: error: multiple size aspects",
         ),
         (
             """\
-        package P
-        is
+        package P is
 
         end Q;
         """,
@@ -1771,22 +1682,19 @@ def test_roundtrip_text(spec: str, body: str | None) -> None:
         ),
         (
             """\
-        package P
-        is
+        package P is
 
         end P;
 
-        package body P
-        is
+        package body P is
 
         end Q;
         """,
-            "<stdin>:6:1: error: inconsistent package identifiers",
+            "<stdin>:5:1: error: inconsistent package identifiers",
         ),
         (
             """\
-        package P
-        is
+        package P is
 
             procedure P
             with
@@ -1794,12 +1702,11 @@ def test_roundtrip_text(spec: str, body: str | None) -> None:
 
         end P;
         """,
-            "<stdin>:6:17: error: duplicate In_Out",
+            "<stdin>:5:17: error: duplicate In_Out",
         ),
         (
             """\
-        package P
-        is
+        package P is
 
             procedure P
             with
@@ -1807,12 +1714,11 @@ def test_roundtrip_text(spec: str, body: str | None) -> None:
 
         end P;
         """,
-            "<stdin>:6:17: error: duplicate Input",
+            "<stdin>:5:17: error: duplicate Input",
         ),
         (
             """\
-        package P
-        is
+        package P is
 
             procedure P
             with
@@ -1820,33 +1726,29 @@ def test_roundtrip_text(spec: str, body: str | None) -> None:
 
         end P;
         """,
-            "<stdin>:6:17: error: duplicate Output",
+            "<stdin>:5:17: error: duplicate Output",
         ),
         (
             """\
-        package P
-        is
+        package P is
 
             type T is array (T range 1 .. 5) of U;
 
         end P;
         """,
-            "<stdin>:4:15: error: discrete array subtypes not implemented",
+            "<stdin>:3:15: error: discrete array subtypes not implemented",
         ),
         (
             """\
-        package P
-        is
+        package P is
 
         end P;
 
-        package P
-        is
+        package P is
 
         end P;
 
-        package P
-        is
+        package P is
 
         end P;
         """,
@@ -1854,8 +1756,7 @@ def test_roundtrip_text(spec: str, body: str | None) -> None:
         ),
         (
             """\
-        package body P
-        is
+        package body P is
 
         end P;
         """,
@@ -1863,13 +1764,11 @@ def test_roundtrip_text(spec: str, body: str | None) -> None:
         ),
         (
             """\
-        package P
-        is
+        package P is
 
         end P;
 
-        package Q
-        is
+        package Q is
 
         end Q;
         """,
@@ -1877,13 +1776,11 @@ def test_roundtrip_text(spec: str, body: str | None) -> None:
         ),
         (
             """\
-        package P
-        is
+        package P is
 
         end P;
 
-        package body P
-        is
+        package body P is
 
            procedure P is
            begin
@@ -1892,23 +1789,21 @@ def test_roundtrip_text(spec: str, body: str | None) -> None:
 
         end P;
         """,
-            "<stdin>:9:4: error: inconsistent identifier",
+            "<stdin>:7:4: error: inconsistent identifier",
         ),
         (
             """\
-        package P
-        is
+        package P is
 
            X : T range 0 .. 1;
 
         end P;
         """,
-            "<stdin>:4:4: error: invalid constraint in object declaration",
+            "<stdin>:3:4: error: invalid constraint in object declaration",
         ),
         (
             """\
-        package P
-        is
+        package P is
 
            type R is record
               E : T range <>;
@@ -1916,25 +1811,23 @@ def test_roundtrip_text(spec: str, body: str | None) -> None:
 
         end P;
         """,
-            "<stdin>:5:11: error: invalid constraint in component definition",
+            "<stdin>:4:11: error: invalid constraint in component definition",
         ),
         (
             """\
-        package P
-        is
+        package P is
 
            type P is access T range <>;
 
         end P;
         """,
-            "<stdin>:4:14: error: invalid constraint in access to object definition",
+            "<stdin>:3:14: error: invalid constraint in access to object definition",
         ),
         (
             """\
         use Q, R;
 
-        package P
-        is
+        package P is
 
         end P;
         """,
@@ -1974,13 +1867,12 @@ def test_parse_error(data: str, message: str) -> None:
         '{overriding_indicator}function "+" (L, R : T) return {null_exclusion}T'
         "{aspect_specification};",
         "{overriding_indicator}function S return {null_exclusion}T{aspect_specification}"
-        "\n           is{declarative_part}"
+        "{is_keyword}{declarative_part}"
         "\n           begin"
         "\n              return 5;"
         "\n           end S;",
         '{overriding_indicator}function "+" (L, R : T) return {null_exclusion}T'
-        "{aspect_specification}"
-        "\n           is{declarative_part}"
+        "{aspect_specification}{is_keyword}{declarative_part}"
         "\n           begin"
         "\n              return 5;"
         '\n           end "+";',
@@ -2000,13 +1892,11 @@ def test_parse_error(data: str, message: str) -> None:
         "{overriding_indicator}procedure S is new G (A, B){aspect_specification};",
         "{overriding_indicator}procedure S is new G (A, 42){aspect_specification};",
         "{overriding_indicator}procedure S is new G (P1 => A, P2 => 42){aspect_specification};",
-        "{overriding_indicator}procedure S{aspect_specification}"
-        "\n           is"
+        "{overriding_indicator}procedure S{aspect_specification}{is_keyword}"
         "\n           begin"
         "\n              return;"
         "\n           end S;",
-        "{overriding_indicator}procedure S (P : T){aspect_specification}"
-        "\n           is"
+        "{overriding_indicator}procedure S (P : T){aspect_specification}{is_keyword}"
         "\n           begin"
         "\n              return;"
         "\n           end S;",
@@ -2022,15 +1912,16 @@ def test_roundtrip_declarations(
     overriding_indicator: str,
     data: str,
 ) -> None:
+    is_keyword = "\n           is" if aspect_specification else " is"
     text = textwrap.dedent(
         f"""\
-        package P
-        is
+        package P is
 
            {data}
 
         end P;
         """.format(
+            is_keyword=is_keyword,
             aspect_specification=aspect_specification,
             null_exclusion=null_exclusion,
             overriding_indicator=overriding_indicator,

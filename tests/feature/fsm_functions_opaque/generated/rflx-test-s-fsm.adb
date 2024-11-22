@@ -551,22 +551,19 @@ is
       pragma Assert (Error_Invariant);
    end Error;
 
-   procedure Initialize (Ctx : in out Context)
-   is
+   procedure Initialize (Ctx : in out Context) is
    begin
       Test.S.FSM_Allocator.Initialize (Ctx.P.Slots, Ctx.P.Memory);
       Ctx.P.Next_State := S_Start;
    end Initialize;
 
-   procedure Finalize (Ctx : in out Context)
-   is
+   procedure Finalize (Ctx : in out Context) is
    begin
       Test.S.FSM_Allocator.Finalize (Ctx.P.Slots);
       Ctx.P.Next_State := S_Final;
    end Finalize;
 
-   procedure Tick (Ctx : in out Context)
-   is
+   procedure Tick (Ctx : in out Context) is
    begin
       case Ctx.P.Next_State is
          when S_Start =>
@@ -587,8 +584,7 @@ is
    function In_IO_State (Unused_Ctx : Context) return Boolean is
      (False);
 
-   procedure Run (Ctx : in out Context)
-   is
+   procedure Run (Ctx : in out Context) is
    begin
       Tick (Ctx);
       while

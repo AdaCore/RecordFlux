@@ -20,14 +20,12 @@ is
 
    pragma Unevaluated_Use_Of_Old (Allow);
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; P : Boolean; Written_Last : RFLX_Types.Bit_Length := 0)
-   is
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; P : Boolean; Written_Last : RFLX_Types.Bit_Length := 0) is
    begin
       Initialize (Ctx, Buffer, RFLX_Types.To_First_Bit_Index (Buffer'First), RFLX_Types.To_Last_Bit_Index (Buffer'Last), P, Written_Last);
    end Initialize;
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; P : Boolean; Written_Last : RFLX_Types.Bit_Length := 0)
-   is
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; P : Boolean; Written_Last : RFLX_Types.Bit_Length := 0) is
       Buffer_First : constant RFLX_Types.Index := Buffer'First;
       Buffer_Last : constant RFLX_Types.Index := Buffer'Last;
    begin
@@ -35,27 +33,23 @@ is
       Buffer := null;
    end Initialize;
 
-   procedure Reset (Ctx : in out Context; P : Boolean)
-   is
+   procedure Reset (Ctx : in out Context; P : Boolean) is
    begin
       Reset (Ctx, RFLX_Types.To_First_Bit_Index (Ctx.Buffer'First), RFLX_Types.To_Last_Bit_Index (Ctx.Buffer'Last), P);
    end Reset;
 
-   procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; P : Boolean)
-   is
+   procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; P : Boolean) is
    begin
       Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, First, Last, P, First - 1, First - 1, Ctx.Buffer, (F_F1 => (State => S_Invalid, others => <>), others => <>));
    end Reset;
 
-   procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr)
-   is
+   procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr) is
    begin
       Buffer := Ctx.Buffer;
       Ctx.Buffer := null;
    end Take_Buffer;
 
-   procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes)
-   is
+   procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes) is
    begin
       if Buffer'Length > 0 then
          Buffer := Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last));
@@ -64,14 +58,12 @@ is
       end if;
    end Copy;
 
-   procedure Generic_Read (Ctx : Context)
-   is
+   procedure Generic_Read (Ctx : Context) is
    begin
       Read (Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last)));
    end Generic_Read;
 
-   procedure Generic_Write (Ctx : in out Context; Offset : RFLX_Types.Length := 0)
-   is
+   procedure Generic_Write (Ctx : in out Context; Offset : RFLX_Types.Length := 0) is
       Length : RFLX_Types.Length;
    begin
       Reset (Ctx, RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First), RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last), Ctx.P);
@@ -80,8 +72,7 @@ is
       Ctx.Written_Last := RFLX_Types.Bit_Index'Max (Ctx.Written_Last, RFLX_Types.To_Last_Bit_Index (RFLX_Types.Length (Ctx.Buffer_First) + Offset + Length - 1));
    end Generic_Write;
 
-   procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes)
-   is
+   procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes) is
    begin
       Data := Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last));
    end Data;
@@ -150,8 +141,7 @@ is
       return RFLX_Types.Operations.Extract (Ctx.Buffer.all, Buffer_First, Buffer_Last, Offset, Size, Byte_Order);
    end Get;
 
-   procedure Verify (Ctx : in out Context; Fld : Field)
-   is
+   procedure Verify (Ctx : in out Context; Fld : Field) is
       Value : RFLX_Types.Base_Integer;
    begin
       if
@@ -178,8 +168,7 @@ is
       end if;
    end Verify;
 
-   procedure Verify_Message (Ctx : in out Context)
-   is
+   procedure Verify_Message (Ctx : in out Context) is
    begin
       for F in Field loop
          pragma Loop_Invariant (Has_Buffer (Ctx)
@@ -283,14 +272,12 @@ is
       RFLX_Types.Operations.Insert (Val, Ctx.Buffer.all, Buffer_First, Buffer_Last, Offset, Positive (Size), RFLX_Types.High_Order_First);
    end Set_Scalar;
 
-   procedure Set_F1 (Ctx : in out Context; Val : RFLX.Universal.Value)
-   is
+   procedure Set_F1 (Ctx : in out Context; Val : RFLX.Universal.Value) is
    begin
       Set_Scalar (Ctx, F_F1, RFLX.Universal.To_Base_Integer (Val));
    end Set_F1;
 
-   procedure Set_F2 (Ctx : in out Context; Val : RFLX.Universal.Value)
-   is
+   procedure Set_F2 (Ctx : in out Context; Val : RFLX.Universal.Value) is
    begin
       Set_Scalar (Ctx, F_F2, RFLX.Universal.To_Base_Integer (Val));
    end Set_F2;

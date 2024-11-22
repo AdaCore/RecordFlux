@@ -905,8 +905,7 @@ is
       pragma Assert (Reply_2_Invariant);
    end Reply_2;
 
-   procedure Initialize (Ctx : in out Context)
-   is
+   procedure Initialize (Ctx : in out Context) is
       Messages_Buffer : RFLX_Types.Bytes_Ptr;
       Tags_Buffer : RFLX_Types.Bytes_Ptr;
       Message_Buffer : RFLX_Types.Bytes_Ptr;
@@ -930,8 +929,7 @@ is
       Ctx.P.Next_State := S_Global;
    end Initialize;
 
-   procedure Finalize (Ctx : in out Context)
-   is
+   procedure Finalize (Ctx : in out Context) is
       Messages_Buffer : RFLX_Types.Bytes_Ptr;
       Tags_Buffer : RFLX_Types.Bytes_Ptr;
       Message_Buffer : RFLX_Types.Bytes_Ptr;
@@ -961,8 +959,7 @@ is
       Ctx.P.Next_State := S_Final;
    end Finalize;
 
-   procedure Tick (Ctx : in out Context)
-   is
+   procedure Tick (Ctx : in out Context) is
    begin
       case Ctx.P.Next_State is
          when S_Global =>
@@ -981,8 +978,7 @@ is
    function In_IO_State (Ctx : Context) return Boolean is
      (Ctx.P.Next_State in S_Reply_1 | S_Reply_2);
 
-   procedure Run (Ctx : in out Context)
-   is
+   procedure Run (Ctx : in out Context) is
    begin
       Tick (Ctx);
       while
@@ -994,8 +990,7 @@ is
       end loop;
    end Run;
 
-   procedure Read (Ctx : Context; Chan : Channel; Buffer : out RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0)
-   is
+   procedure Read (Ctx : Context; Chan : Channel; Buffer : out RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) is
       function Read_Pre (Message_Buffer : RFLX_Types.Bytes) return Boolean is
         (Buffer'Length > 0
          and then Offset < Message_Buffer'Length);

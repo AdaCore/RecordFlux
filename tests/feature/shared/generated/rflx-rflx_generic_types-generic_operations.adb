@@ -235,8 +235,7 @@ is
       end if;
    end U64_Insert;
 
-   function Extract (Buffer : Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order) return U64
-   is
+   function Extract (Buffer : Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order) return U64 is
    begin
       if BO = High_Order_First then
          return U64_Extract (Buffer, First, Last, Off, Size);
@@ -245,20 +244,17 @@ is
       end if;
    end Extract;
 
-   function Extract (Buffer : Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order) return Base_Integer
-   is
+   function Extract (Buffer : Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order) return Base_Integer is
    begin
       return Base_Integer (U64'(Extract (Buffer, First, Last, Off, Size, BO)));
    end Extract;
 
-   procedure Insert (Val : U64; Buffer : in out Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order)
-   is
+   procedure Insert (Val : U64; Buffer : in out Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order) is
    begin
       U64_Insert (Val, Buffer, First, Last, Off, Size, BO);
    end Insert;
 
-   procedure Insert (Val : Base_Integer; Buffer : in out Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order)
-   is
+   procedure Insert (Val : Base_Integer; Buffer : in out Bytes; First : Index; Last : Index; Off : Offset; Size : Positive; BO : Byte_Order) is
    begin
       Lemma_Size (Val, Size);
       Insert (U64 (Val), Buffer, First, Last, Off, Size, BO);

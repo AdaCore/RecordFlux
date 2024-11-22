@@ -19,14 +19,12 @@ is
 
    pragma Unevaluated_Use_Of_Old (Allow);
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; Length : Test.Length; Extended : Boolean; Written_Last : RFLX_Types.Bit_Length := 0)
-   is
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; Length : Test.Length; Extended : Boolean; Written_Last : RFLX_Types.Bit_Length := 0) is
    begin
       Initialize (Ctx, Buffer, RFLX_Types.To_First_Bit_Index (Buffer'First), RFLX_Types.To_Last_Bit_Index (Buffer'Last), Length, Extended, Written_Last);
    end Initialize;
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Length : Test.Length; Extended : Boolean; Written_Last : RFLX_Types.Bit_Length := 0)
-   is
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Length : Test.Length; Extended : Boolean; Written_Last : RFLX_Types.Bit_Length := 0) is
       Buffer_First : constant RFLX_Types.Index := Buffer'First;
       Buffer_Last : constant RFLX_Types.Index := Buffer'Last;
    begin
@@ -34,27 +32,23 @@ is
       Buffer := null;
    end Initialize;
 
-   procedure Reset (Ctx : in out Context; Length : Test.Length; Extended : Boolean)
-   is
+   procedure Reset (Ctx : in out Context; Length : Test.Length; Extended : Boolean) is
    begin
       Reset (Ctx, RFLX_Types.To_First_Bit_Index (Ctx.Buffer'First), RFLX_Types.To_Last_Bit_Index (Ctx.Buffer'Last), Length, Extended);
    end Reset;
 
-   procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Length : Test.Length; Extended : Boolean)
-   is
+   procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Length : Test.Length; Extended : Boolean) is
    begin
       Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, First, Last, Length, Extended, First - 1, First - 1, Ctx.Buffer, (F_Data => (State => S_Invalid, others => <>), others => <>));
    end Reset;
 
-   procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr)
-   is
+   procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr) is
    begin
       Buffer := Ctx.Buffer;
       Ctx.Buffer := null;
    end Take_Buffer;
 
-   procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes)
-   is
+   procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes) is
    begin
       if Buffer'Length > 0 then
          Buffer := Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last));
@@ -63,14 +57,12 @@ is
       end if;
    end Copy;
 
-   procedure Generic_Read (Ctx : Context)
-   is
+   procedure Generic_Read (Ctx : Context) is
    begin
       Read (Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last)));
    end Generic_Read;
 
-   procedure Generic_Write (Ctx : in out Context; Offset : RFLX_Types.Length := 0)
-   is
+   procedure Generic_Write (Ctx : in out Context; Offset : RFLX_Types.Length := 0) is
       Length : RFLX_Types.Length;
    begin
       Reset (Ctx, RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First), RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last), Ctx.Length, Ctx.Extended);
@@ -79,8 +71,7 @@ is
       Ctx.Written_Last := RFLX_Types.Bit_Index'Max (Ctx.Written_Last, RFLX_Types.To_Last_Bit_Index (RFLX_Types.Length (Ctx.Buffer_First) + Offset + Length - 1));
    end Generic_Write;
 
-   procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes)
-   is
+   procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes) is
    begin
       Data := Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last));
    end Data;
@@ -131,8 +122,7 @@ is
       end loop;
    end Reset_Dependent_Fields;
 
-   procedure Verify (Ctx : in out Context; Fld : Field)
-   is
+   procedure Verify (Ctx : in out Context; Fld : Field) is
       Value : RFLX_Types.Base_Integer;
    begin
       if
@@ -159,8 +149,7 @@ is
       end if;
    end Verify;
 
-   procedure Verify_Message (Ctx : in out Context)
-   is
+   procedure Verify_Message (Ctx : in out Context) is
    begin
       for F in Field loop
          pragma Loop_Invariant (Has_Buffer (Ctx)
@@ -174,24 +163,21 @@ is
       end loop;
    end Verify_Message;
 
-   function Get_Data (Ctx : Context) return RFLX_Types.Bytes
-   is
+   function Get_Data (Ctx : Context) return RFLX_Types.Bytes is
       First : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Data).First);
       Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Data).Last);
    begin
       return Ctx.Buffer.all (First .. Last);
    end Get_Data;
 
-   function Get_Extension (Ctx : Context) return RFLX_Types.Bytes
-   is
+   function Get_Extension (Ctx : Context) return RFLX_Types.Bytes is
       First : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Extension).First);
       Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Extension).Last);
    begin
       return Ctx.Buffer.all (First .. Last);
    end Get_Extension;
 
-   procedure Get_Data (Ctx : Context; Data : out RFLX_Types.Bytes)
-   is
+   procedure Get_Data (Ctx : Context; Data : out RFLX_Types.Bytes) is
       First : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Data).First);
       Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Data).Last);
    begin
@@ -199,8 +185,7 @@ is
       Data (Data'First .. Data'First + (Last - First)) := Ctx.Buffer.all (First .. Last);
    end Get_Data;
 
-   procedure Get_Extension (Ctx : Context; Data : out RFLX_Types.Bytes)
-   is
+   procedure Get_Extension (Ctx : Context; Data : out RFLX_Types.Bytes) is
       First : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Extension).First);
       Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Extension).Last);
    begin
@@ -208,16 +193,14 @@ is
       Data (Data'First .. Data'First + (Last - First)) := Ctx.Buffer.all (First .. Last);
    end Get_Extension;
 
-   procedure Generic_Get_Data (Ctx : Context)
-   is
+   procedure Generic_Get_Data (Ctx : Context) is
       First : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Data).First);
       Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Data).Last);
    begin
       Process_Data (Ctx.Buffer.all (First .. Last));
    end Generic_Get_Data;
 
-   procedure Generic_Get_Extension (Ctx : Context)
-   is
+   procedure Generic_Get_Extension (Ctx : Context) is
       First : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Extension).First);
       Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Extension).Last);
    begin
@@ -259,8 +242,7 @@ is
       Ctx.Cursors (F_Data) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
    end Initialize_Data_Private;
 
-   procedure Initialize_Data (Ctx : in out Context)
-   is
+   procedure Initialize_Data (Ctx : in out Context) is
    begin
       Initialize_Data_Private (Ctx, RFLX_Types.To_Length (Field_Size (Ctx, F_Data)));
    end Initialize_Data;
@@ -298,14 +280,12 @@ is
       Ctx.Cursors (F_Extension) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
    end Initialize_Extension_Private;
 
-   procedure Initialize_Extension (Ctx : in out Context)
-   is
+   procedure Initialize_Extension (Ctx : in out Context) is
    begin
       Initialize_Extension_Private (Ctx, RFLX_Types.To_Length (Field_Size (Ctx, F_Extension)));
    end Initialize_Extension;
 
-   procedure Set_Data (Ctx : in out Context; Data : RFLX_Types.Bytes)
-   is
+   procedure Set_Data (Ctx : in out Context; Data : RFLX_Types.Bytes) is
       Buffer_First : constant RFLX_Types.Index := RFLX_Types.To_Index (Field_First (Ctx, F_Data));
       Buffer_Last : constant RFLX_Types.Index := Buffer_First + Data'Length - 1;
    begin
@@ -315,8 +295,7 @@ is
       pragma Assert (Ctx.Buffer.all (RFLX_Types.To_Index (Field_First (Ctx, F_Data)) .. RFLX_Types.To_Index (Field_Last (Ctx, F_Data))) = Data);
    end Set_Data;
 
-   procedure Set_Extension (Ctx : in out Context; Data : RFLX_Types.Bytes)
-   is
+   procedure Set_Extension (Ctx : in out Context; Data : RFLX_Types.Bytes) is
       Buffer_First : constant RFLX_Types.Index := RFLX_Types.To_Index (Field_First (Ctx, F_Extension));
       Buffer_Last : constant RFLX_Types.Index := Buffer_First + Data'Length - 1;
    begin
@@ -326,8 +305,7 @@ is
       pragma Assert (Ctx.Buffer.all (RFLX_Types.To_Index (Field_First (Ctx, F_Extension)) .. RFLX_Types.To_Index (Field_Last (Ctx, F_Extension))) = Data);
    end Set_Extension;
 
-   procedure Generic_Set_Data (Ctx : in out Context; Length : RFLX_Types.Length)
-   is
+   procedure Generic_Set_Data (Ctx : in out Context; Length : RFLX_Types.Length) is
       First : constant RFLX_Types.Index := RFLX_Types.To_Index (Field_First (Ctx, F_Data));
    begin
       if Length > 0 then
@@ -337,8 +315,7 @@ is
       Initialize_Data_Private (Ctx, Length);
    end Generic_Set_Data;
 
-   procedure Generic_Set_Extension (Ctx : in out Context; Length : RFLX_Types.Length)
-   is
+   procedure Generic_Set_Extension (Ctx : in out Context; Length : RFLX_Types.Length) is
       First : constant RFLX_Types.Index := RFLX_Types.To_Index (Field_First (Ctx, F_Extension));
    begin
       if Length > 0 then

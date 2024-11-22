@@ -1003,8 +1003,7 @@ def test_declarative_items() -> None:
         ada.PackageDeclaration("P", declarations=[ada.ObjectDeclaration("X", "Boolean")]),
     ) == textwrap.dedent(
         """\
-        package P
-        is
+        package P is
 
            X : Boolean;
 
@@ -1024,8 +1023,7 @@ def test_declarative_items() -> None:
                 body=ada.PackageBody("P"),
             ),
             """\
-            package P
-            is
+            package P is
 
             end P;
             """,
@@ -1040,8 +1038,7 @@ def test_declarative_items() -> None:
             ),
             """\
             generic
-            package P
-            is
+            package P is
 
             end P;
             """,
@@ -1057,8 +1054,7 @@ def test_declarative_items() -> None:
             """\
             generic
                type T is range 0 .. 124;
-            package P
-            is
+            package P is
 
             end P;
             """,
@@ -1089,8 +1085,7 @@ def test_declarative_items() -> None:
                type T is range 0 .. 124;
                with procedure P (P1 : T := 42);
                with package A is new B (P1 => A, P2 => <>, others => <>);
-            package P
-            is
+            package P is
 
             end P;
             """,

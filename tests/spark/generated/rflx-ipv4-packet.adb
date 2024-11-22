@@ -20,14 +20,12 @@ is
 
    pragma Unevaluated_Use_Of_Old (Allow);
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; Written_Last : RFLX_Types.Bit_Length := 0)
-   is
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; Written_Last : RFLX_Types.Bit_Length := 0) is
    begin
       Initialize (Ctx, Buffer, RFLX_Types.To_First_Bit_Index (Buffer'First), RFLX_Types.To_Last_Bit_Index (Buffer'Last), Written_Last);
    end Initialize;
 
-   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length := 0)
-   is
+   procedure Initialize (Ctx : out Context; Buffer : in out RFLX_Types.Bytes_Ptr; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length := 0) is
       Buffer_First : constant RFLX_Types.Index := Buffer'First;
       Buffer_Last : constant RFLX_Types.Index := Buffer'Last;
    begin
@@ -35,27 +33,23 @@ is
       Buffer := null;
    end Initialize;
 
-   procedure Reset (Ctx : in out Context)
-   is
+   procedure Reset (Ctx : in out Context) is
    begin
       Reset (Ctx, RFLX_Types.To_First_Bit_Index (Ctx.Buffer'First), RFLX_Types.To_Last_Bit_Index (Ctx.Buffer'Last));
    end Reset;
 
-   procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length)
-   is
+   procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) is
    begin
       Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, First, Last, First - 1, First - 1, Ctx.Buffer, (F_Version => (State => S_Invalid, others => <>), others => <>));
    end Reset;
 
-   procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr)
-   is
+   procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr) is
    begin
       Buffer := Ctx.Buffer;
       Ctx.Buffer := null;
    end Take_Buffer;
 
-   procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes)
-   is
+   procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes) is
    begin
       if Buffer'Length > 0 then
          Buffer := Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last));
@@ -64,14 +58,12 @@ is
       end if;
    end Copy;
 
-   procedure Generic_Read (Ctx : Context)
-   is
+   procedure Generic_Read (Ctx : Context) is
    begin
       Read (Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last)));
    end Generic_Read;
 
-   procedure Generic_Write (Ctx : in out Context; Offset : RFLX_Types.Length := 0)
-   is
+   procedure Generic_Write (Ctx : in out Context; Offset : RFLX_Types.Length := 0) is
       Length : RFLX_Types.Length;
    begin
       Reset (Ctx, RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First), RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last));
@@ -80,8 +72,7 @@ is
       Ctx.Written_Last := RFLX_Types.Bit_Index'Max (Ctx.Written_Last, RFLX_Types.To_Last_Bit_Index (RFLX_Types.Length (Ctx.Buffer_First) + Offset + Length - 1));
    end Generic_Write;
 
-   procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes)
-   is
+   procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes) is
    begin
       Data := Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last));
    end Data;
@@ -211,8 +202,7 @@ is
       return RFLX_Types.Operations.Extract (Ctx.Buffer.all, Buffer_First, Buffer_Last, Offset, Size, Byte_Order);
    end Get;
 
-   procedure Verify (Ctx : in out Context; Fld : Field)
-   is
+   procedure Verify (Ctx : in out Context; Fld : Field) is
       Value : RFLX_Types.Base_Integer;
    begin
       if
@@ -243,8 +233,7 @@ is
       end if;
    end Verify;
 
-   procedure Verify_Message (Ctx : in out Context)
-   is
+   procedure Verify_Message (Ctx : in out Context) is
    begin
       for F in Field loop
          pragma Loop_Invariant (Has_Buffer (Ctx)
@@ -256,16 +245,14 @@ is
       end loop;
    end Verify_Message;
 
-   function Get_Payload (Ctx : Context) return RFLX_Types.Bytes
-   is
+   function Get_Payload (Ctx : Context) return RFLX_Types.Bytes is
       First : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Payload).First);
       Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Payload).Last);
    begin
       return Ctx.Buffer.all (First .. Last);
    end Get_Payload;
 
-   procedure Get_Payload (Ctx : Context; Data : out RFLX_Types.Bytes)
-   is
+   procedure Get_Payload (Ctx : Context; Data : out RFLX_Types.Bytes) is
       First : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Payload).First);
       Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Payload).Last);
    begin
@@ -273,8 +260,7 @@ is
       Data (Data'First .. Data'First + (Last - First)) := Ctx.Buffer.all (First .. Last);
    end Get_Payload;
 
-   procedure Generic_Get_Payload (Ctx : Context)
-   is
+   procedure Generic_Get_Payload (Ctx : Context) is
       First : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Payload).First);
       Last : constant RFLX_Types.Index := RFLX_Types.To_Index (Ctx.Cursors (F_Payload).Last);
    begin
@@ -378,114 +364,96 @@ is
       RFLX_Types.Operations.Insert (Val, Ctx.Buffer.all, Buffer_First, Buffer_Last, Offset, Positive (Size), RFLX_Types.High_Order_First);
    end Set_Scalar;
 
-   procedure Set_Version (Ctx : in out Context; Val : RFLX.IPv4.Version)
-   is
+   procedure Set_Version (Ctx : in out Context; Val : RFLX.IPv4.Version) is
    begin
       Set_Scalar (Ctx, F_Version, RFLX.IPv4.To_Base_Integer (Val));
    end Set_Version;
 
-   procedure Set_IHL (Ctx : in out Context; Val : RFLX.IPv4.IHL)
-   is
+   procedure Set_IHL (Ctx : in out Context; Val : RFLX.IPv4.IHL) is
    begin
       Set_Scalar (Ctx, F_IHL, RFLX.IPv4.To_Base_Integer (Val));
    end Set_IHL;
 
-   procedure Set_DSCP (Ctx : in out Context; Val : RFLX.IPv4.DCSP)
-   is
+   procedure Set_DSCP (Ctx : in out Context; Val : RFLX.IPv4.DCSP) is
    begin
       Set_Scalar (Ctx, F_DSCP, RFLX.IPv4.To_Base_Integer (Val));
    end Set_DSCP;
 
-   procedure Set_ECN (Ctx : in out Context; Val : RFLX.IPv4.ECN)
-   is
+   procedure Set_ECN (Ctx : in out Context; Val : RFLX.IPv4.ECN) is
    begin
       Set_Scalar (Ctx, F_ECN, RFLX.IPv4.To_Base_Integer (Val));
    end Set_ECN;
 
-   procedure Set_Total_Length (Ctx : in out Context; Val : RFLX.IPv4.Total_Length)
-   is
+   procedure Set_Total_Length (Ctx : in out Context; Val : RFLX.IPv4.Total_Length) is
    begin
       Set_Scalar (Ctx, F_Total_Length, RFLX.IPv4.To_Base_Integer (Val));
    end Set_Total_Length;
 
-   procedure Set_Identification (Ctx : in out Context; Val : RFLX.IPv4.Identification)
-   is
+   procedure Set_Identification (Ctx : in out Context; Val : RFLX.IPv4.Identification) is
    begin
       Set_Scalar (Ctx, F_Identification, RFLX.IPv4.To_Base_Integer (Val));
    end Set_Identification;
 
-   procedure Set_Flag_R (Ctx : in out Context; Val : Boolean)
-   is
+   procedure Set_Flag_R (Ctx : in out Context; Val : Boolean) is
    begin
       Set_Scalar (Ctx, F_Flag_R, To_Base_Integer (Val));
    end Set_Flag_R;
 
-   procedure Set_Flag_DF (Ctx : in out Context; Val : Boolean)
-   is
+   procedure Set_Flag_DF (Ctx : in out Context; Val : Boolean) is
    begin
       Set_Scalar (Ctx, F_Flag_DF, To_Base_Integer (Val));
    end Set_Flag_DF;
 
-   procedure Set_Flag_MF (Ctx : in out Context; Val : Boolean)
-   is
+   procedure Set_Flag_MF (Ctx : in out Context; Val : Boolean) is
    begin
       Set_Scalar (Ctx, F_Flag_MF, To_Base_Integer (Val));
    end Set_Flag_MF;
 
-   procedure Set_Fragment_Offset (Ctx : in out Context; Val : RFLX.IPv4.Fragment_Offset)
-   is
+   procedure Set_Fragment_Offset (Ctx : in out Context; Val : RFLX.IPv4.Fragment_Offset) is
    begin
       Set_Scalar (Ctx, F_Fragment_Offset, RFLX.IPv4.To_Base_Integer (Val));
    end Set_Fragment_Offset;
 
-   procedure Set_TTL (Ctx : in out Context; Val : RFLX.IPv4.TTL)
-   is
+   procedure Set_TTL (Ctx : in out Context; Val : RFLX.IPv4.TTL) is
    begin
       Set_Scalar (Ctx, F_TTL, RFLX.IPv4.To_Base_Integer (Val));
    end Set_TTL;
 
-   procedure Set_Protocol (Ctx : in out Context; Val : RFLX.IPv4.Protocol_Enum)
-   is
+   procedure Set_Protocol (Ctx : in out Context; Val : RFLX.IPv4.Protocol_Enum) is
    begin
       Set_Scalar (Ctx, F_Protocol, RFLX.IPv4.To_Base_Integer (Val));
    end Set_Protocol;
 
-   procedure Set_Header_Checksum (Ctx : in out Context; Val : RFLX.IPv4.Header_Checksum)
-   is
+   procedure Set_Header_Checksum (Ctx : in out Context; Val : RFLX.IPv4.Header_Checksum) is
    begin
       Set_Scalar (Ctx, F_Header_Checksum, RFLX.IPv4.To_Base_Integer (Val));
    end Set_Header_Checksum;
 
-   procedure Set_Source (Ctx : in out Context; Val : RFLX.IPv4.Address)
-   is
+   procedure Set_Source (Ctx : in out Context; Val : RFLX.IPv4.Address) is
    begin
       Set_Scalar (Ctx, F_Source, RFLX.IPv4.To_Base_Integer (Val));
    end Set_Source;
 
-   procedure Set_Destination (Ctx : in out Context; Val : RFLX.IPv4.Address)
-   is
+   procedure Set_Destination (Ctx : in out Context; Val : RFLX.IPv4.Address) is
    begin
       Set_Scalar (Ctx, F_Destination, RFLX.IPv4.To_Base_Integer (Val));
    end Set_Destination;
 
-   procedure Set_Options_Empty (Ctx : in out Context)
-   is
+   procedure Set_Options_Empty (Ctx : in out Context) is
       Unused_Buffer_First, Unused_Buffer_Last : RFLX_Types.Index;
       Unused_Offset : RFLX_Types.Offset;
    begin
       Set (Ctx, F_Options, 0, 0, True, Unused_Buffer_First, Unused_Buffer_Last, Unused_Offset);
    end Set_Options_Empty;
 
-   procedure Set_Payload_Empty (Ctx : in out Context)
-   is
+   procedure Set_Payload_Empty (Ctx : in out Context) is
       Unused_Buffer_First, Unused_Buffer_Last : RFLX_Types.Index;
       Unused_Offset : RFLX_Types.Offset;
    begin
       Set (Ctx, F_Payload, 0, 0, True, Unused_Buffer_First, Unused_Buffer_Last, Unused_Offset);
    end Set_Payload_Empty;
 
-   procedure Set_Options (Ctx : in out Context; Seq_Ctx : RFLX.IPv4.Options.Context)
-   is
+   procedure Set_Options (Ctx : in out Context; Seq_Ctx : RFLX.IPv4.Options.Context) is
       Size : constant RFLX_Types.Bit_Length := RFLX_Types.To_Bit_Length (RFLX.IPv4.Options.Byte_Size (Seq_Ctx));
       Unused_First, Unused_Last : RFLX_Types.Bit_Index;
       Buffer_First, Buffer_Last : RFLX_Types.Index;
@@ -542,8 +510,7 @@ is
       Ctx.Cursors (F_Options) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
    end Initialize_Options_Private;
 
-   procedure Initialize_Options (Ctx : in out Context)
-   is
+   procedure Initialize_Options (Ctx : in out Context) is
    begin
       Initialize_Options_Private (Ctx, RFLX_Types.To_Length (Field_Size (Ctx, F_Options)));
    end Initialize_Options;
@@ -593,14 +560,12 @@ is
       Ctx.Cursors (F_Payload) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
    end Initialize_Payload_Private;
 
-   procedure Initialize_Payload (Ctx : in out Context)
-   is
+   procedure Initialize_Payload (Ctx : in out Context) is
    begin
       Initialize_Payload_Private (Ctx, RFLX_Types.To_Length (Field_Size (Ctx, F_Payload)));
    end Initialize_Payload;
 
-   procedure Set_Payload (Ctx : in out Context; Data : RFLX_Types.Bytes)
-   is
+   procedure Set_Payload (Ctx : in out Context; Data : RFLX_Types.Bytes) is
       Buffer_First : constant RFLX_Types.Index := RFLX_Types.To_Index (Field_First (Ctx, F_Payload));
       Buffer_Last : constant RFLX_Types.Index := Buffer_First + Data'Length - 1;
    begin
@@ -610,8 +575,7 @@ is
       pragma Assert (Ctx.Buffer.all (RFLX_Types.To_Index (Field_First (Ctx, F_Payload)) .. RFLX_Types.To_Index (Field_Last (Ctx, F_Payload))) = Data);
    end Set_Payload;
 
-   procedure Generic_Set_Payload (Ctx : in out Context; Length : RFLX_Types.Length)
-   is
+   procedure Generic_Set_Payload (Ctx : in out Context; Length : RFLX_Types.Length) is
       First : constant RFLX_Types.Index := RFLX_Types.To_Index (Field_First (Ctx, F_Payload));
    begin
       if Length > 0 then
@@ -621,8 +585,7 @@ is
       Initialize_Payload_Private (Ctx, Length);
    end Generic_Set_Payload;
 
-   procedure Switch_To_Options (Ctx : in out Context; Seq_Ctx : out RFLX.IPv4.Options.Context)
-   is
+   procedure Switch_To_Options (Ctx : in out Context; Seq_Ctx : out RFLX.IPv4.Options.Context) is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Options);
       Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Options);
       Buffer : RFLX_Types.Bytes_Ptr;
@@ -640,8 +603,7 @@ is
       pragma Warnings (On, "unused assignment to ""Buffer""");
    end Switch_To_Options;
 
-   procedure Update_Options (Ctx : in out Context; Seq_Ctx : in out RFLX.IPv4.Options.Context)
-   is
+   procedure Update_Options (Ctx : in out Context; Seq_Ctx : in out RFLX.IPv4.Options.Context) is
       Valid_Sequence : constant Boolean := RFLX.IPv4.Packet.Complete_Options (Ctx, Seq_Ctx);
       Buffer : RFLX_Types.Bytes_Ptr;
    begin

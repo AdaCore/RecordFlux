@@ -1529,7 +1529,8 @@ class PackageDeclaration(Declaration):
     def __str__(self) -> str:
         return (
             f"{generic_formal_part(self.formal_parameters)}"
-            f"package {self.identifier.ada_str}{aspect_specification(self.aspects)}\nis\n\n"
+            f"package {self.identifier.ada_str}"
+            f"{aspect_specification(self.aspects, with_separator=True)}is\n\n"
             f"{declarative_items(self.declarations)}"
             f"{declarative_items(self.private_declarations, private=True)}"
             f"end {self.identifier.ada_str};\n"
@@ -1560,7 +1561,8 @@ class PackageBody(Declaration):
         )
 
         return (
-            f"package body {self.identifier.ada_str}{aspect_specification(self.aspects)}\nis\n\n"
+            f"package body {self.identifier.ada_str}"
+            f"{aspect_specification(self.aspects, with_separator=True)}is\n\n"
             f"{declarative_items(self.declarations)}{statements}end {self.identifier.ada_str};\n"
         )
 
@@ -2452,8 +2454,7 @@ class SubprogramBody(SubprogramDeclaration):
 
     def __str__(self) -> str:
         return (
-            f"{self.specification}{aspect_specification(self.aspects)}\n"
-            "is\n"
+            f"{self.specification}{aspect_specification(self.aspects, with_separator=True)}is\n"
             f"{self._declarations()}"
             f"begin\n"
             f"{self._statements()}\n"
@@ -2780,10 +2781,14 @@ def declarative_items(declarations: Sequence[Declaration], private: bool = False
     return result
 
 
-def aspect_specification(aspects: Sequence[Aspect] | None) -> str:
+def aspect_specification(aspects: Sequence[Aspect] | None, with_separator: bool = False) -> str:
     if not aspects:
-        return ""
-    return "\nwith\n" + ",\n".join(indent(str(aspect), 2) for aspect in aspects)
+        return " " if with_separator else ""
+    return (
+        "\nwith\n"
+        + ",\n".join(indent(str(aspect), 2) for aspect in aspects)
+        + ("\n" if with_separator else "")
+    )
 
 
 def context_clause(context: Sequence[ContextItem]) -> str:

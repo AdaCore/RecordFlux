@@ -21,30 +21,26 @@ is
      Global =>
        null;
 
-   function Shift_Add (V : U64; Data : U64; Amount : Natural; Bits : Natural) return U64
-   is
+   function Shift_Add (V : U64; Data : U64; Amount : Natural; Bits : Natural) return U64 is
       pragma Unreferenced (Bits);
    begin
       return Shift_Left (V, Amount) + Data;
    end Shift_Add;
 
-   function Right_Shift (V : U64; Amount : Natural; Size : Natural) return U64
-   is
+   function Right_Shift (V : U64; Amount : Natural; Size : Natural) return U64 is
       pragma Unreferenced (Size);
    begin
       return Shift_Right (V, Amount);
    end Right_Shift;
 
-   function Left_Shift (V : U64; Amount : Natural; Size : Natural) return U64
-   is
+   function Left_Shift (V : U64; Amount : Natural; Size : Natural) return U64 is
       pragma Unreferenced (Size);
       Result : constant U64 := Shift_Left (V, Amount);
    begin
       return Result;
    end Left_Shift;
 
-   function Mask_Lower (V : U64; Mask, Bits : Natural) return U64
-   is
+   function Mask_Lower (V : U64; Mask, Bits : Natural) return U64 is
       Result : constant U64 := Shift_Left (Shift_Right (V, Mask), Mask);
    begin
       pragma Assert (if
@@ -58,22 +54,19 @@ is
       return Result;
    end Mask_Lower;
 
-   function Mask_Upper (V : U64; Mask : Natural) return U64
-   is
+   function Mask_Upper (V : U64; Mask : Natural) return U64 is
    begin
       return V
              and 2**Mask - 1;
    end Mask_Upper;
 
-   function Add (A : U64; B : U64; Total_Bits, Lower_Bits : Natural) return U64
-   is
+   function Add (A : U64; B : U64; Total_Bits, Lower_Bits : Natural) return U64 is
       pragma Unreferenced (Total_Bits, Lower_Bits);
    begin
       return A + B;
    end Add;
 
-   procedure Lemma_Size (Val : Base_Integer; Size : Positive)
-   is
+   procedure Lemma_Size (Val : Base_Integer; Size : Positive) is
    begin
       if Size < Base_Integer'Size then
          pragma Assert (Val < 2**Size);

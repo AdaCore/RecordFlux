@@ -285,8 +285,7 @@ is
       pragma Assert (Reply2_Invariant);
    end Reply2;
 
-   procedure Initialize (Ctx : in out Context)
-   is
+   procedure Initialize (Ctx : in out Context) is
       In_Msg_Buffer : RFLX_Types.Bytes_Ptr;
       In_Msg2_Buffer : RFLX_Types.Bytes_Ptr;
       Out_Msg_Buffer : RFLX_Types.Bytes_Ptr;
@@ -316,8 +315,7 @@ is
       Ctx.P.Next_State := S_Start;
    end Initialize;
 
-   procedure Finalize (Ctx : in out Context)
-   is
+   procedure Finalize (Ctx : in out Context) is
       In_Msg_Buffer : RFLX_Types.Bytes_Ptr;
       In_Msg2_Buffer : RFLX_Types.Bytes_Ptr;
       Out_Msg_Buffer : RFLX_Types.Bytes_Ptr;
@@ -375,8 +373,7 @@ is
       end case;
    end Reset_Messages_Before_Write;
 
-   procedure Tick (Ctx : in out Context)
-   is
+   procedure Tick (Ctx : in out Context) is
    begin
       case Ctx.P.Next_State is
          when S_Start =>
@@ -400,8 +397,7 @@ is
    function In_IO_State (Ctx : Context) return Boolean is
      (Ctx.P.Next_State in S_Start | S_Reply | S_Read2 | S_Reply2);
 
-   procedure Run (Ctx : in out Context)
-   is
+   procedure Run (Ctx : in out Context) is
    begin
       Tick (Ctx);
       while
@@ -413,8 +409,7 @@ is
       end loop;
    end Run;
 
-   procedure Read (Ctx : Context; Chan : Channel; Buffer : out RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0)
-   is
+   procedure Read (Ctx : Context; Chan : Channel; Buffer : out RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) is
       function Read_Pre (Message_Buffer : RFLX_Types.Bytes) return Boolean is
         (Buffer'Length > 0
          and then Offset < Message_Buffer'Length);
@@ -451,8 +446,7 @@ is
       end case;
    end Read;
 
-   procedure Write (Ctx : in out Context; Chan : Channel; Buffer : RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0)
-   is
+   procedure Write (Ctx : in out Context; Chan : Channel; Buffer : RFLX_Types.Bytes; Offset : RFLX_Types.Length := 0) is
       Write_Buffer_Length : constant RFLX_Types.Length := Write_Buffer_Size (Ctx, Chan);
       function Write_Pre (Context_Buffer_Length : RFLX_Types.Length; Offset : RFLX_Types.Length) return Boolean is
         (Buffer'Length > 0
