@@ -135,7 +135,7 @@ def procedure_body(
         ),
         package(
             declaration_declarations=[
-                ada.RangeType("T", first=ada.Number(0), last=ada.Number(255)),
+                ada.SignedIntegerType("T", first=ada.Number(0), last=ada.Number(255)),
             ],
         ),
         package(
@@ -251,7 +251,9 @@ def procedure_body(
                     ],
                 ),
             ],
-            body_declarations=[ada.RangeType("T", first=ada.Number(0), last=ada.Number(255))],
+            body_declarations=[
+                ada.SignedIntegerType("T", first=ada.Number(0), last=ada.Number(255)),
+            ],
         ),
         package(
             declaration_declarations=[
@@ -520,7 +522,7 @@ def procedure_body(
             formal_parameters=[ada.DiscreteType("DT")],
         ),
         package(
-            formal_parameters=[ada.SignedIntegerType("SIT")],
+            formal_parameters=[ada.FormalSignedIntegerType("SIT")],
         ),
         package(
             formal_parameters=[ada.ArrayType("AT", "I", "T")],
@@ -622,7 +624,7 @@ def procedure_body(
                 ada.PrivateType("PT"),
             ],
             declaration_private_declarations=[
-                ada.RangeType("PT", ada.Number(1), ada.Number(42)),
+                ada.SignedIntegerType("PT", ada.Number(1), ada.Number(42)),
             ],
         ),
         package(

@@ -1137,7 +1137,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         self,
         data: tuple[ada.Number, ada.Number],
     ) -> ada.Declaration:
-        return ada.RangeType(identifier="__INVALID__", first=data[0], last=data[1])
+        return ada.SignedIntegerType(identifier="__INVALID__", first=data[0], last=data[1])
 
     def modular_type_definition(self, data: list[ada.Expr]) -> ada.Declaration:
         return ada.ModularType(identifier="__INVALID__", modulus=data[0])
@@ -1860,7 +1860,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             list[ada.Discriminant] | None,
             ada.PrivateType
             | ada.DiscreteType
-            | ada.SignedIntegerType
+            | ada.FormalSignedIntegerType
             | ada.UnconstrainedArrayType
             | ada.ArrayType
             | ada.AccessType,
@@ -1869,7 +1869,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     ) -> (
         ada.PrivateType
         | ada.DiscreteType
-        | ada.SignedIntegerType
+        | ada.FormalSignedIntegerType
         | ada.UnconstrainedArrayType
         | ada.ArrayType
         | ada.AccessType
@@ -1888,8 +1888,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
                 discriminants=discriminants,
                 aspects=aspects,
             )
-        if isinstance(declaration, ada.SignedIntegerType):
-            return ada.SignedIntegerType(
+        if isinstance(declaration, ada.FormalSignedIntegerType):
+            return ada.FormalSignedIntegerType(
                 identifier=identifier,
                 discriminants=discriminants,
                 aspects=aspects,
@@ -1920,8 +1920,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def formal_discrete_type_definition(self, _: None) -> ada.DiscreteType:
         return ada.DiscreteType("__INVALID__")
 
-    def formal_signed_integer_type_definition(self, _: None) -> ada.SignedIntegerType:
-        return ada.SignedIntegerType("__INVALID__")
+    def formal_signed_integer_type_definition(self, _: None) -> ada.FormalSignedIntegerType:
+        return ada.FormalSignedIntegerType("__INVALID__")
 
     def formal_concrete_subprogram_declaration(
         self,
@@ -2059,7 +2059,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             | ada.ModularType
             | ada.PlainDerivedType
             | ada.PrivateType
-            | ada.RangeType
+            | ada.SignedIntegerType
             | ada.RecordType
             | ada.UnconstrainedArrayType,
             list[ada.Aspect],
@@ -2073,8 +2073,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
                 modulus=definition.modulus,
                 aspects=aspects,
             )
-        if isinstance(definition, ada.RangeType):
-            return ada.RangeType(
+        if isinstance(definition, ada.SignedIntegerType):
+            return ada.SignedIntegerType(
                 identifier=identifier,
                 first=definition.first,
                 last=definition.last,

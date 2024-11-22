@@ -57,9 +57,9 @@ from rflx.ada import (
     PragmaStatement,
     Precondition,
     ProcedureSpecification,
-    RangeType,
     RecordType,
     Selected,
+    SignedIntegerType,
     SizeAspect,
     Slice,
     SparkMode,
@@ -1677,7 +1677,7 @@ class Generator:
 
 def integer_types(integer: Integer) -> list[Declaration]:
     return [
-        RangeType(
+        SignedIntegerType(
             integer.name,
             expr_conv.to_ada(integer.first_expr),
             expr_conv.to_ada(integer.last_expr),

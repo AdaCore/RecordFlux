@@ -1704,7 +1704,7 @@ class ModularType(TypeDeclaration):
         return f" mod {self.modulus}"
 
 
-class RangeType(TypeDeclaration):
+class SignedIntegerType(TypeDeclaration):
     def __init__(
         self,
         identifier: StrID,
@@ -1862,7 +1862,7 @@ class DiscreteType(FormalTypeDeclaration):
         return " (<>)"
 
 
-class SignedIntegerType(FormalTypeDeclaration):
+class FormalSignedIntegerType(FormalTypeDeclaration):
     @property
     def type_definition(self) -> str:
         return " range <>"

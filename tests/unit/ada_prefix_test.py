@@ -27,7 +27,11 @@ from rflx.identifier import ID
                 declaration=ada.PackageDeclaration(
                     "Template.P",
                     declarations=[
-                        ada.RangeType("T", first=ada.Number(0), last=ada.Variable("Template.D")),
+                        ada.SignedIntegerType(
+                            "T",
+                            first=ada.Number(0),
+                            last=ada.Variable("Template.D"),
+                        ),
                     ],
                     aspects=[
                         ada.Initializes("Local", "Template.External"),
@@ -45,7 +49,11 @@ from rflx.identifier import ID
                 declaration=ada.PackageDeclaration(
                     "New.Prefix.P",
                     declarations=[
-                        ada.RangeType("T", first=ada.Number(0), last=ada.Variable("New.Prefix.D")),
+                        ada.SignedIntegerType(
+                            "T",
+                            first=ada.Number(0),
+                            last=ada.Variable("New.Prefix.D"),
+                        ),
                     ],
                     aspects=[
                         ada.Initializes("Local", "New.Prefix.External"),
@@ -66,7 +74,7 @@ from rflx.identifier import ID
                 body_context=[],
                 body=ada.PackageBody("Template.P"),
                 formal_parameters=[
-                    ada.RangeType("T", first=ada.Number(0), last=ada.Number(124)),
+                    ada.SignedIntegerType("T", first=ada.Number(0), last=ada.Number(124)),
                 ],
             ),
             ada.PackageUnit(
@@ -75,7 +83,7 @@ from rflx.identifier import ID
                 body_context=[],
                 body=ada.PackageBody("New.Prefix.P"),
                 formal_parameters=[
-                    ada.RangeType("T", first=ada.Number(0), last=ada.Number(124)),
+                    ada.SignedIntegerType("T", first=ada.Number(0), last=ada.Number(124)),
                 ],
             ),
         ),
@@ -99,7 +107,7 @@ from rflx.identifier import ID
                 declaration=ada.PackageDeclaration(
                     identifier="Template.P",
                     declarations=[
-                        ada.RangeType("T", first=ada.Number(0), last=ada.Number(124)),
+                        ada.SignedIntegerType("T", first=ada.Number(0), last=ada.Number(124)),
                         ada.SubprogramDeclaration(
                             specification=ada.ProcedureSpecification(
                                 "S",
@@ -119,7 +127,7 @@ from rflx.identifier import ID
                 declaration=ada.PackageDeclaration(
                     identifier="New.Prefix.P",
                     declarations=[
-                        ada.RangeType("T", first=ada.Number(0), last=ada.Number(124)),
+                        ada.SignedIntegerType("T", first=ada.Number(0), last=ada.Number(124)),
                         ada.SubprogramDeclaration(
                             specification=ada.ProcedureSpecification(
                                 "S",
@@ -141,7 +149,7 @@ from rflx.identifier import ID
                 declaration=ada.PackageDeclaration(
                     identifier="Template.P",
                     declarations=[
-                        ada.RangeType("T", first=ada.Number(0), last=ada.Number(124)),
+                        ada.SignedIntegerType("T", first=ada.Number(0), last=ada.Number(124)),
                         ada.SubprogramDeclaration(
                             specification=ada.FunctionSpecification(
                                 "F",
@@ -159,7 +167,7 @@ from rflx.identifier import ID
                 declaration=ada.PackageDeclaration(
                     identifier="New.Prefix.P",
                     declarations=[
-                        ada.RangeType("T", first=ada.Number(0), last=ada.Number(124)),
+                        ada.SignedIntegerType("T", first=ada.Number(0), last=ada.Number(124)),
                         ada.SubprogramDeclaration(
                             specification=ada.FunctionSpecification(
                                 "F",
@@ -594,7 +602,7 @@ from rflx.identifier import ID
                 declaration=ada.PackageDeclaration(
                     identifier="Template.P",
                     declarations=[
-                        ada.RangeType("T", first=ada.Number(0), last=ada.Number(124)),
+                        ada.SignedIntegerType("T", first=ada.Number(0), last=ada.Number(124)),
                         ada.SubprogramDeclaration(
                             specification=ada.ProcedureSpecification(
                                 "S",
@@ -631,7 +639,7 @@ from rflx.identifier import ID
                 declaration=ada.PackageDeclaration(
                     identifier="New.Prefix.P",
                     declarations=[
-                        ada.RangeType("T", first=ada.Number(0), last=ada.Number(124)),
+                        ada.SignedIntegerType("T", first=ada.Number(0), last=ada.Number(124)),
                         ada.SubprogramDeclaration(
                             specification=ada.ProcedureSpecification(
                                 "S",
@@ -670,7 +678,7 @@ from rflx.identifier import ID
                 declaration=ada.PackageDeclaration(
                     identifier="Template.P",
                     declarations=[
-                        ada.RangeType("T", first=ada.Number(0), last=ada.Number(124)),
+                        ada.SignedIntegerType("T", first=ada.Number(0), last=ada.Number(124)),
                         ada.SubprogramDeclaration(
                             specification=ada.ProcedureSpecification(
                                 "S",
@@ -707,7 +715,7 @@ from rflx.identifier import ID
                 declaration=ada.PackageDeclaration(
                     identifier="New.Prefix.P",
                     declarations=[
-                        ada.RangeType("T", first=ada.Number(0), last=ada.Number(124)),
+                        ada.SignedIntegerType("T", first=ada.Number(0), last=ada.Number(124)),
                         ada.SubprogramDeclaration(
                             specification=ada.ProcedureSpecification(
                                 "S",
@@ -746,7 +754,7 @@ from rflx.identifier import ID
                 declaration=ada.PackageDeclaration(
                     identifier="Template.P",
                     declarations=[
-                        ada.RangeType("T", first=ada.Number(0), last=ada.Number(124)),
+                        ada.SignedIntegerType("T", first=ada.Number(0), last=ada.Number(124)),
                         ada.SubprogramDeclaration(
                             specification=ada.FunctionSpecification(
                                 "S",
@@ -784,7 +792,7 @@ from rflx.identifier import ID
                 declaration=ada.PackageDeclaration(
                     identifier="New.Prefix.P",
                     declarations=[
-                        ada.RangeType("T", first=ada.Number(0), last=ada.Number(124)),
+                        ada.SignedIntegerType("T", first=ada.Number(0), last=ada.Number(124)),
                         ada.SubprogramDeclaration(
                             specification=ada.FunctionSpecification(
                                 "S",

@@ -535,7 +535,7 @@ def _(element: ada.ModularType, old: ID, new: ID | None) -> ada.ModularType:
 
 
 @_change_prefix.register
-def _(element: ada.RangeType, old: ID, new: ID | None) -> ada.RangeType:
+def _(element: ada.SignedIntegerType, old: ID, new: ID | None) -> ada.SignedIntegerType:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         first=_change_prefix_elem(element.first, old, new),

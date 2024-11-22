@@ -697,7 +697,14 @@ def test_modular_type() -> None:
 
 def test_range_type() -> None:
     assert (
-        str(ada.RangeType("A", ada.Number(1), ada.Number(100), [ada.SizeAspect(ada.Number(8))]))
+        str(
+            ada.SignedIntegerType(
+                "A",
+                ada.Number(1),
+                ada.Number(100),
+                [ada.SizeAspect(ada.Number(8))],
+            ),
+        )
         == "type A is range 1 .. 100\nwith\n  Size =>\n    8;"
     )
 
@@ -758,7 +765,7 @@ def test_discrete_type() -> None:
 
 
 def test_signed_integer_type() -> None:
-    assert str(ada.SignedIntegerType("A")) == "type A is range <>;"
+    assert str(ada.FormalSignedIntegerType("A")) == "type A is range <>;"
 
 
 def test_array_type() -> None:
@@ -1049,7 +1056,9 @@ def test_declarative_items() -> None:
                 declaration=ada.PackageDeclaration("P"),
                 body_context=[],
                 body=ada.PackageBody("P"),
-                formal_parameters=[ada.RangeType("T", first=ada.Number(0), last=ada.Number(124))],
+                formal_parameters=[
+                    ada.SignedIntegerType("T", first=ada.Number(0), last=ada.Number(124)),
+                ],
             ),
             """\
             generic
@@ -1066,7 +1075,7 @@ def test_declarative_items() -> None:
                 body_context=[],
                 body=ada.PackageBody("P"),
                 formal_parameters=[
-                    ada.RangeType("T", first=ada.Number(0), last=ada.Number(124)),
+                    ada.SignedIntegerType("T", first=ada.Number(0), last=ada.Number(124)),
                     ada.FormalSubprogramDeclaration(
                         specification=ada.ProcedureSpecification(
                             "P",
