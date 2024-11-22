@@ -833,6 +833,14 @@ def test_access_parameter() -> None:
             ),
             "procedure A is new B (P1 => C, P2 => D);",
         ),
+        (
+            ada.GenericProcedureInstantiation("A", "B"),
+            "procedure A is new B;",
+        ),
+        (
+            ada.GenericProcedureInstantiation("A", "B", []),
+            "procedure A is new B;",
+        ),
     ],
 )
 def test_generic_instantiation(subprogram: ada.SubprogramDeclaration, expected: str) -> None:
@@ -844,6 +852,9 @@ def test_subprogram_renaming_declaration() -> None:
         str(ada.SubprogramRenamingDeclaration(ada.ProcedureSpecification("A"), "B"))
         == "procedure A renames B;"
     )
+
+
+def test_generic_function_instantiation() -> None:
     assert (
         str(
             ada.GenericFunctionInstantiation(
