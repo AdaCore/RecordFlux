@@ -257,7 +257,7 @@ def procedure_body(
         ),
         package(
             declaration_declarations=[
-                ada.SubprogramAbstractDeclaration(
+                ada.AbstractSubprogramDeclaration(
                     specification=ada.FunctionSpecification(
                         identifier='"+"',
                         parameters=[

@@ -891,14 +891,14 @@ def test_generic_function_instantiation() -> None:
 
 def test_subprogram_separate_declaration() -> None:
     assert (
-        str(ada.SubprogramSeparateDeclaration(specification=ada.ProcedureSpecification("A")))
+        str(ada.SeparateSubprogramDeclaration(specification=ada.ProcedureSpecification("A")))
         == "procedure A is separate;"
     )
 
 
 def test_subprogram_abstract_declaration() -> None:
     assert (
-        str(ada.SubprogramAbstractDeclaration(ada.ProcedureSpecification("A")))
+        str(ada.AbstractSubprogramDeclaration(ada.ProcedureSpecification("A")))
         == "procedure A is abstract;"
     )
 

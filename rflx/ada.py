@@ -2422,13 +2422,13 @@ class SubprogramDeclaration(Declaration):
         return ""
 
 
-class SubprogramAbstractDeclaration(SubprogramDeclaration):
+class AbstractSubprogramDeclaration(SubprogramDeclaration):
     @property
     def _declaration(self) -> str:
         return " is abstract"
 
 
-class SubprogramSeparateDeclaration(SubprogramDeclaration):
+class SeparateSubprogramDeclaration(SubprogramDeclaration):
     @property
     def _declaration(self) -> str:
         return " is separate"

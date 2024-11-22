@@ -2329,12 +2329,12 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
                         aspects=declaration.part.function_part.aspects,
                     )
                 if isinstance(declaration.part.function_part, UnifiedAbstract):
-                    return ada.SubprogramAbstractDeclaration(
+                    return ada.AbstractSubprogramDeclaration(
                         specification=function_specification,
                         aspects=declaration.part.function_part.aspects,
                     )
                 if isinstance(declaration.part.function_part, UnifiedSeparate):
-                    return ada.SubprogramSeparateDeclaration(
+                    return ada.SeparateSubprogramDeclaration(
                         specification=function_specification,
                         aspects=declaration.part.function_part.aspects,
                     )
@@ -2391,12 +2391,12 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
                     aspects=declaration.part.aspects,
                 )
             if isinstance(declaration.part, UnifiedSeparate):
-                return ada.SubprogramSeparateDeclaration(
+                return ada.SeparateSubprogramDeclaration(
                     specification=procedure_specification,
                     aspects=declaration.part.aspects,
                 )
             if isinstance(declaration.part, UnifiedAbstract):
-                return ada.SubprogramAbstractDeclaration(
+                return ada.AbstractSubprogramDeclaration(
                     specification=procedure_specification,
                     aspects=declaration.part.aspects,
                 )
