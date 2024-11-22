@@ -1844,19 +1844,23 @@ class DerivedRecordType(DerivedType):
         return f"{extension}"
 
 
-class PrivateType(TypeDeclaration):
+class FormalTypeDeclaration(TypeDeclaration):
+    pass
+
+
+class PrivateType(FormalTypeDeclaration):
     @property
     def type_definition(self) -> str:
         return " private"
 
 
-class DiscreteType(TypeDeclaration):
+class DiscreteType(FormalTypeDeclaration):
     @property
     def type_definition(self) -> str:
         return " (<>)"
 
 
-class SignedIntegerType(TypeDeclaration):
+class SignedIntegerType(FormalTypeDeclaration):
     @property
     def type_definition(self) -> str:
         return " range <>"
@@ -2626,7 +2630,13 @@ class PackageUnit(Unit):
         body_context: list[ContextItem],
         body: PackageBody,
         formal_parameters: (
-            list[FormalSubprogramDeclaration | TypeDeclaration | FormalPackageDeclaration] | None
+            list[
+                FormalSubprogramDeclaration
+                | TypeDeclaration
+                | FormalTypeDeclaration
+                | FormalPackageDeclaration
+            ]
+            | None
         ) = None,
     ) -> None:
         assert declaration.identifier == body.identifier

@@ -19,7 +19,12 @@ def package(  # noqa: PLR0913
     declaration_private_declarations: list[ada.Declaration] | None = None,
     body_declarations: list[ada.Declaration] | None = None,
     formal_parameters: (
-        list[ada.FormalSubprogramDeclaration | ada.TypeDeclaration | ada.FormalPackageDeclaration]
+        list[
+            ada.FormalSubprogramDeclaration
+            | ada.TypeDeclaration
+            | ada.FormalTypeDeclaration
+            | ada.FormalPackageDeclaration
+        ]
         | None
     ) = None,
 ) -> ada.PackageUnit:
