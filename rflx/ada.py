@@ -56,6 +56,10 @@ class Expr(Base):
             return "(" + indent_next(str(expression), 1) + ")"
         return str(expression)
 
+    @property
+    def parenthesized_if_needed(self) -> str:
+        return f"({self})"
+
     @abstractmethod
     def rflx_expr(self) -> expr.Expr:
         raise NotImplementedError
@@ -840,6 +844,10 @@ class IfExpr(Expr):
             self.else_expression.rflx_expr() if self.else_expression else None,
         )
 
+    @property
+    def parenthesized_if_needed(self) -> str:
+        return str(self)
+
 
 def Case(  # noqa: N802
     control_expression: Expr,
@@ -882,6 +890,10 @@ class CaseExpr(Expr):
 
     def rflx_expr(self) -> expr.Expr:
         raise NotImplementedError
+
+    @property
+    def parenthesized_if_needed(self) -> str:
+        return str(self)
 
 
 class QuantifiedExpr(Expr):
@@ -997,12 +1009,9 @@ class QualifiedExpr(Expr):
         self.expression = expression
 
     def _update_str(self) -> None:
-        operand = (
-            str(self.expression)
-            if isinstance(self.expression, (Aggregate, NamedAggregate, IfExpr))
-            else f"({self.expression})"
+        self._str = intern(
+            f"{self.type_identifier.ada_str}'{self.expression.parenthesized_if_needed}",
         )
-        self._str = intern(f"{self.type_identifier.ada_str}'{operand}")
 
     @property
     def precedence(self) -> Precedence:
@@ -2474,12 +2483,7 @@ class ExpressionFunctionDeclaration(SubprogramDeclaration):
 
     @property
     def _declaration(self) -> str:
-        expression = (
-            f"({self.expression})"
-            if not isinstance(self.expression, (IfExpr, CaseExpr))
-            else str(self.expression)
-        )
-        return f" is\n  {indent_next(expression, 3)}"
+        return f" is\n  {(indent_next(self.expression.parenthesized_if_needed, 3))}"
 
 
 class GenericInstantiation(SubprogramSpecification, Declaration):

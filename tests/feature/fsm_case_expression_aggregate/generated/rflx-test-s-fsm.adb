@@ -114,7 +114,7 @@ is
          goto Finalize_Prepare;
       end if;
       if
-         not RFLX.Universal.Message.Field_Condition (Ctx.P.Message_Ctx, RFLX.Universal.Message.F_Value, Universal.To_Base_Integer (Universal.Value'((case Recv_Type is
+         not RFLX.Universal.Message.Field_Condition (Ctx.P.Message_Ctx, RFLX.Universal.Message.F_Value, Universal.To_Base_Integer (Universal.Value'(case Recv_Type is
              when Universal.MT_Null | Universal.MT_Data =>
                 2,
              when Universal.MT_Value =>
@@ -128,13 +128,13 @@ is
              when Universal.MT_Unconstrained_Data =>
                 64,
              when Universal.MT_Unconstrained_Options =>
-                128))))
+                128)))
       then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Prepare_Invariant);
          goto Finalize_Prepare;
       end if;
-      Universal.Message.Set_Value (Ctx.P.Message_Ctx, Universal.Value'((case Recv_Type is
+      Universal.Message.Set_Value (Ctx.P.Message_Ctx, Universal.Value'(case Recv_Type is
           when Universal.MT_Null | Universal.MT_Data =>
              2,
           when Universal.MT_Value =>
@@ -148,7 +148,7 @@ is
           when Universal.MT_Unconstrained_Data =>
              64,
           when Universal.MT_Unconstrained_Options =>
-             128)));
+             128));
       Ctx.P.Next_State := S_Reply;
       pragma Assert (Prepare_Invariant);
       <<Finalize_Prepare>>
