@@ -2277,130 +2277,15 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             formal_parameters=formal_parameters,
         )
 
-    def unified_subprogram_declaration(  # noqa: PLR0911, PLR0912
+    def unified_subprogram_declaration(
         self,
         data: tuple[bool | None, UnifiedFunctionDeclaration | UnifiedProcedureDeclaration],
     ) -> ada.Declaration:
         overriding, declaration = data
         if isinstance(declaration, UnifiedFunctionDeclaration):
-            if isinstance(declaration.part, UnifiedGenericFunctionInstantiationPart):
-                return ada.GenericFunctionInstantiation(
-                    identifier=declaration.designator,
-                    generic_name=declaration.part.name,
-                    associations=declaration.part.actuals,
-                    overriding=overriding,
-                    aspects=declaration.part.aspects,
-                )
-            if isinstance(declaration.part, UnifiedFunctionDeclarationPart):
-                function_specification = ada.FunctionSpecification(
-                    identifier=declaration.designator,
-                    return_type=declaration.part.return_type,
-                    parameters=declaration.part.formal_part,
-                    overriding=overriding,
-                    not_null=declaration.part.null_exclusion,
-                )
-                if declaration.part.function_part is None:
-                    return ada.SubprogramDeclaration(
-                        specification=function_specification,
-                    )
-                if isinstance(declaration.part.function_part, UnifiedWith):
-                    if declaration.part.function_part.body is None:
-                        return ada.SubprogramDeclaration(
-                            specification=function_specification,
-                            aspects=declaration.part.function_part.aspect_parts,
-                        )
-                    return ada.SubprogramBody(
-                        specification=function_specification,
-                        declarations=declaration.part.function_part.body.declarations,
-                        statements=declaration.part.function_part.body.statements,
-                        aspects=declaration.part.function_part.aspect_parts,
-                    )
-                if isinstance(declaration.part.function_part, UnifiedBody):
-                    assert function_specification.identifier == declaration.part.function_part.name
-                    return ada.SubprogramBody(
-                        specification=function_specification,
-                        declarations=declaration.part.function_part.declarations,
-                        statements=declaration.part.function_part.statements,
-                    )
-                if isinstance(declaration.part.function_part, UnifiedExpressionFunction):
-                    return ada.ExpressionFunctionDeclaration(
-                        specification=function_specification,
-                        expression=declaration.part.function_part.expression,
-                        aspects=declaration.part.function_part.aspects,
-                    )
-                if isinstance(declaration.part.function_part, UnifiedAbstract):
-                    return ada.AbstractSubprogramDeclaration(
-                        specification=function_specification,
-                        aspects=declaration.part.function_part.aspects,
-                    )
-                if isinstance(declaration.part.function_part, UnifiedSeparate):
-                    return ada.SeparateSubprogramDeclaration(
-                        specification=function_specification,
-                        aspects=declaration.part.function_part.aspects,
-                    )
-                if isinstance(declaration.part.function_part, UnifiedRenames):
-                    return ada.SubprogramRenamingDeclaration(
-                        specification=function_specification,
-                        subprogram_identifier=declaration.part.function_part.name,
-                        aspects=declaration.part.function_part.aspects,
-                    )
-                assert_never(declaration.part.function_part)
-            assert_never(declaration.part)
+            return self._unified_function_declaration(declaration, overriding)
         if isinstance(declaration, UnifiedProcedureDeclaration):
-            procedure_specification = ada.ProcedureSpecification(
-                identifier=declaration.name,
-                parameters=declaration.parameters,
-                overriding=overriding,
-            )
-            if declaration.part is None:
-                return ada.SubprogramDeclaration(
-                    specification=procedure_specification,
-                )
-            if isinstance(declaration.part, UnifiedRenames):
-                return ada.SubprogramRenamingDeclaration(
-                    specification=procedure_specification,
-                    subprogram_identifier=declaration.part.name,
-                    aspects=declaration.part.aspects,
-                )
-            if isinstance(declaration.part, UnifiedWith):
-                if declaration.part.body is None:
-                    return ada.SubprogramDeclaration(
-                        specification=procedure_specification,
-                        aspects=declaration.part.aspect_parts,
-                    )
-                return ada.SubprogramBody(
-                    specification=procedure_specification,
-                    declarations=declaration.part.body.declarations,
-                    statements=declaration.part.body.statements,
-                    aspects=declaration.part.aspect_parts,
-                )
-            if isinstance(declaration.part, UnifiedBody):
-                if procedure_specification.identifier != declaration.part.name:
-                    raise ParseError("inconsistent identifier")
-                return ada.SubprogramBody(
-                    specification=procedure_specification,
-                    declarations=declaration.part.declarations,
-                    statements=declaration.part.statements,
-                )
-            if isinstance(declaration.part, UnifiedGenericProcedureInstantiation):
-                return ada.GenericProcedureInstantiation(
-                    identifier=declaration.name,
-                    generic_name=declaration.part.name,
-                    associations=declaration.part.actual_part,
-                    overriding=overriding,
-                    aspects=declaration.part.aspects,
-                )
-            if isinstance(declaration.part, UnifiedSeparate):
-                return ada.SeparateSubprogramDeclaration(
-                    specification=procedure_specification,
-                    aspects=declaration.part.aspects,
-                )
-            if isinstance(declaration.part, UnifiedAbstract):
-                return ada.AbstractSubprogramDeclaration(
-                    specification=procedure_specification,
-                    aspects=declaration.part.aspects,
-                )
-            assert_never(declaration.part)
+            return self._unified_procedure_declaration(declaration, overriding)
         assert_never(declaration)
 
     def unified_function_declaration(
@@ -2542,7 +2427,137 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def _optional(data: list[T]) -> T | None:
         if len(data) == 0:
             return None
+        assert len(data) == 1
         return data[0]
+
+    def _unified_function_declaration(
+        self,
+        declaration: UnifiedFunctionDeclaration,
+        overriding: bool | None,
+    ) -> ada.Declaration:
+        if isinstance(declaration.part, UnifiedGenericFunctionInstantiationPart):
+            return ada.GenericFunctionInstantiation(
+                identifier=declaration.designator,
+                generic_name=declaration.part.name,
+                associations=declaration.part.actuals,
+                overriding=overriding,
+                aspects=declaration.part.aspects,
+            )
+        if isinstance(declaration.part, UnifiedFunctionDeclarationPart):
+            function_specification = ada.FunctionSpecification(
+                identifier=declaration.designator,
+                return_type=declaration.part.return_type,
+                parameters=declaration.part.formal_part,
+                overriding=overriding,
+                not_null=declaration.part.null_exclusion,
+            )
+            if declaration.part.function_part is None:
+                return ada.SubprogramDeclaration(
+                    specification=function_specification,
+                )
+            if isinstance(declaration.part.function_part, UnifiedWith):
+                if declaration.part.function_part.body is None:
+                    return ada.SubprogramDeclaration(
+                        specification=function_specification,
+                        aspects=declaration.part.function_part.aspect_parts,
+                    )
+                return ada.SubprogramBody(
+                    specification=function_specification,
+                    declarations=declaration.part.function_part.body.declarations,
+                    statements=declaration.part.function_part.body.statements,
+                    aspects=declaration.part.function_part.aspect_parts,
+                )
+            if isinstance(declaration.part.function_part, UnifiedBody):
+                assert function_specification.identifier == declaration.part.function_part.name
+                return ada.SubprogramBody(
+                    specification=function_specification,
+                    declarations=declaration.part.function_part.declarations,
+                    statements=declaration.part.function_part.statements,
+                )
+            if isinstance(declaration.part.function_part, UnifiedExpressionFunction):
+                return ada.ExpressionFunctionDeclaration(
+                    specification=function_specification,
+                    expression=declaration.part.function_part.expression,
+                    aspects=declaration.part.function_part.aspects,
+                )
+            if isinstance(declaration.part.function_part, UnifiedAbstract):
+                return ada.AbstractSubprogramDeclaration(
+                    specification=function_specification,
+                    aspects=declaration.part.function_part.aspects,
+                )
+            if isinstance(declaration.part.function_part, UnifiedSeparate):
+                return ada.SeparateSubprogramDeclaration(
+                    specification=function_specification,
+                    aspects=declaration.part.function_part.aspects,
+                )
+            if isinstance(declaration.part.function_part, UnifiedRenames):
+                return ada.SubprogramRenamingDeclaration(
+                    specification=function_specification,
+                    subprogram_identifier=declaration.part.function_part.name,
+                    aspects=declaration.part.function_part.aspects,
+                )
+            assert_never(declaration.part.function_part)
+        assert_never(declaration.part)
+
+    def _unified_procedure_declaration(
+        self,
+        declaration: UnifiedProcedureDeclaration,
+        overriding: bool | None,
+    ) -> ada.Declaration:
+        procedure_specification = ada.ProcedureSpecification(
+            identifier=declaration.name,
+            parameters=declaration.parameters,
+            overriding=overriding,
+        )
+        if declaration.part is None:
+            return ada.SubprogramDeclaration(
+                specification=procedure_specification,
+            )
+        if isinstance(declaration.part, UnifiedRenames):
+            return ada.SubprogramRenamingDeclaration(
+                specification=procedure_specification,
+                subprogram_identifier=declaration.part.name,
+                aspects=declaration.part.aspects,
+            )
+        if isinstance(declaration.part, UnifiedWith):
+            if declaration.part.body is None:
+                return ada.SubprogramDeclaration(
+                    specification=procedure_specification,
+                    aspects=declaration.part.aspect_parts,
+                )
+            return ada.SubprogramBody(
+                specification=procedure_specification,
+                declarations=declaration.part.body.declarations,
+                statements=declaration.part.body.statements,
+                aspects=declaration.part.aspect_parts,
+            )
+        if isinstance(declaration.part, UnifiedBody):
+            if procedure_specification.identifier != declaration.part.name:
+                raise ParseError("inconsistent identifier")
+            return ada.SubprogramBody(
+                specification=procedure_specification,
+                declarations=declaration.part.declarations,
+                statements=declaration.part.statements,
+            )
+        if isinstance(declaration.part, UnifiedGenericProcedureInstantiation):
+            return ada.GenericProcedureInstantiation(
+                identifier=declaration.name,
+                generic_name=declaration.part.name,
+                associations=declaration.part.actual_part,
+                overriding=overriding,
+                aspects=declaration.part.aspects,
+            )
+        if isinstance(declaration.part, UnifiedSeparate):
+            return ada.SeparateSubprogramDeclaration(
+                specification=procedure_specification,
+                aspects=declaration.part.aspects,
+            )
+        if isinstance(declaration.part, UnifiedAbstract):
+            return ada.AbstractSubprogramDeclaration(
+                specification=procedure_specification,
+                aspects=declaration.part.aspects,
+            )
+        assert_never(declaration.part)
 
 
 def parse(text: str, source: Path | None = None) -> ada.PackageUnit:
