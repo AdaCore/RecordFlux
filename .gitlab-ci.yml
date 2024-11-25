@@ -447,7 +447,7 @@ verification_tests:
     - security_group:GitLabRunnerTasksExecDefaultSG
   parallel:
     matrix:
-      - SPARK_VERSION: "24.0"
+      - SPARK_VERSION: "24.2"
         SPARK_BUILD_DATE: "all"
       - SPARK_VERSION: "25.0"
         SPARK_BUILD_DATE: "all"
@@ -469,7 +469,7 @@ verification_python_tests:
     - security_group:GitLabRunnerTasksExecDefaultSG
   parallel:
     matrix:
-      - SPARK_VERSION: "24.0"
+      - SPARK_VERSION: "24.2"
         SPARK_BUILD_DATE: "all"
       - SPARK_VERSION: "25.0"
         SPARK_BUILD_DATE: "all"
