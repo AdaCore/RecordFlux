@@ -19,6 +19,7 @@ class ParseError(Exception):
     pass
 
 
+# This grammar supports the *subset* of Ada 2012 used by the RecordFlux generator and in templates.
 ADA_GRAMMAR = lark.Lark(
     r"""
         # 2.3 (2/2)
