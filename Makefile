@@ -118,6 +118,21 @@ $(shell $(call update_repo,$(LANGKIT_DIR),$(LANGKIT_HEAD)))
 $(shell $(call update_repo,$(ADASAT_DIR),$(ADASAT_HEAD)))
 endif
 
+# --- Other helper functions ---
+
+# Check the version of the current Python interpreter.
+#
+# @param $(1) expected Python version (major.minor)
+define assert_python_version
+	current_version=$$($(POETRY) run python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')") && \
+	if [ "$$current_version" != "$(1)" ]; then \
+		interpreter_path=$$($(POETRY) run python -c "import sys; print(sys.executable)") && \
+		echo "Error: Expected Python version $(1), but got $$current_version"; \
+		echo "Interpreter path: $$interpreter_path"; \
+		exit 1; \
+	fi
+endef
+
 # --- Default ---
 
 .PHONY: all
@@ -323,9 +338,9 @@ check_rapidflux:
 
 check_poetry: export PYTHONPATH=
 check_poetry: $(RFLX)
-	@echo "Checking the consistency between pyproject.toml and poetry.lock"  
+	@echo "Checking the consistency between pyproject.toml and poetry.lock"
 	$(POETRY) check
-	@echo "Checking the consistency between poetry.lock and the environment"  
+	@echo "Checking the consistency between poetry.lock and the environment"
 	@SYNC_OPT=$(if $(CHECK_VENV_FULL_SYNC),--sync,); \
 		OUTPUT=$$($(POETRY) install $$SYNC_OPT --dry-run | grep "-" | grep -v "Already installed"); \
 		if [ -n "$$OUTPUT" ]; then \
@@ -612,7 +627,7 @@ wheel: clean_build $(BUILD_DEPS) $(PARSER) $(VSIX) pyproject.toml $(PACKAGE_SRC)
 # Build distributions for all defined Python versions without local version identifier.
 pypi_dist: $(PROJECT_MANAGEMENT)
 	$(MAKE) sdist VERSION=$$(echo $(VERSION) | sed 's/+.*//')
-	$(foreach version,$(PYTHON_VERSIONS),$(POETRY) env use $(version) && $(POETRY) env info && $(MAKE) wheel VERSION=$$(echo $(VERSION) | sed 's/+.*//') || exit;)
+	$(foreach version,$(PYTHON_VERSIONS),$(POETRY) env use $(version) && $(POETRY) env info && $(call assert_python_version,$(version)) && $(MAKE) wheel VERSION=$$(echo $(VERSION) | sed 's/+.*//') || exit;)
 
 anod_dist: $(BUILD_DEPS) $(PARSER) $(RAPIDFLUX) pyproject.toml $(PACKAGE_SRC)
 	$(POETRY) build -vv --no-cache
