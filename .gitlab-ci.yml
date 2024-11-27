@@ -630,12 +630,9 @@ gnat_wave_compatibility:
     - security_group:GitLabRunnerTasksExecPrivilegedSG
   script:
     - git fetch --unshallow
-    - generic_anod_ci --continuous-builder-mode
-    - cat /tmp/ci_env.sh
-    - . /tmp/ci_env.sh
-    - anod install gnat
-    - eval `anod printenv gnat`
-    - gnat --version
+    - export GNAT_VERSION="wave"
+    - export GNAT_BUILD_DATE="all"
+    - *setup_gnat
     - *setup_python_venv
     - *install_recordflux
     - *setup_python
@@ -652,12 +649,9 @@ spark_wave_compatibility:
     - security_group:GitLabRunnerTasksExecDefaultSG
   script:
     - git fetch --unshallow
-    - generic_anod_ci --continuous-builder-mode
-    - cat /tmp/ci_env.sh
-    - . /tmp/ci_env.sh
-    - anod install spark2014
-    - eval `anod printenv spark2014`
-    - gnatprove --version
+    - export SPARK_VERSION="wave"
+    - export SPARK_BUILD_DATE="all"
+    - *setup_spark
     - *setup_python
     - make prove_tests
     - make prove_python_tests
