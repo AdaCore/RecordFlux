@@ -146,7 +146,7 @@ changelog:
 
 anod_build_and_test:
   services:
-    - image:recordflux
+    - image:pe-base
     - cpu:16
     - mem:16
     - security_group:GitLabRunnerTasksExecDefaultSG
@@ -177,7 +177,7 @@ anod_build_and_test:
 
 anod_doc:
   services:
-    - image:recordflux
+    - image:pe-base
     - cpu:16
     - mem:16
     - security_group:GitLabRunnerTasksExecDefaultSG
