@@ -26,7 +26,8 @@ PYPISERVER_VERSION = 2.0.1
 # --- Repository structure ---
 
 APPS := $(filter-out __init__.py,$(notdir $(wildcard examples/apps/*)))
-SDIST = dist/recordflux-$(VERSION).tar.gz
+DIST_DIR := $(MAKEFILE_DIR)/dist
+SDIST = $(DIST_DIR)/recordflux-$(VERSION).tar.gz
 VSIX = rflx/ide/vscode/recordflux.vsix
 BIN_DIR := $(MAKEFILE_DIR)/.bin
 GENERATED_DIR := generated
@@ -118,7 +119,9 @@ $(shell $(call update_repo,$(LANGKIT_DIR),$(LANGKIT_HEAD)))
 $(shell $(call update_repo,$(ADASAT_DIR),$(ADASAT_HEAD)))
 endif
 
-# --- Other helper functions ---
+# --- Other helper functions and definitions ---
+
+SHORT_VERSION = $(firstword $(subst +, ,$(VERSION)))
 
 # Check the version of the current Python interpreter.
 #
@@ -129,6 +132,30 @@ define assert_python_version
 		interpreter_path=$$($(POETRY) run python -c "import sys; print(sys.executable)") && \
 		echo "Error: Expected Python version $(1), but got $$current_version"; \
 		echo "Interpreter path: $$interpreter_path"; \
+		exit 1; \
+	fi
+endef
+
+# Check if the source distribution for the given RecordFlux version has been built.
+#
+# @param $(1) expected RecordFlux version
+define assert_sdist_exists
+	$(eval FILE_PATTERN := recordflux-$(1).tar.gz)
+	if ! ls $(DIST_DIR)/$(FILE_PATTERN) > /dev/null 2>&1; then \
+		echo "Error: No source package found for pattern $(FILE_PATTERN) in $(DIST_DIR)."; \
+		exit 1; \
+	fi
+endef
+
+# Check if a wheel for the given RecordFlux and Python version has been built.
+#
+# @param $(1) expected RecordFlux version
+# @param $(2) expected Python version (major.minor)
+define assert_wheel_exists
+	$(eval PYTHON_TAG := cp$(subst .,,$(2)))
+	$(eval FILE_PATTERN := recordflux-$(1)-$(PYTHON_TAG)-$(PYTHON_TAG)*.whl)
+	if ! ls $(DIST_DIR)/$(FILE_PATTERN) > /dev/null 2>&1; then \
+		echo "Error: No wheel file found for pattern $(FILE_PATTERN) in $(DIST_DIR)."; \
 		exit 1; \
 	fi
 endef
@@ -622,12 +649,14 @@ wheel: clean_build $(BUILD_DEPS) $(PARSER) $(VSIX) pyproject.toml $(PACKAGE_SRC)
 	POETRY_DYNAMIC_VERSIONING_BYPASS=$(VERSION) $(POETRY) build -vv --no-cache -f wheel
 	$(RM) $(RAPIDFLUX_PLATFORM)
 	@# Test wheel
-	$(MAKE) test_package PACKAGE=dist/recordflux-$(VERSION)-$(PYTHON_TAG)-$(PYTHON_TAG)-manylinux_*_x86_64.whl
+	$(MAKE) test_package PACKAGE=$(DIST_DIR)/recordflux-$(VERSION)-$(PYTHON_TAG)-$(PYTHON_TAG)-manylinux_*_x86_64.whl
 
 # Build distributions for all defined Python versions without local version identifier.
 pypi_dist: $(PROJECT_MANAGEMENT)
-	$(MAKE) sdist VERSION=$$(echo $(VERSION) | sed 's/+.*//')
-	$(foreach version,$(PYTHON_VERSIONS),$(POETRY) env use $(version) && $(POETRY) env info && $(call assert_python_version,$(version)) && $(MAKE) wheel VERSION=$$(echo $(VERSION) | sed 's/+.*//') || exit;)
+	$(MAKE) sdist VERSION=$(SHORT_VERSION)
+	@$(call assert_sdist_exists,$(SHORT_VERSION))
+	$(foreach version,$(PYTHON_VERSIONS),$(POETRY) env use $(version) && $(POETRY) env info && $(call assert_python_version,$(version)) && $(MAKE) wheel VERSION=$(SHORT_VERSION) || exit;)
+	@$(foreach version, $(PYTHON_VERSIONS), $(call assert_wheel_exists,$(SHORT_VERSION),$(version)))
 
 anod_dist: $(BUILD_DEPS) $(PARSER) $(RAPIDFLUX) pyproject.toml $(PACKAGE_SRC)
 	$(POETRY) build -vv --no-cache
