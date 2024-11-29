@@ -7,7 +7,6 @@ from collections import OrderedDict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field as dataclass_field
 from enum import Enum
-from sys import intern
 
 from typing_extensions import Self
 
@@ -30,21 +29,8 @@ class Precedence(Enum):
 
 
 class Expr(Base):
-    _str: str
-
-    def __str__(self) -> str:
-        try:
-            return self._str
-        except AttributeError:
-            self._update_str()
-            return self._str
-
     def __neg__(self) -> Expr:
         return Neg(self)
-
-    @abstractmethod
-    def _update_str(self) -> None:
-        raise NotImplementedError
 
     @property
     @abstractmethod
@@ -69,10 +55,9 @@ class Not(Expr):
     def __init__(self, expression: Expr) -> None:
         super().__init__()
         self.expression = expression
-        self._update_str()
 
-    def _update_str(self) -> None:
-        self._str = intern(f"not {self.parenthesized(self.expression)}")
+    def __str__(self) -> str:
+        return f"not {self.parenthesized(self.expression)}"
 
     @property
     def precedence(self) -> Precedence:
@@ -90,8 +75,8 @@ class Neg(Expr):
     def __neg__(self) -> Expr:
         return self.expression
 
-    def _update_str(self) -> None:
-        self._str = intern(f"-{self.parenthesized(self.expression)}")
+    def __str__(self) -> str:
+        return f"-{self.parenthesized(self.expression)}"
 
     @property
     def precedence(self) -> Precedence:
@@ -107,12 +92,9 @@ class BinExpr(Expr):
         super().__init__()
         self.left = left
         self.right = right
-        self._update_str()
 
-    def _update_str(self) -> None:
-        self._str = intern(
-            f"{self.parenthesized(self.left)}{self.symbol}{self.parenthesized(self.right)}",
-        )
+    def __str__(self) -> str:
+        return f"{self.parenthesized(self.left)}{self.symbol}{self.parenthesized(self.right)}"
 
     @property
     @abstractmethod
@@ -137,10 +119,9 @@ class AssExpr(Expr):
     def __init__(self, *terms: Expr) -> None:
         super().__init__()
         self.terms = list(terms)
-        self._update_str()
 
-    def _update_str(self) -> None:
-        self._str = intern(self.symbol.join(map(self.parenthesized, self.terms)))
+    def __str__(self) -> str:
+        return self.symbol.join(map(self.parenthesized, self.terms))
 
     @property
     @abstractmethod
@@ -159,22 +140,21 @@ class AssExpr(Expr):
 
 
 class BoolAssExpr(AssExpr):
-    def _update_str(self) -> None:
+    def __str__(self) -> str:
         if not self.terms:
-            self._str = str(TRUE)
-            return
-        self._str = ""
+            return str(TRUE)
+        result = ""
         for i, t in reversed(list(enumerate(self.terms))):
             if i == 0:
-                self._str = self.parenthesized(t) + self._str
+                result = self.parenthesized(t) + result
             else:
-                self._str = (
+                result = (
                     "\n"
                     + str(self.symbol)[1:]
                     + indent_next(self.parenthesized(t), len(self.symbol) - 1)
-                    + self._str
+                    + result
                 )
-        self._str = intern(self._str)
+        return result
 
     @property
     @abstractmethod
@@ -219,26 +199,25 @@ class Number(Expr):
         super().__init__()
         self.value = value
         self.base = base
-        self._update_str()
 
     def __neg__(self) -> Number:
         return Number(-self.value)
 
-    def _update_str(self) -> None:
+    def __str__(self) -> str:
         value = self.value if self.value >= 0 else -self.value
         if self.base == 0:
-            self._str = f"{value}"
+            _str = f"{value}"
         elif self.base == 2:
-            self._str = f"2#{value:b}#"
+            _str = f"2#{value:b}#"
         elif self.base == 8:
-            self._str = f"8#{value:o}#"
+            _str = f"8#{value:o}#"
         elif self.base == 10:
-            self._str = f"10#{value}#"
+            _str = f"10#{value}#"
         elif self.base == 16:
-            self._str = f"16#{value:X}#"
+            _str = f"16#{value:X}#"
         else:
             raise NotImplementedError(f"unsupported base {self.base}")
-        self._str = intern(f"(-{self._str})" if self.value < 0 else self._str)
+        return f"(-{_str})" if self.value < 0 else _str
 
     @property
     def precedence(self) -> Precedence:
@@ -249,14 +228,14 @@ class Number(Expr):
 
 
 class Add(AssExpr):
-    def _update_str(self) -> None:
-        self._str = str(self.terms[0])
+    def __str__(self) -> str:
+        result = str(self.terms[0])
         for t in self.terms[1:]:
             if (isinstance(t, Number) and t.value < 0) or isinstance(t, Neg):
-                self._str += f" - {self.parenthesized(-t)}"
+                result += f" - {self.parenthesized(-t)}"
             else:
-                self._str += f"{self.symbol}{self.parenthesized(t)}"
-        self._str = intern(self._str)
+                result += f"{self.symbol}{self.parenthesized(t)}"
+        return result
 
     @property
     def precedence(self) -> Precedence:
@@ -342,8 +321,8 @@ class New(Expr):
         super().__init__()
         self.expr = expr
 
-    def _update_str(self) -> None:
-        self._str = intern(f"new {self.expr}")
+    def __str__(self) -> str:
+        return f"new {self.expr}"
 
     @property
     def precedence(self) -> Precedence:
@@ -356,10 +335,9 @@ class New(Expr):
 class Name(Expr):
     def __init__(self) -> None:
         super().__init__()
-        self._update_str()
 
-    def _update_str(self) -> None:
-        self._str = intern(self._representation)
+    def __str__(self) -> str:
+        return self._representation
 
     @property
     @abstractmethod
@@ -641,11 +619,10 @@ class Aggregate(Expr):
     def __init__(self, *elements: Expr) -> None:
         super().__init__()
         self.elements = list(elements)
-        self._update_str()
 
-    def _update_str(self) -> None:
+    def __str__(self) -> str:
         assert len(self.elements) > 1
-        self._str = intern("(" + ", ".join(map(str, self.elements)) + ")")
+        return "(" + ", ".join(map(str, self.elements)) + ")"
 
     @property
     def precedence(self) -> Precedence:
@@ -668,8 +645,8 @@ class String(Aggregate):
         self.data = data
         super().__init__(*[Number(ord(d)) for d in data])
 
-    def _update_str(self) -> None:
-        self._str = intern(f'"{self.data}"')
+    def __str__(self) -> str:
+        return f'"{self.data}"'
 
     @property
     def precedence(self) -> Precedence:
@@ -687,17 +664,16 @@ class NamedAggregate(Expr):
     def __init__(self, *elements: tuple[StrID | Expr, Expr]) -> None:
         super().__init__()
         self.elements = [(ID(n) if isinstance(n, str) else n, e) for n, e in elements]
-        self._update_str()
 
-    def _update_str(self) -> None:
+    def __str__(self) -> str:
         assert len(self.elements) > 0
-        self._str = intern(
+        return (
             "("
             + ", ".join(
                 f"{name.ada_str if isinstance(name, ID) else name} => {element}"
                 for name, element in self.elements
             )
-            + ")",
+            + ")"
         )
 
     @property
@@ -805,9 +781,8 @@ class IfExpr(Expr):
         super().__init__()
         self.condition_expressions = condition_expressions
         self.else_expression = else_expression
-        self._update_str()
 
-    def _update_str(self) -> None:
+    def __str__(self) -> str:
         condition_expressions = [(str(c), str(e)) for c, e in self.condition_expressions]
         else_expression = str(self.else_expression)
 
@@ -832,7 +807,7 @@ class IfExpr(Expr):
             if self.else_expression:
                 expression += f"\n else\n{indent(else_expression, 4)}"
 
-        self._str = intern(f"({expression})")
+        return f"({expression})"
 
     @property
     def precedence(self) -> Precedence:
@@ -868,7 +843,7 @@ class CaseExpr(Expr):
         self.control_expression = control_expression
         self.case_expressions = case_expressions
 
-    def _update_str(self) -> None:
+    def __str__(self) -> str:
         grouped_cases = [
             (" | ".join(str(c) for c, _ in choices), expression)
             for expression, choices in itertools.groupby(self.case_expressions, lambda x: x[1])
@@ -882,7 +857,7 @@ class CaseExpr(Expr):
             ),
             4,
         )
-        self._str = intern(f"(case {self.control_expression} is{cases})")
+        return f"(case {self.control_expression} is{cases})"
 
     @property
     def precedence(self) -> Precedence:
@@ -903,10 +878,10 @@ class QuantifiedExpr(Expr):
         self.iterable = iterable
         self.predicate = predicate
 
-    def _update_str(self) -> None:
-        self._str = intern(
+    def __str__(self) -> str:
+        return (
             f"(for {self.quantifier} {self.parameter_identifier.ada_str} {self.keyword}"
-            f" {self.iterable} =>\n{indent(str(self.predicate), 4)})",
+            f" {self.iterable} =>\n{indent(str(self.predicate), 4)})"
         )
 
     @property
@@ -969,13 +944,11 @@ class ValueRange(Expr):
         self.lower = lower
         self.upper = upper
         self.type_identifier = ID(type_identifier) if type_identifier else None
-        self._update_str()
 
-    def _update_str(self) -> None:
+    def __str__(self) -> str:
         if self.type_identifier is None:
-            self._str = intern(f"{self.lower} .. {self.upper}")
-        else:
-            self._str = intern(f"{self.type_identifier.ada_str} range {self.lower} .. {self.upper}")
+            return f"{self.lower} .. {self.upper}"
+        return f"{self.type_identifier.ada_str} range {self.lower} .. {self.upper}"
 
     @property
     def precedence(self) -> Precedence:
@@ -991,8 +964,8 @@ class Conversion(Expr):
         self.identifier = ID(identifier)
         self.argument = argument
 
-    def _update_str(self) -> None:
-        self._str = intern(f"{self.identifier.ada_str} ({self.argument})")
+    def __str__(self) -> str:
+        return f"{self.identifier.ada_str} ({self.argument})"
 
     @property
     def precedence(self) -> Precedence:
@@ -1008,10 +981,8 @@ class QualifiedExpr(Expr):
         self.type_identifier = ID(type_identifier)
         self.expression = expression
 
-    def _update_str(self) -> None:
-        self._str = intern(
-            f"{self.type_identifier.ada_str}'{self.expression.parenthesized_if_needed}",
-        )
+    def __str__(self) -> str:
+        return f"{self.type_identifier.ada_str}'{self.expression.parenthesized_if_needed}"
 
     @property
     def precedence(self) -> Precedence:
@@ -1027,9 +998,9 @@ class Raise(Expr):
         self.identifier = ID(identifier)
         self.string = string
 
-    def _update_str(self) -> None:
+    def __str__(self) -> str:
         string = f" with {self.string}" if self.string else ""
-        self._str = intern(f"raise {self.identifier.ada_str}{string}")
+        return f"raise {self.identifier.ada_str}{string}"
 
     @property
     def precedence(self) -> Precedence:
@@ -1044,8 +1015,8 @@ class ChoiceList(Expr):
         super().__init__()
         self.expressions = list(expressions)
 
-    def _update_str(self) -> None:
-        self._str = intern(" | ".join([str(e) for e in self.expressions]))
+    def __str__(self) -> str:
+        return " | ".join([str(e) for e in self.expressions])
 
     @property
     def precedence(self) -> Precedence:
