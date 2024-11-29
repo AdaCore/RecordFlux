@@ -7,5 +7,8 @@ UNREACHABLE_COUNT=$(echo "$UNREACHABLE" | wc -l)
 
 cargo llvm-cov nextest --package librapidflux --no-fail-fast --fail-uncovered-lines $UNREACHABLE_COUNT --show-missing-lines --skip-functions
 
+ES=$?
+
 echo -e "Ignored $UNREACHABLE_COUNT unreachable lines:\n$UNREACHABLE"
 
+exit $ES
