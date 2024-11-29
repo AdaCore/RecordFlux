@@ -5,6 +5,7 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html
 """
 
 import sys
+from datetime import datetime
 from pathlib import Path
 
 from sphinx.highlighting import lexers
@@ -21,7 +22,7 @@ sys.path.insert(0, str(Path("../..").resolve()))
 # -- Project information -----------------------------------------------------
 
 project = "RecordFlux"
-copyright = "2023, AdaCore"  # noqa: A001
+copyright = f"2023-{datetime.now().year}, AdaCore"  # noqa: A001, DTZ005
 author = "AdaCore"
 recordflux_version = __version__
 version = recordflux_version
