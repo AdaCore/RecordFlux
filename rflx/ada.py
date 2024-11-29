@@ -621,6 +621,7 @@ class Aggregate(Expr):
         self.elements = list(elements)
 
     def __str__(self) -> str:
+        # TODO(eng/recordflux/RecordFlux#1767): Support aggregates with single elements
         assert len(self.elements) > 1
         return "(" + ", ".join(map(str, self.elements)) + ")"
 

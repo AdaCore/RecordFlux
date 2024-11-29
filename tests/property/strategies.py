@@ -406,6 +406,7 @@ def calls(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> expr.Call:
 
 @st.composite
 def aggregates(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> expr.Aggregate:
+    # TODO(eng/recordflux/RecordFlux#1767): Support aggregates with single elements
     return expr.Aggregate(*draw(st.lists(elements, min_size=2)))
 
 
