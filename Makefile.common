@@ -11,6 +11,8 @@ POETRY = $(POETRY_VENV)/bin/poetry
 DEVEL_VENV ?= $(shell test -n "$$VIRTUAL_ENV" && echo $$VIRTUAL_ENV || echo $(MAKEFILE_DIR)/.venv)
 RFLX = $(DEVEL_VENV)/bin/rflx
 
+CI_SIM_VENV = $(MAKEFILE_DIR)/.venv.ci.sim
+
 # --- Executables ---
 
 SHELL = /bin/bash

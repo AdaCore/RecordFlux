@@ -15,6 +15,9 @@ PYTHON_VERSIONS ?= 3.9 3.10 3.11 3.12
 CARGO_HOME ?= $(MAKEFILE_DIR)/.cargo-home
 NO_GIT_CHECKOUT ?=
 CHECK_VENV_FULL_SYNC ?=
+# Engine for CI simulation. Supported values are podman and docker.
+CONTAINER_ENGINE ?= podman
+CI_CONTAINER ?= recordflux-ci
 
 # --- Dependencies ---
 
@@ -554,6 +557,38 @@ fuzz_parser: $(RFLX)
 show_fuzz_parser_results: $(RFLX)
 	$(POETRY) run tools/fuzz_driver.py --crash-dir $(BUILD_DIR)/crashes --regression
 
+# --- Simulation of CI jobs using podman ---
+
+# For simulation the current directory is assumed to be mounted to the
+# simulation container. During the simulation the DEVEL_VENV and POETRY_VENV
+# folders will contain references to the container's filesystem. Hence, they are
+# removed below before starting the simulation to avoid confusion. After the end
+# of simulation runs they should be cleaned up via `make clean_ci_sim` to allow
+# for local use again.
+
+$(CI_SIM_VENV): export PYTHONPATH=
+$(CI_SIM_VENV):
+	$(PYTHON) -m venv --clear $(CI_SIM_VENV)
+	$(CI_SIM_VENV)/bin/python -m pip -v install ruamel-yaml
+
+.PHONY: ci_sim_%
+
+ci_sim_%: $(CI_SIM_VENV)
+	@if [ -z "$(CI_USER)" ]; then \
+		echo "Error: Environment variable CI_USER is not set." >&2; \
+		exit 1; \
+	fi
+	rm -rf $(DEVEL_VENV)
+	rm -rf $(POETRY_VENV)
+	{ \
+	  printf "%s\n" \
+	    "set -euxo pipefail" \
+	    ". /it/bin/ci-init-script" \
+	    "export E3_CATHOD_CACHE_DIR=~/cathod-cache && mkdir -p \$$E3_CATHOD_CACHE_DIR" \
+	    "export CI_PROJECT_DIR=~/RecordFlux"; \
+	  $(CI_SIM_VENV)/bin/python tools/extract_ci_jobs.py $(MAKEFILE_DIR)/.gitlab-ci.yml --job $*; \
+	} | $(CONTAINER_ENGINE) exec -i -u $(CI_USER) -w /home/$(CI_USER) $(CI_CONTAINER) bash
+
 # --- Development tools ---
 
 .PHONY: git_hooks
@@ -717,7 +752,7 @@ touch_build_tree:
 
 # --- Clean ---
 
-.PHONY: clean clean_build clean_cache clean_all
+.PHONY: clean clean_build clean_cache clean_ci_sim clean_all
 
 clean: clean_build clean_cache
 	rm -rf .coverage .coverage.* .hypothesis doc/language_reference/build doc/user_guide/build
@@ -735,7 +770,12 @@ clean_build:
 clean_cache:
 	find -name ".*_cache" -type d -exec rm -vrf {} +
 
-clean_all: clean
+clean_ci_sim:
+	rm -rf $(CI_SIM_VENV)
+	rm -rf $(DEVEL_VENV)
+	rm -rf $(POETRY_VENV)
+
+clean_all: clean clean_ci_sim
 	$(RM) -r $(DEVEL_VENV) $(POETRY_VENV) $(BIN_DIR) $(GENERATED_DIR) $(CARGO_HOME) rflx/lang rflx/rapidflux*.so pyproject.toml
 	test -d $(LANGKIT_DIR) && touch $(LANGKIT_DIR)/langkit/py.typed || true
 	@$(call remove_repo,$(DEVUTILS_DIR))
