@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from functools import singledispatch
-from typing import TypeVar
+from typing import Optional, TypeVar
 
 from rflx import ada
 from rflx.identifier import ID
@@ -81,8 +81,12 @@ def _change_prefix_mapping(
     }
 
 
+# TODO(eng/recordflux/RecordFlux#1424): Change into PEP604 type annotations.
+# ruff: noqa: UP007
+
+
 @singledispatch
-def _change_prefix(element: object, old: ID, new: ID | None) -> object:  # noqa: ARG001
+def _change_prefix(element: object, old: ID, new: Optional[ID]) -> object:  # noqa: ARG001
     raise NotImplementedError(f"implement change_prefix for {element.__class__.__name__}")
 
 
@@ -90,7 +94,7 @@ def _change_prefix(element: object, old: ID, new: ID | None) -> object:  # noqa:
 
 
 @_change_prefix.register
-def _(element: ID, old: ID, new: ID | None) -> ID:
+def _(element: ID, old: ID, new: Optional[ID]) -> ID:
     if element.parts[0] != old:
         return element
     if new is None:
@@ -99,12 +103,12 @@ def _(element: ID, old: ID, new: ID | None) -> ID:
 
 
 @_change_prefix.register
-def _(element: None, old: ID, new: ID | None) -> None:  # noqa: ARG001
+def _(element: None, old: ID, new: Optional[ID]) -> None:  # noqa: ARG001
     return None
 
 
 @_change_prefix.register
-def _(element: str, old: ID, new: ID | None) -> str:  # noqa: ARG001
+def _(element: str, old: ID, new: Optional[ID]) -> str:  # noqa: ARG001
     return element
 
 
@@ -112,17 +116,17 @@ def _(element: str, old: ID, new: ID | None) -> str:  # noqa: ARG001
 
 
 @_change_prefix.register
-def _(element: ada.Not, old: ID, new: ID | None) -> ada.Not:
+def _(element: ada.Not, old: ID, new: Optional[ID]) -> ada.Not:
     return element.__class__(_change_prefix_elem(element.expression, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.Neg, old: ID, new: ID | None) -> ada.Neg:
+def _(element: ada.Neg, old: ID, new: Optional[ID]) -> ada.Neg:
     return element.__class__(_change_prefix_elem(element.expression, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.BinExpr, old: ID, new: ID | None) -> ada.BinExpr:
+def _(element: ada.BinExpr, old: ID, new: Optional[ID]) -> ada.BinExpr:
     return element.__class__(
         _change_prefix_elem(element.left, old, new),
         _change_prefix_elem(element.right, old, new),
@@ -130,39 +134,39 @@ def _(element: ada.BinExpr, old: ID, new: ID | None) -> ada.BinExpr:
 
 
 @_change_prefix.register
-def _(element: ada.AssExpr, old: ID, new: ID | None) -> ada.AssExpr:
+def _(element: ada.AssExpr, old: ID, new: Optional[ID]) -> ada.AssExpr:
     return element.__class__(
         *_change_prefix_seq(element.terms, old, new),
     )
 
 
 @_change_prefix.register
-def _(element: ada.Number, old: ID, new: ID | None) -> ada.Number:  # noqa: ARG001
+def _(element: ada.Number, old: ID, new: Optional[ID]) -> ada.Number:  # noqa: ARG001
     return element
 
 
 @_change_prefix.register
-def _(element: ada.New, old: ID, new: ID | None) -> ada.New:
+def _(element: ada.New, old: ID, new: Optional[ID]) -> ada.New:
     return element.__class__(_change_prefix_elem(element.expr, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.Literal, old: ID, new: ID | None) -> ada.Literal:
+def _(element: ada.Literal, old: ID, new: Optional[ID]) -> ada.Literal:
     return element.__class__(_change_prefix_elem(element.identifier, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.Variable, old: ID, new: ID | None) -> ada.Variable:
+def _(element: ada.Variable, old: ID, new: Optional[ID]) -> ada.Variable:
     return element.__class__(_change_prefix_elem(element.identifier, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.Attribute, old: ID, new: ID | None) -> ada.Attribute:
+def _(element: ada.Attribute, old: ID, new: Optional[ID]) -> ada.Attribute:
     return element.__class__(prefix=_change_prefix_elem(element.prefix, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.AttributeExpr, old: ID, new: ID | None) -> ada.AttributeExpr:
+def _(element: ada.AttributeExpr, old: ID, new: Optional[ID]) -> ada.AttributeExpr:
     return element.__class__(
         prefix=_change_prefix_elem(element.prefix, old, new),
         expression=_change_prefix_elem(element.expression, old, new),
@@ -170,7 +174,7 @@ def _(element: ada.AttributeExpr, old: ID, new: ID | None) -> ada.AttributeExpr:
 
 
 @_change_prefix.register
-def _(element: ada.BinAttributeExpr, old: ID, new: ID | None) -> ada.BinAttributeExpr:
+def _(element: ada.BinAttributeExpr, old: ID, new: Optional[ID]) -> ada.BinAttributeExpr:
     return element.__class__(
         prefix=_change_prefix_elem(element.prefix, old, new),
         left=_change_prefix_elem(element.left, old, new),
@@ -179,7 +183,7 @@ def _(element: ada.BinAttributeExpr, old: ID, new: ID | None) -> ada.BinAttribut
 
 
 @_change_prefix.register
-def _(element: ada.NamedAttributeExpr, old: ID, new: ID | None) -> ada.NamedAttributeExpr:
+def _(element: ada.NamedAttributeExpr, old: ID, new: Optional[ID]) -> ada.NamedAttributeExpr:
     return element.__class__(
         _change_prefix_elem(element.prefix, old, new),
         *_change_prefix_tuple_seq(element.associations, old, new),
@@ -187,7 +191,7 @@ def _(element: ada.NamedAttributeExpr, old: ID, new: ID | None) -> ada.NamedAttr
 
 
 @_change_prefix.register
-def _(element: ada.Indexed, old: ID, new: ID | None) -> ada.Indexed:
+def _(element: ada.Indexed, old: ID, new: Optional[ID]) -> ada.Indexed:
     return element.__class__(
         _change_prefix_elem(element.prefix, old, new),
         *_change_prefix_seq(element.elements, old, new),
@@ -195,7 +199,7 @@ def _(element: ada.Indexed, old: ID, new: ID | None) -> ada.Indexed:
 
 
 @_change_prefix.register
-def _(element: ada.Selected, old: ID, new: ID | None) -> ada.Selected:
+def _(element: ada.Selected, old: ID, new: Optional[ID]) -> ada.Selected:
     return element.__class__(
         prefix=_change_prefix_elem(element.prefix, old, new),
         selector=_change_prefix_elem(element.selector, old, new),
@@ -203,7 +207,7 @@ def _(element: ada.Selected, old: ID, new: ID | None) -> ada.Selected:
 
 
 @_change_prefix.register
-def _(element: ada.Call, old: ID, new: ID | None) -> ada.Call:
+def _(element: ada.Call, old: ID, new: Optional[ID]) -> ada.Call:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         arguments=_change_prefix_opt_seq(element.arguments, old, new),
@@ -212,7 +216,7 @@ def _(element: ada.Call, old: ID, new: ID | None) -> ada.Call:
 
 
 @_change_prefix.register
-def _(element: ada.Slice, old: ID, new: ID | None) -> ada.Slice:
+def _(element: ada.Slice, old: ID, new: Optional[ID]) -> ada.Slice:
     return element.__class__(
         prefix=_change_prefix_elem(element.prefix, old, new),
         first=_change_prefix_elem(element.first, old, new),
@@ -221,17 +225,17 @@ def _(element: ada.Slice, old: ID, new: ID | None) -> ada.Slice:
 
 
 @_change_prefix.register
-def _(element: ada.Aggregate, old: ID, new: ID | None) -> ada.Aggregate:
+def _(element: ada.Aggregate, old: ID, new: Optional[ID]) -> ada.Aggregate:
     return element.__class__(*_change_prefix_seq(element.elements, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.String, old: ID, new: ID | None) -> ada.String:  # noqa: ARG001
+def _(element: ada.String, old: ID, new: Optional[ID]) -> ada.String:  # noqa: ARG001
     return element.__class__(element.data)
 
 
 @_change_prefix.register
-def _(element: ada.NamedAggregate, old: ID, new: ID | None) -> ada.NamedAggregate:
+def _(element: ada.NamedAggregate, old: ID, new: Optional[ID]) -> ada.NamedAggregate:
     return element.__class__(
         *[
             (_change_prefix_elem(k, old, new), _change_prefix_elem(v, old, new))
@@ -241,7 +245,7 @@ def _(element: ada.NamedAggregate, old: ID, new: ID | None) -> ada.NamedAggregat
 
 
 @_change_prefix.register
-def _(element: ada.IfExpr, old: ID, new: ID | None) -> ada.IfExpr:
+def _(element: ada.IfExpr, old: ID, new: Optional[ID]) -> ada.IfExpr:
     return element.__class__(
         condition_expressions=[
             (_change_prefix_elem(c, old, new), _change_prefix_elem(e, old, new))
@@ -252,7 +256,7 @@ def _(element: ada.IfExpr, old: ID, new: ID | None) -> ada.IfExpr:
 
 
 @_change_prefix.register
-def _(element: ada.CaseExpr, old: ID, new: ID | None) -> ada.CaseExpr:
+def _(element: ada.CaseExpr, old: ID, new: Optional[ID]) -> ada.CaseExpr:
     return element.__class__(
         control_expression=_change_prefix_elem(element.control_expression, old, new),
         case_expressions=[
@@ -263,7 +267,7 @@ def _(element: ada.CaseExpr, old: ID, new: ID | None) -> ada.CaseExpr:
 
 
 @_change_prefix.register
-def _(element: ada.QuantifiedExpr, old: ID, new: ID | None) -> ada.QuantifiedExpr:
+def _(element: ada.QuantifiedExpr, old: ID, new: Optional[ID]) -> ada.QuantifiedExpr:
     return element.__class__(
         parameter_identifier=_change_prefix_elem(element.parameter_identifier, old, new),
         iterable=_change_prefix_elem(element.iterable, old, new),
@@ -272,7 +276,7 @@ def _(element: ada.QuantifiedExpr, old: ID, new: ID | None) -> ada.QuantifiedExp
 
 
 @_change_prefix.register
-def _(element: ada.ValueRange, old: ID, new: ID | None) -> ada.ValueRange:
+def _(element: ada.ValueRange, old: ID, new: Optional[ID]) -> ada.ValueRange:
     return element.__class__(
         lower=_change_prefix_elem(element.lower, old, new),
         upper=_change_prefix_elem(element.upper, old, new),
@@ -281,7 +285,7 @@ def _(element: ada.ValueRange, old: ID, new: ID | None) -> ada.ValueRange:
 
 
 @_change_prefix.register
-def _(element: ada.Conversion, old: ID, new: ID | None) -> ada.Conversion:
+def _(element: ada.Conversion, old: ID, new: Optional[ID]) -> ada.Conversion:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         argument=_change_prefix_elem(element.argument, old, new),
@@ -289,7 +293,7 @@ def _(element: ada.Conversion, old: ID, new: ID | None) -> ada.Conversion:
 
 
 @_change_prefix.register
-def _(element: ada.QualifiedExpr, old: ID, new: ID | None) -> ada.QualifiedExpr:
+def _(element: ada.QualifiedExpr, old: ID, new: Optional[ID]) -> ada.QualifiedExpr:
     return element.__class__(
         type_identifier=_change_prefix_elem(element.type_identifier, old, new),
         expression=_change_prefix_elem(element.expression, old, new),
@@ -297,7 +301,7 @@ def _(element: ada.QualifiedExpr, old: ID, new: ID | None) -> ada.QualifiedExpr:
 
 
 @_change_prefix.register
-def _(element: ada.Raise, old: ID, new: ID | None) -> ada.Raise:
+def _(element: ada.Raise, old: ID, new: Optional[ID]) -> ada.Raise:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         string=_change_prefix_elem(element.string, old, new),
@@ -305,52 +309,52 @@ def _(element: ada.Raise, old: ID, new: ID | None) -> ada.Raise:
 
 
 @_change_prefix.register
-def _(element: ada.ChoiceList, old: ID, new: ID | None) -> ada.ChoiceList:
+def _(element: ada.ChoiceList, old: ID, new: Optional[ID]) -> ada.ChoiceList:
     return element.__class__(*_change_prefix_seq(element.expressions, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.ContextItem, old: ID, new: ID | None) -> ada.ContextItem:
+def _(element: ada.ContextItem, old: ID, new: Optional[ID]) -> ada.ContextItem:
     return element.__class__(identifier=_change_prefix_elem(element.identifier, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.UseTypeClause, old: ID, new: ID | None) -> ada.UseTypeClause:
+def _(element: ada.UseTypeClause, old: ID, new: Optional[ID]) -> ada.UseTypeClause:
     return element.__class__(*_change_prefix_seq(element.identifiers, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.Aspect, old: ID, new: ID | None) -> ada.Aspect:  # noqa: ARG001
+def _(element: ada.Aspect, old: ID, new: Optional[ID]) -> ada.Aspect:  # noqa: ARG001
     return element.__class__()
 
 
 @_change_prefix.register
-def _(element: ada.Precondition, old: ID, new: ID | None) -> ada.Precondition:
+def _(element: ada.Precondition, old: ID, new: Optional[ID]) -> ada.Precondition:
     return element.__class__(_change_prefix_elem(element.expression, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.Postcondition, old: ID, new: ID | None) -> ada.Postcondition:
+def _(element: ada.Postcondition, old: ID, new: Optional[ID]) -> ada.Postcondition:
     return element.__class__(_change_prefix_elem(element.expression, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.ClassPrecondition, old: ID, new: ID | None) -> ada.ClassPrecondition:
+def _(element: ada.ClassPrecondition, old: ID, new: Optional[ID]) -> ada.ClassPrecondition:
     return element.__class__(expression=_change_prefix_elem(element.expression, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.ClassPostcondition, old: ID, new: ID | None) -> ada.ClassPostcondition:
+def _(element: ada.ClassPostcondition, old: ID, new: Optional[ID]) -> ada.ClassPostcondition:
     return element.__class__(expression=_change_prefix_elem(element.expression, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.ContractCases, old: ID, new: ID | None) -> ada.ContractCases:
+def _(element: ada.ContractCases, old: ID, new: Optional[ID]) -> ada.ContractCases:
     return element.__class__(*_change_prefix_tuple_seq(element.cases, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.Depends, old: ID, new: ID | None) -> ada.Depends:
+def _(element: ada.Depends, old: ID, new: Optional[ID]) -> ada.Depends:
     return element.__class__(
         dependencies={
             _change_prefix_elem(k, old, new): _change_prefix_seq(v, old, new)
@@ -360,57 +364,61 @@ def _(element: ada.Depends, old: ID, new: ID | None) -> ada.Depends:
 
 
 @_change_prefix.register
-def _(element: ada.AlwaysTerminates, old: ID, new: ID | None) -> ada.AlwaysTerminates:
+def _(element: ada.AlwaysTerminates, old: ID, new: Optional[ID]) -> ada.AlwaysTerminates:
     return element.__class__(expression=_change_prefix_elem(element.expression, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.ChangeDirection, old: ID, new: ID | None) -> ada.ChangeDirection:
+def _(element: ada.ChangeDirection, old: ID, new: Optional[ID]) -> ada.ChangeDirection:
     return element.__class__(expression=_change_prefix_elem(element.expression, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.SubprogramVariant, old: ID, new: ID | None) -> ada.SubprogramVariant:
+def _(element: ada.SubprogramVariant, old: ID, new: Optional[ID]) -> ada.SubprogramVariant:
     return element.__class__(direction=_change_prefix_elem(element.direction, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.DynamicPredicate, old: ID, new: ID | None) -> ada.DynamicPredicate:
+def _(element: ada.DynamicPredicate, old: ID, new: Optional[ID]) -> ada.DynamicPredicate:
     return element.__class__(_change_prefix_elem(element.expression, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.SizeAspect, old: ID, new: ID | None) -> ada.SizeAspect:
+def _(element: ada.SizeAspect, old: ID, new: Optional[ID]) -> ada.SizeAspect:
     return element.__class__(_change_prefix_elem(element.expression, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.InitialCondition, old: ID, new: ID | None) -> ada.InitialCondition:
+def _(element: ada.InitialCondition, old: ID, new: Optional[ID]) -> ada.InitialCondition:
     return element.__class__(expression=_change_prefix_elem(element.expression, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.DefaultInitialCondition, old: ID, new: ID | None) -> ada.DefaultInitialCondition:
+def _(
+    element: ada.DefaultInitialCondition,
+    old: ID,
+    new: Optional[ID],
+) -> ada.DefaultInitialCondition:
     return element.__class__(_change_prefix_elem(element.expression, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.SparkMode, old: ID, new: ID | None) -> ada.SparkMode:  # noqa: ARG001
+def _(element: ada.SparkMode, old: ID, new: Optional[ID]) -> ada.SparkMode:  # noqa: ARG001
     return element.__class__(element.off)
 
 
 @_change_prefix.register
-def _(element: ada.AbstractState, old: ID, new: ID | None) -> ada.AbstractState:
+def _(element: ada.AbstractState, old: ID, new: Optional[ID]) -> ada.AbstractState:
     return element.__class__(*_change_prefix_seq(element.identifiers, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.Initializes, old: ID, new: ID | None) -> ada.Initializes:
+def _(element: ada.Initializes, old: ID, new: Optional[ID]) -> ada.Initializes:
     return element.__class__(*_change_prefix_seq(element.identifiers, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.Global, old: ID, new: ID | None) -> ada.Global:
+def _(element: ada.Global, old: ID, new: Optional[ID]) -> ada.Global:
     return element.__class__(
         inputs=_change_prefix_opt_seq(element.inputs, old, new),
         outputs=_change_prefix_opt_seq(element.outputs, old, new),
@@ -419,17 +427,21 @@ def _(element: ada.Global, old: ID, new: ID | None) -> ada.Global:
 
 
 @_change_prefix.register
-def _(element: ada.Annotate, old: ID, new: ID | None) -> ada.Annotate:  # noqa: ARG001
+def _(element: ada.Annotate, old: ID, new: Optional[ID]) -> ada.Annotate:  # noqa: ARG001
     return element.__class__(*element.args)
 
 
 @_change_prefix.register
-def _(element: ada.ConventionKind, old: ID, new: ID | None) -> ada.ConventionKind:  # noqa: ARG001
+def _(
+    element: ada.ConventionKind,
+    old: ID,  # noqa: ARG001
+    new: Optional[ID],  # noqa: ARG001
+) -> ada.ConventionKind:
     return element
 
 
 @_change_prefix.register
-def _(element: ada.Convention, old: ID, new: ID | None) -> ada.Convention:
+def _(element: ada.Convention, old: ID, new: Optional[ID]) -> ada.Convention:
     return element.__class__(convention=_change_prefix_elem(element.convention, old, new))
 
 
@@ -437,7 +449,7 @@ def _(element: ada.Convention, old: ID, new: ID | None) -> ada.Convention:
 def _(
     element: ada.FormalPackageDeclaration,
     old: ID,
-    new: ID | None,
+    new: Optional[ID],
 ) -> ada.FormalPackageDeclaration:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
@@ -447,7 +459,7 @@ def _(
 
 
 @_change_prefix.register
-def _(element: ada.PackageDeclaration, old: ID, new: ID | None) -> ada.PackageDeclaration:
+def _(element: ada.PackageDeclaration, old: ID, new: Optional[ID]) -> ada.PackageDeclaration:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         declarations=_change_prefix_opt_seq(element.declarations, old, new),
@@ -458,7 +470,7 @@ def _(element: ada.PackageDeclaration, old: ID, new: ID | None) -> ada.PackageDe
 
 
 @_change_prefix.register
-def _(element: ada.PackageBody, old: ID, new: ID | None) -> ada.PackageBody:
+def _(element: ada.PackageBody, old: ID, new: Optional[ID]) -> ada.PackageBody:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         declarations=_change_prefix_opt_seq(element.declarations, old, new),
@@ -471,7 +483,7 @@ def _(element: ada.PackageBody, old: ID, new: ID | None) -> ada.PackageBody:
 def _(
     element: ada.GenericPackageInstantiation,
     old: ID,
-    new: ID | None,
+    new: Optional[ID],
 ) -> ada.GenericPackageInstantiation:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
@@ -487,7 +499,7 @@ def _(
 def _(
     element: ada.PackageRenamingDeclaration,
     old: ID,
-    new: ID | None,
+    new: Optional[ID],
 ) -> ada.PackageRenamingDeclaration:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
@@ -496,7 +508,7 @@ def _(
 
 
 @_change_prefix.register
-def _(element: ada.ObjectDeclaration, old: ID, new: ID | None) -> ada.ObjectDeclaration:
+def _(element: ada.ObjectDeclaration, old: ID, new: Optional[ID]) -> ada.ObjectDeclaration:
     return element.__class__(
         identifiers=_change_prefix_seq(element.identifiers, old, new),
         type_identifier=_change_prefix_elem(element.type_identifier, old, new),
@@ -508,7 +520,7 @@ def _(element: ada.ObjectDeclaration, old: ID, new: ID | None) -> ada.ObjectDecl
 
 
 @_change_prefix.register
-def _(element: ada.Discriminant, old: ID, new: ID | None) -> ada.Discriminant:
+def _(element: ada.Discriminant, old: ID, new: Optional[ID]) -> ada.Discriminant:
     return element.__class__(
         identifiers=_change_prefix_seq(element.identifiers, old, new),
         type_identifier=_change_prefix_elem(element.type_identifier, old, new),
@@ -517,7 +529,7 @@ def _(element: ada.Discriminant, old: ID, new: ID | None) -> ada.Discriminant:
 
 
 @_change_prefix.register
-def _(element: ada.TypeDeclaration, old: ID, new: ID | None) -> ada.TypeDeclaration:
+def _(element: ada.TypeDeclaration, old: ID, new: Optional[ID]) -> ada.TypeDeclaration:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         discriminants=_change_prefix_opt_seq(element.discriminants, old, new),
@@ -526,7 +538,7 @@ def _(element: ada.TypeDeclaration, old: ID, new: ID | None) -> ada.TypeDeclarat
 
 
 @_change_prefix.register
-def _(element: ada.ModularType, old: ID, new: ID | None) -> ada.ModularType:
+def _(element: ada.ModularType, old: ID, new: Optional[ID]) -> ada.ModularType:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         modulus=_change_prefix_elem(element.modulus, old, new),
@@ -535,7 +547,7 @@ def _(element: ada.ModularType, old: ID, new: ID | None) -> ada.ModularType:
 
 
 @_change_prefix.register
-def _(element: ada.SignedIntegerType, old: ID, new: ID | None) -> ada.SignedIntegerType:
+def _(element: ada.SignedIntegerType, old: ID, new: Optional[ID]) -> ada.SignedIntegerType:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         first=_change_prefix_elem(element.first, old, new),
@@ -545,7 +557,7 @@ def _(element: ada.SignedIntegerType, old: ID, new: ID | None) -> ada.SignedInte
 
 
 @_change_prefix.register
-def _(element: ada.EnumerationType, old: ID, new: ID | None) -> ada.EnumerationType:
+def _(element: ada.EnumerationType, old: ID, new: Optional[ID]) -> ada.EnumerationType:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         literals={
@@ -557,7 +569,7 @@ def _(element: ada.EnumerationType, old: ID, new: ID | None) -> ada.EnumerationT
 
 
 @_change_prefix.register
-def _(element: ada.Subtype, old: ID, new: ID | None) -> ada.Subtype:
+def _(element: ada.Subtype, old: ID, new: Optional[ID]) -> ada.Subtype:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         base_identifier=_change_prefix_elem(element.base_identifier, old, new),
@@ -566,7 +578,7 @@ def _(element: ada.Subtype, old: ID, new: ID | None) -> ada.Subtype:
 
 
 @_change_prefix.register
-def _(element: ada.RangeSubtype, old: ID, new: ID | None) -> ada.RangeSubtype:
+def _(element: ada.RangeSubtype, old: ID, new: Optional[ID]) -> ada.RangeSubtype:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         base_identifier=_change_prefix_elem(element.base_identifier, old, new),
@@ -576,7 +588,7 @@ def _(element: ada.RangeSubtype, old: ID, new: ID | None) -> ada.RangeSubtype:
 
 
 @_change_prefix.register
-def _(element: ada.DerivedType, old: ID, new: ID | None) -> ada.DerivedType:
+def _(element: ada.DerivedType, old: ID, new: Optional[ID]) -> ada.DerivedType:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         type_identifier=_change_prefix_elem(element.type_identifier, old, new),
@@ -584,7 +596,7 @@ def _(element: ada.DerivedType, old: ID, new: ID | None) -> ada.DerivedType:
 
 
 @_change_prefix.register
-def _(element: ada.DerivedRangeType, old: ID, new: ID | None) -> ada.DerivedRangeType:
+def _(element: ada.DerivedRangeType, old: ID, new: Optional[ID]) -> ada.DerivedRangeType:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         type_identifier=_change_prefix_elem(element.type_identifier, old, new),
@@ -594,7 +606,7 @@ def _(element: ada.DerivedRangeType, old: ID, new: ID | None) -> ada.DerivedRang
 
 
 @_change_prefix.register
-def _(element: ada.DerivedRecordType, old: ID, new: ID | None) -> ada.DerivedRecordType:
+def _(element: ada.DerivedRecordType, old: ID, new: Optional[ID]) -> ada.DerivedRecordType:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         type_identifier=_change_prefix_elem(element.type_identifier, old, new),
@@ -603,7 +615,7 @@ def _(element: ada.DerivedRecordType, old: ID, new: ID | None) -> ada.DerivedRec
 
 
 @_change_prefix.register
-def _(element: ada.ArrayType, old: ID, new: ID | None) -> ada.ArrayType:
+def _(element: ada.ArrayType, old: ID, new: Optional[ID]) -> ada.ArrayType:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         index_type=_change_prefix_elem(element.index_type, old, new),
@@ -612,7 +624,7 @@ def _(element: ada.ArrayType, old: ID, new: ID | None) -> ada.ArrayType:
 
 
 @_change_prefix.register
-def _(element: ada.AccessType, old: ID, new: ID | None) -> ada.AccessType:
+def _(element: ada.AccessType, old: ID, new: Optional[ID]) -> ada.AccessType:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         object_identifier=_change_prefix_elem(element.object_identifier, old, new),
@@ -620,7 +632,7 @@ def _(element: ada.AccessType, old: ID, new: ID | None) -> ada.AccessType:
 
 
 @_change_prefix.register
-def _(element: ada.Component, old: ID, new: ID | None) -> ada.Component:
+def _(element: ada.Component, old: ID, new: Optional[ID]) -> ada.Component:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         type_identifier=_change_prefix_elem(element.type_identifier, old, new),
@@ -630,7 +642,7 @@ def _(element: ada.Component, old: ID, new: ID | None) -> ada.Component:
 
 
 @_change_prefix.register
-def _(element: ada.Variant, old: ID, new: ID | None) -> ada.Variant:
+def _(element: ada.Variant, old: ID, new: Optional[ID]) -> ada.Variant:
     return element.__class__(
         discrete_choices=_change_prefix_seq(element.discrete_choices, old, new),
         components=_change_prefix_seq(element.components, old, new),
@@ -638,7 +650,7 @@ def _(element: ada.Variant, old: ID, new: ID | None) -> ada.Variant:
 
 
 @_change_prefix.register
-def _(element: ada.VariantPart, old: ID, new: ID | None) -> ada.VariantPart:
+def _(element: ada.VariantPart, old: ID, new: Optional[ID]) -> ada.VariantPart:
     return element.__class__(
         discriminant_identifier=_change_prefix_elem(element.discriminant_identifier, old, new),
         variants=_change_prefix_seq(element.variants, old, new),
@@ -646,7 +658,7 @@ def _(element: ada.VariantPart, old: ID, new: ID | None) -> ada.VariantPart:
 
 
 @_change_prefix.register
-def _(element: ada.RecordType, old: ID, new: ID | None) -> ada.RecordType:
+def _(element: ada.RecordType, old: ID, new: Optional[ID]) -> ada.RecordType:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         components=_change_prefix_seq(element.components, old, new),
@@ -660,12 +672,12 @@ def _(element: ada.RecordType, old: ID, new: ID | None) -> ada.RecordType:
 
 
 @_change_prefix.register
-def _(element: ada.NullStatement, old: ID, new: ID | None) -> ada.NullStatement:  # noqa: ARG001
+def _(element: ada.NullStatement, old: ID, new: Optional[ID]) -> ada.NullStatement:  # noqa: ARG001
     return element.__class__()
 
 
 @_change_prefix.register
-def _(element: ada.Assignment, old: ID, new: ID | None) -> ada.Assignment:
+def _(element: ada.Assignment, old: ID, new: Optional[ID]) -> ada.Assignment:
     return element.__class__(
         name=_change_prefix_elem(element.name, old, new),
         expression=_change_prefix_elem(element.expression, old, new),
@@ -673,7 +685,7 @@ def _(element: ada.Assignment, old: ID, new: ID | None) -> ada.Assignment:
 
 
 @_change_prefix.register
-def _(element: ada.CallStatement, old: ID, new: ID | None) -> ada.CallStatement:
+def _(element: ada.CallStatement, old: ID, new: Optional[ID]) -> ada.CallStatement:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         arguments=_change_prefix_opt_seq(element.arguments, old, new),
@@ -682,7 +694,7 @@ def _(element: ada.CallStatement, old: ID, new: ID | None) -> ada.CallStatement:
 
 
 @_change_prefix.register
-def _(element: ada.PragmaStatement, old: ID, new: ID | None) -> ada.PragmaStatement:
+def _(element: ada.PragmaStatement, old: ID, new: Optional[ID]) -> ada.PragmaStatement:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         parameters=_change_prefix_seq(element.pragma_parameters, old, new),
@@ -690,37 +702,37 @@ def _(element: ada.PragmaStatement, old: ID, new: ID | None) -> ada.PragmaStatem
 
 
 @_change_prefix.register
-def _(element: ada.ReturnStatement, old: ID, new: ID | None) -> ada.ReturnStatement:
+def _(element: ada.ReturnStatement, old: ID, new: Optional[ID]) -> ada.ReturnStatement:
     return element.__class__(expression=_change_prefix_elem(element.expression, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.ExitStatement, old: ID, new: ID | None) -> ada.ExitStatement:
+def _(element: ada.ExitStatement, old: ID, new: Optional[ID]) -> ada.ExitStatement:
     return element.__class__(expression=_change_prefix_elem(element.expression, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.GotoStatement, old: ID, new: ID | None) -> ada.GotoStatement:
+def _(element: ada.GotoStatement, old: ID, new: Optional[ID]) -> ada.GotoStatement:
     return element.__class__(label=_change_prefix_elem(element.label, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.Label, old: ID, new: ID | None) -> ada.Label:
+def _(element: ada.Label, old: ID, new: Optional[ID]) -> ada.Label:
     return element.__class__(identifier=_change_prefix_elem(element.identifier, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.Comment, old: ID, new: ID | None) -> ada.Comment:
+def _(element: ada.Comment, old: ID, new: Optional[ID]) -> ada.Comment:
     return element.__class__(comment=_change_prefix_elem(element.comment, old, new))
 
 
 @_change_prefix.register
-def _(element: ada.VerticalSpace, old: ID, new: ID | None) -> ada.VerticalSpace:  # noqa: ARG001
+def _(element: ada.VerticalSpace, old: ID, new: Optional[ID]) -> ada.VerticalSpace:  # noqa: ARG001
     return element.__class__()
 
 
 @_change_prefix.register
-def _(element: ada.IfStatement, old: ID, new: ID | None) -> ada.IfStatement:
+def _(element: ada.IfStatement, old: ID, new: Optional[ID]) -> ada.IfStatement:
     return element.__class__(
         condition_statements=[
             (_change_prefix_elem(c, old, new), _change_prefix_seq(s, old, new))
@@ -731,7 +743,7 @@ def _(element: ada.IfStatement, old: ID, new: ID | None) -> ada.IfStatement:
 
 
 @_change_prefix.register
-def _(element: ada.CaseStatement, old: ID, new: ID | None) -> ada.CaseStatement:
+def _(element: ada.CaseStatement, old: ID, new: Optional[ID]) -> ada.CaseStatement:
     return element.__class__(
         control_expression=_change_prefix_elem(element.control_expression, old, new),
         case_statements=[
@@ -743,7 +755,7 @@ def _(element: ada.CaseStatement, old: ID, new: ID | None) -> ada.CaseStatement:
 
 
 @_change_prefix.register
-def _(element: ada.While, old: ID, new: ID | None) -> ada.While:
+def _(element: ada.While, old: ID, new: Optional[ID]) -> ada.While:
     return element.__class__(
         condition=_change_prefix_elem(element.condition, old, new),
         statements=_change_prefix_seq(element.statements, old, new),
@@ -751,7 +763,7 @@ def _(element: ada.While, old: ID, new: ID | None) -> ada.While:
 
 
 @_change_prefix.register
-def _(element: ada.ForLoop, old: ID, new: ID | None) -> ada.ForLoop:
+def _(element: ada.ForLoop, old: ID, new: Optional[ID]) -> ada.ForLoop:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         iterator=_change_prefix_elem(element.iterator, old, new),
@@ -761,7 +773,7 @@ def _(element: ada.ForLoop, old: ID, new: ID | None) -> ada.ForLoop:
 
 
 @_change_prefix.register
-def _(element: ada.RaiseStatement, old: ID, new: ID | None) -> ada.RaiseStatement:
+def _(element: ada.RaiseStatement, old: ID, new: Optional[ID]) -> ada.RaiseStatement:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         string=_change_prefix_elem(element.string, old, new),
@@ -769,7 +781,7 @@ def _(element: ada.RaiseStatement, old: ID, new: ID | None) -> ada.RaiseStatemen
 
 
 @_change_prefix.register
-def _(element: ada.Declare, old: ID, new: ID | None) -> ada.Declare:
+def _(element: ada.Declare, old: ID, new: Optional[ID]) -> ada.Declare:
     return element.__class__(
         declarations=_change_prefix_seq(element.declarations, old, new),
         statements=_change_prefix_seq(element.statements, old, new),
@@ -777,7 +789,7 @@ def _(element: ada.Declare, old: ID, new: ID | None) -> ada.Declare:
 
 
 @_change_prefix.register
-def _(element: ada.Parameter, old: ID, new: ID | None) -> ada.Parameter:
+def _(element: ada.Parameter, old: ID, new: Optional[ID]) -> ada.Parameter:
     return element.__class__(
         identifiers=_change_prefix_seq(element.identifiers, old, new),
         type_identifier=_change_prefix_elem(element.type_identifier, old, new),
@@ -786,7 +798,7 @@ def _(element: ada.Parameter, old: ID, new: ID | None) -> ada.Parameter:
 
 
 @_change_prefix.register
-def _(element: ada.AccessParameter, old: ID, new: ID | None) -> ada.AccessParameter:
+def _(element: ada.AccessParameter, old: ID, new: Optional[ID]) -> ada.AccessParameter:
     return element.__class__(
         identifiers=_change_prefix_seq(element.identifiers, old, new),
         type_identifier=_change_prefix_elem(element.type_identifier, old, new),
@@ -799,7 +811,7 @@ def _(element: ada.AccessParameter, old: ID, new: ID | None) -> ada.AccessParame
 def _(
     element: ada.ParameterizedSubprogramSpecification,
     old: ID,
-    new: ID | None,
+    new: Optional[ID],
 ) -> ada.ParameterizedSubprogramSpecification:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
@@ -809,7 +821,7 @@ def _(
 
 
 @_change_prefix.register
-def _(element: ada.FunctionSpecification, old: ID, new: ID | None) -> ada.FunctionSpecification:
+def _(element: ada.FunctionSpecification, old: ID, new: Optional[ID]) -> ada.FunctionSpecification:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         return_type=_change_prefix_elem(element.return_type, old, new),
@@ -820,7 +832,7 @@ def _(element: ada.FunctionSpecification, old: ID, new: ID | None) -> ada.Functi
 
 
 @_change_prefix.register
-def _(element: ada.SubprogramDeclaration, old: ID, new: ID | None) -> ada.SubprogramDeclaration:
+def _(element: ada.SubprogramDeclaration, old: ID, new: Optional[ID]) -> ada.SubprogramDeclaration:
     return element.__class__(
         specification=_change_prefix_elem(element.specification, old, new),
         aspects=_change_prefix_opt_seq(element.aspects, old, new),
@@ -832,7 +844,7 @@ def _(element: ada.SubprogramDeclaration, old: ID, new: ID | None) -> ada.Subpro
 def _(
     element: ada.FormalSubprogramDeclaration,
     old: ID,
-    new: ID | None,
+    new: Optional[ID],
 ) -> ada.FormalSubprogramDeclaration:
     return element.__class__(
         specification=_change_prefix_elem(element.specification, old, new),
@@ -842,7 +854,7 @@ def _(
 
 
 @_change_prefix.register
-def _(element: ada.SubprogramBody, old: ID, new: ID | None) -> ada.SubprogramBody:
+def _(element: ada.SubprogramBody, old: ID, new: Optional[ID]) -> ada.SubprogramBody:
     return element.__class__(
         specification=_change_prefix_elem(element.specification, old, new),
         declarations=_change_prefix_seq(element.declarations, old, new),
@@ -855,7 +867,7 @@ def _(element: ada.SubprogramBody, old: ID, new: ID | None) -> ada.SubprogramBod
 def _(
     element: ada.ExpressionFunctionDeclaration,
     old: ID,
-    new: ID | None,
+    new: Optional[ID],
 ) -> ada.ExpressionFunctionDeclaration:
     assert isinstance(element.specification, ada.FunctionSpecification)
     return element.__class__(
@@ -869,7 +881,7 @@ def _(
 def _(
     element: ada.GenericProcedureInstantiation,
     old: ID,
-    new: ID | None,
+    new: Optional[ID],
 ) -> ada.GenericProcedureInstantiation:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
@@ -884,7 +896,7 @@ def _(
 def _(
     element: ada.GenericFunctionInstantiation,
     old: ID,
-    new: ID | None,
+    new: Optional[ID],
 ) -> ada.GenericFunctionInstantiation:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
@@ -899,7 +911,7 @@ def _(
 def _(
     element: ada.SubprogramRenamingDeclaration,
     old: ID,
-    new: ID | None,
+    new: Optional[ID],
 ) -> ada.SubprogramRenamingDeclaration:
     return element.__class__(
         specification=_change_prefix_elem(element.specification, old, new),
@@ -909,7 +921,7 @@ def _(
 
 
 @_change_prefix.register
-def _(element: ada.Pragma, old: ID, new: ID | None) -> ada.Pragma:
+def _(element: ada.Pragma, old: ID, new: Optional[ID]) -> ada.Pragma:
     return element.__class__(
         identifier=_change_prefix_elem(element.identifier, old, new),
         parameters=_change_prefix_opt_seq(element.pragma_parameters, old, new),
@@ -917,7 +929,7 @@ def _(element: ada.Pragma, old: ID, new: ID | None) -> ada.Pragma:
 
 
 @_change_prefix.register
-def _(element: ada.PackageUnit, old: ID, new: ID | None) -> ada.PackageUnit:
+def _(element: ada.PackageUnit, old: ID, new: Optional[ID]) -> ada.PackageUnit:
     return element.__class__(
         declaration_context=_change_prefix_seq(element.declaration_context, old, new),
         declaration=_change_prefix_elem(element.declaration, old, new),
@@ -928,7 +940,7 @@ def _(element: ada.PackageUnit, old: ID, new: ID | None) -> ada.PackageUnit:
 
 
 @_change_prefix.register
-def _(element: ada.InstantiationUnit, old: ID, new: ID | None) -> ada.InstantiationUnit:
+def _(element: ada.InstantiationUnit, old: ID, new: Optional[ID]) -> ada.InstantiationUnit:
     return element.__class__(
         context=_change_prefix_seq(element.context, old, new),
         declaration=_change_prefix_elem(element.declaration, old, new),
