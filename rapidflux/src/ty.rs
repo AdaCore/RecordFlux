@@ -7,8 +7,8 @@ use pyo3::{
     exceptions::PyTypeError,
     prelude::*,
     sync::GILOnceCell,
-    type_object::PyTypeInfo,
     types::{PyBool, PyBytes, PyInt, PyList, PyNotImplemented, PySet, PyTuple, PyType},
+    PyTypeInfo,
 };
 use serde::{Deserialize, Serialize};
 
@@ -225,7 +225,7 @@ impl Enumeration {
     }
 
     fn __eq__(&self, other: &Bound<'_, PyAny>) -> bool {
-        matches!(to_ty(other), lib::Ty::Enumeration(e) if e == self.0)
+        matches!(to_ty_opt(other), Some(lib::Ty::Enumeration(e)) if e == self.0)
     }
 
     fn __repr__(&self) -> String {
@@ -320,7 +320,7 @@ impl UniversalInteger {
     }
 
     fn __eq__(&self, other: &Bound<'_, PyAny>) -> bool {
-        matches!(to_ty(other), lib::Ty::UniversalInteger(i) if i == self.0)
+        matches!(to_ty_opt(other), Some(lib::Ty::UniversalInteger(i)) if i == self.0)
     }
 
     fn __repr__(&self) -> String {
@@ -380,7 +380,7 @@ impl Integer {
     }
 
     fn __eq__(&self, other: &Bound<'_, PyAny>) -> bool {
-        matches!(to_ty(other), lib::Ty::Integer(i) if i == self.0)
+        matches!(to_ty_opt(other), Some(lib::Ty::Integer(i)) if i == self.0)
     }
 
     fn __repr__(&self) -> String {
@@ -459,7 +459,7 @@ impl Aggregate {
     }
 
     fn __eq__(&self, other: &Bound<'_, PyAny>) -> bool {
-        matches!(to_ty(other), lib::Ty::Aggregate(a) if a == self.0)
+        matches!(to_ty_opt(other), Some(lib::Ty::Aggregate(a)) if a == self.0)
     }
 
     fn __repr__(&self) -> String {
@@ -516,7 +516,7 @@ impl Sequence {
     }
 
     fn __eq__(&self, other: &Bound<'_, PyAny>) -> bool {
-        matches!(to_ty(other), lib::Ty::Sequence(s) if s == self.0)
+        matches!(to_ty_opt(other), Some(lib::Ty::Sequence(s)) if s == self.0)
     }
 
     fn __repr__(&self) -> String {
@@ -621,7 +621,7 @@ impl Structure {
     }
 
     fn __eq__(&self, other: &Bound<'_, PyAny>) -> bool {
-        matches!(to_ty(other), lib::Ty::Structure(s) if s == self.0)
+        matches!(to_ty_opt(other), Some(lib::Ty::Structure(s)) if s == self.0)
     }
 
     fn __repr__(&self) -> String {
@@ -773,7 +773,7 @@ impl Message {
     }
 
     fn __eq__(&self, other: &Bound<'_, PyAny>) -> bool {
-        matches!(to_ty(other), lib::Ty::Message(m) if m == self.0)
+        matches!(to_ty_opt(other), Some(lib::Ty::Message(m)) if m == self.0)
     }
 
     fn __repr__(&self) -> String {
@@ -948,7 +948,7 @@ impl Channel {
     }
 
     fn __eq__(&self, other: &Bound<'_, PyAny>) -> bool {
-        matches!(to_ty(other), lib::Ty::Channel(c) if c == self.0)
+        matches!(to_ty_opt(other), Some(lib::Ty::Channel(c)) if c == self.0)
     }
 
     fn __repr__(&self) -> String {
@@ -1094,8 +1094,7 @@ fn check_type_instance(
     description: &str,
     additional_annotations: Option<Vec<Annotation>>,
     py: Python<'_>,
-) -> PyResult<Error> {
-    let mut exp = vec![];
+) -> Error {
     let expected = if let Ok(tuple) = expected.extract::<Vec<Bound<'_, PyType>>>() {
         tuple
     } else if let Ok(ty) = expected.extract::<Bound<'_, PyType>>() {
@@ -1103,40 +1102,12 @@ fn check_type_instance(
     } else {
         panic!("unexpected argument type for expected: {expected}")
     };
-    for e in expected {
-        if e.eq(Undefined::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::Undefined);
-        } else if e.eq(Any::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::Any);
-        } else if e.eq(Enumeration::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::Enumeration);
-        } else if e.eq(AnyInteger::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::AnyInteger);
-        } else if e.eq(UniversalInteger::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::UniversalInteger);
-        } else if e.eq(Integer::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::Integer);
-        } else if e.eq(Composite::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::Composite);
-        } else if e.eq(Aggregate::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::Aggregate);
-        } else if e.eq(Sequence::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::Sequence);
-        } else if e.eq(Compound::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::Compound);
-        } else if e.eq(Structure::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::Structure);
-        } else if e.eq(Message::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::Message);
-        } else if e.eq(Channel::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::Channel);
-        } else {
-            panic!("unexpected type {e}")
-        }
-    }
-    Ok(Error(lib::check_type_instance(
+    Error(lib::check_type_instance(
         &to_ty(actual),
-        &exp,
+        &expected
+            .iter()
+            .map(|e| to_ty_discriminants(e, py))
+            .collect::<Vec<_>>(),
         &location.0,
         description,
         &additional_annotations
@@ -1144,36 +1115,79 @@ fn check_type_instance(
             .into_iter()
             .map(|a| a.0)
             .collect::<Vec<_>>(),
-    )))
+    ))
 }
 
-fn to_ty(obj: &Bound<'_, PyAny>) -> lib::Ty {
+pub(crate) fn to_ty(obj: &Bound<'_, PyAny>) -> lib::Ty {
+    to_ty_opt(obj).unwrap_or_else(|| panic!("Unknown type \"{obj:?}\""))
+}
+
+pub(crate) fn to_ty_opt(obj: &Bound<'_, PyAny>) -> Option<lib::Ty> {
     if obj.extract::<PyRef<Undefined>>().is_ok() {
-        lib::Ty::Undefined
+        Some(lib::Ty::Undefined)
     } else if let Ok(enumeration) = obj.extract::<PyRef<Enumeration>>() {
-        lib::Ty::Enumeration(enumeration.0.clone())
+        Some(lib::Ty::Enumeration(enumeration.0.clone()))
     } else if let Ok(universal_integer) = obj.extract::<PyRef<UniversalInteger>>() {
-        lib::Ty::UniversalInteger(universal_integer.0.clone())
+        Some(lib::Ty::UniversalInteger(universal_integer.0.clone()))
     } else if let Ok(integer) = obj.extract::<PyRef<Integer>>() {
-        lib::Ty::Integer(integer.0.clone())
+        Some(lib::Ty::Integer(integer.0.clone()))
     } else if let Ok(aggregate) = obj.extract::<PyRef<Aggregate>>() {
-        lib::Ty::Aggregate(aggregate.0.clone())
+        Some(lib::Ty::Aggregate(aggregate.0.clone()))
     } else if let Ok(sequence) = obj.extract::<PyRef<Sequence>>() {
-        lib::Ty::Sequence(sequence.0.clone())
+        Some(lib::Ty::Sequence(sequence.0.clone()))
     } else if let Ok(structure) = obj.extract::<PyRef<Structure>>() {
-        lib::Ty::Structure(structure.0.clone())
+        Some(lib::Ty::Structure(structure.0.clone()))
     } else if let Ok(message) = obj.extract::<PyRef<Message>>() {
-        lib::Ty::Message(message.0.clone())
+        Some(lib::Ty::Message(message.0.clone()))
     } else if let Ok(channel) = obj.extract::<PyRef<Channel>>() {
-        lib::Ty::Channel(channel.0.clone())
+        Some(lib::Ty::Channel(channel.0.clone()))
     } else if obj.extract::<PyRef<Any>>().is_ok() {
-        lib::Ty::Any
+        Some(lib::Ty::Any)
     } else {
-        panic!("Unknown type \"{obj:?}\"")
+        None
     }
 }
 
-fn to_py(obj: &lib::Ty, py: Python<'_>) -> PyObject {
+pub(crate) fn to_ty_discriminants(obj: &Bound<'_, PyAny>, py: Python<'_>) -> lib::TyDiscriminants {
+    to_ty_discriminants_opt(obj, py).unwrap_or_else(|| panic!("Unknown type \"{obj:?}\""))
+}
+
+pub(crate) fn to_ty_discriminants_opt(
+    obj: &Bound<'_, PyAny>,
+    py: Python<'_>,
+) -> Option<lib::TyDiscriminants> {
+    if obj.eq(Undefined::type_object_bound(py)).unwrap() {
+        Some(lib::TyDiscriminants::Undefined)
+    } else if obj.eq(Any::type_object_bound(py)).unwrap() {
+        Some(lib::TyDiscriminants::Any)
+    } else if obj.eq(Enumeration::type_object_bound(py)).unwrap() {
+        Some(lib::TyDiscriminants::Enumeration)
+    } else if obj.eq(AnyInteger::type_object_bound(py)).unwrap() {
+        Some(lib::TyDiscriminants::AnyInteger)
+    } else if obj.eq(UniversalInteger::type_object_bound(py)).unwrap() {
+        Some(lib::TyDiscriminants::UniversalInteger)
+    } else if obj.eq(Integer::type_object_bound(py)).unwrap() {
+        Some(lib::TyDiscriminants::Integer)
+    } else if obj.eq(Composite::type_object_bound(py)).unwrap() {
+        Some(lib::TyDiscriminants::Composite)
+    } else if obj.eq(Aggregate::type_object_bound(py)).unwrap() {
+        Some(lib::TyDiscriminants::Aggregate)
+    } else if obj.eq(Sequence::type_object_bound(py)).unwrap() {
+        Some(lib::TyDiscriminants::Sequence)
+    } else if obj.eq(Compound::type_object_bound(py)).unwrap() {
+        Some(lib::TyDiscriminants::Compound)
+    } else if obj.eq(Structure::type_object_bound(py)).unwrap() {
+        Some(lib::TyDiscriminants::Structure)
+    } else if obj.eq(Message::type_object_bound(py)).unwrap() {
+        Some(lib::TyDiscriminants::Message)
+    } else if obj.eq(Channel::type_object_bound(py)).unwrap() {
+        Some(lib::TyDiscriminants::Channel)
+    } else {
+        None
+    }
+}
+
+pub(crate) fn to_py(obj: &lib::Ty, py: Python<'_>) -> PyObject {
     match obj {
         lib::Ty::Undefined => Py::new(py, Undefined::new()).unwrap().into_py(py),
         lib::Ty::Any => Py::new(py, Any::new()).unwrap().into_py(py),

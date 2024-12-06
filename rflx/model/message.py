@@ -65,7 +65,7 @@ FINAL = Field(ID("Final", location=Location((1, 1))))
 class Link(Base):
     source: Field
     target: Field
-    condition: expr.Expr = expr.TRUE
+    condition: expr.Expr = dataclass_field(default_factory=lambda: expr.TRUE)
     size: expr.Expr = expr.UNDEFINED
     first: expr.Expr = expr.UNDEFINED
     location: Location = dataclass_field(default=NO_LOCATION, repr=False)
@@ -457,8 +457,7 @@ class Message(type_decl.TypeDecl):
                     {
                         **{
                             v: v.__class__(
-                                ID(prefix + v.name, v.identifier.location),
-                                location=v.location,
+                                ID(prefix + v.name, v.location),
                             )
                             for v in expression.variables()
                             if v.identifier in fields
@@ -683,7 +682,6 @@ class Message(type_decl.TypeDecl):
                     expr.Variable(
                         message_instance,
                         type_=self.type_,
-                        location=message_instance.location,
                     ),
                     expression.identifier,
                     type_=expression.type_,
@@ -698,14 +696,21 @@ class Message(type_decl.TypeDecl):
             The prefix is used to prevent name conflicts between field values and field names.
             """
             if isinstance(expression, expr.Variable) and expression.name.startswith("RFLX_"):
-                return expression.copy(identifier=expression.name[5:])
+                return expr.Variable(
+                    ID(identifier=expression.name[5:], location=expression.location),
+                )
             if (
                 isinstance(expression, expr.Selected)
                 and isinstance(expression.prefix, expr.Variable)
                 and expression.prefix.name.startswith("RFLX_")
             ):
                 return expression.copy(
-                    prefix=expression.prefix.copy(identifier=expression.prefix.name[5:]),
+                    prefix=expr.Variable(
+                        ID(
+                            identifier=expression.prefix.name[5:],
+                            location=expression.prefix.location,
+                        ),
+                    ),
                 )
             return expression
 
@@ -725,7 +730,11 @@ class Message(type_decl.TypeDecl):
                     composite_sizes.append(
                         expr.Equal(
                             expr.Size(f.name),
-                            expr.Size(v.copy(identifier="RFLX_" + v.identifier)),
+                            expr.Size(
+                                expr.Variable(
+                                    ID(identifier="RFLX_" + v.identifier, location=v.location),
+                                ),
+                            ),
                         ),
                     )
 
@@ -735,7 +744,12 @@ class Message(type_decl.TypeDecl):
                             expr.Size(f.name),
                             expr.Size(
                                 v.copy(
-                                    prefix=v.prefix.copy(identifier="RFLX_" + v.prefix.identifier),
+                                    prefix=expr.Variable(
+                                        ID(
+                                            identifier="RFLX_" + v.prefix.identifier,
+                                            location=v.prefix.location,
+                                        ),
+                                    ),
                                 ),
                             ),
                         ),
@@ -2381,8 +2395,12 @@ class Message(type_decl.TypeDecl):
                     e
                     for l in sorted(structure)
                     for e in (
-                        expr.Variable(l.source.identifier, location=l.source.identifier.location),
-                        expr.Variable(l.target.identifier, location=l.target.identifier.location),
+                        expr.Variable(
+                            ID(l.source.identifier, location=l.source.identifier.location),
+                        ),
+                        expr.Variable(
+                            ID(l.target.identifier, location=l.target.identifier.location),
+                        ),
                         l.condition,
                         l.size,
                         l.first,
@@ -3509,9 +3527,8 @@ def normalize_identifiers(
 
     if isinstance(expression, expr.Variable) and expression.identifier in fields_map:
         return expr.Variable(
-            ID(fields_map[expression.identifier], location=expression.identifier.location),
+            ID(fields_map[expression.identifier], location=expression.location),
             type_=expression.type_,
-            location=expression.location,
         )
 
     if (
@@ -3521,10 +3538,9 @@ def normalize_identifiers(
         return expr.Literal(
             ID(
                 enum_literals_map[expression.identifier],
-                location=expression.identifier.location,
+                location=expression.location,
             ),
             expression.type_,
-            location=expression.location,
         )
 
     if (

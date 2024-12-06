@@ -6,7 +6,6 @@ import itertools
 import operator
 from abc import abstractmethod
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from enum import Enum
 from itertools import groupby
 from operator import itemgetter
 from pathlib import Path
@@ -24,22 +23,12 @@ from rflx.rapidflux import (
     RecordFluxError,
     Severity,
 )
+from rflx.rapidflux.expr import Precedence as Precedence
 
 if TYPE_CHECKING:
     from _typeshed import SupportsAllComparisons
 
 MAX_LINE_LENGTH: Final = 100
-
-
-class Precedence(Enum):
-    UNDEFINED = 0
-    BOOLEAN_OPERATOR = 1
-    RELATIONAL_OPERATOR = 2
-    BINARY_ADDING_OPERATOR = 3
-    UNARY_ADDING_OPERATOR = 4
-    MULTIPLYING_OPERATOR = 5
-    HIGHEST_PRECEDENCE_OPERATOR = 6
-    LITERAL = 7
 
 
 class Expr(Base):
@@ -145,7 +134,7 @@ class Expr(Base):
     def variables(self) -> list[Variable]:
         return []
 
-    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
+    def findall(self, match: Callable[[Expr], bool]) -> list[Expr]:
         return [self] if match(self) else []
 
     def substituted(self, func: Callable[[Expr], Expr]) -> Expr:
@@ -182,7 +171,7 @@ class Not(Expr):
     def variables(self) -> list[Variable]:
         return self.expr.variables()
 
-    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
+    def findall(self, match: Callable[[Expr], bool]) -> list[Expr]:
         return [
             *([self] if match(self) else []),
             *self.expr.findall(match),
@@ -267,7 +256,7 @@ class BinExpr(Expr):
     def variables(self) -> list[Variable]:
         return list(unique(self.left.variables() + self.right.variables()))
 
-    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
+    def findall(self, match: Callable[[Expr], bool]) -> list[Expr]:
         return [
             *([self] if match(self) else []),
             *self.left.findall(match),
@@ -333,7 +322,7 @@ class AssExpr(Expr):
     def variables(self) -> list[Variable]:
         return list(unique([v for t in self.terms for v in t.variables()]))
 
-    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
+    def findall(self, match: Callable[[Expr], bool]) -> list[Expr]:
         return [
             *([self] if match(self) else []),
             *[m for t in self.terms for m in t.findall(match)],
@@ -690,12 +679,12 @@ class Neg(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        return Precedence.HIGHEST_PRECEDENCE_OPERATOR
+        return Precedence.UNARY_ADDING_OPERATOR
 
     def variables(self) -> list[Variable]:
         return self.expr.variables()
 
-    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
+    def findall(self, match: Callable[[Expr], bool]) -> list[Expr]:
         return [
             *([self] if match(self) else []),
             *self.expr.findall(match),
@@ -751,11 +740,11 @@ class Add(MathAssExpr):
         return left + right
 
     def simplified(self) -> Expr:
-        expr = super().simplified()
-        if not isinstance(expr, Add):
-            return expr
+        expression = super().simplified()
+        if not isinstance(expression, Add):
+            return expression
         terms: list[Expr] = []
-        for term in reversed(expr.terms):
+        for term in reversed(expression.terms):
             complement = None
             for other in terms:
                 if other == -term:
@@ -991,10 +980,9 @@ class Literal(Name):
         self,
         identifier: StrID,
         type_: ty.Type = ty.UNDEFINED,
-        location: Location | None = None,
     ) -> None:
         self.identifier = ID(identifier)
-        super().__init__(type_=type_, location=location)
+        super().__init__(type_=type_, location=self.identifier.location)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -1021,29 +1009,15 @@ class Literal(Name):
     def variables(self) -> list[Variable]:
         return []
 
-    def copy(
-        self,
-        identifier: StrID | None = None,
-        type_: ty.Type | None = None,
-        location: Location | None = None,
-    ) -> Literal:
-        return self.__class__(
-            ID(identifier) if identifier is not None else self.identifier,
-            type_ if type_ is not None else self.type_,
-            location if location is not None else self.location,
-        )
-
 
 class Variable(Name):
     def __init__(
         self,
         identifier: StrID,
         type_: ty.Type = ty.UNDEFINED,
-        location: Location | None = None,
     ) -> None:
         self.identifier = ID(identifier)
-        super().__init__(type_, location)
-        self._location = location or self.identifier.location
+        super().__init__(type_, self.identifier.location)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -1070,35 +1044,21 @@ class Variable(Name):
     def variables(self) -> list[Variable]:
         return [self]
 
-    def copy(
-        self,
-        identifier: StrID | None = None,
-        type_: ty.Type | None = None,
-        location: Location | None = None,
-    ) -> Variable:
-        return self.__class__(
-            ID(identifier) if identifier is not None else self.identifier,
-            type_ if type_ is not None else self.type_,
-            location if location is not None else self.location,
-        )
-
 
 TRUE = Literal(
-    "True",
+    ID("True", location=Location((1, 1), Path(str(const.BUILTINS_PACKAGE)), (1, 1))),
     type_=ty.BOOLEAN,
-    location=Location((1, 1), Path(str(const.BUILTINS_PACKAGE)), (1, 1)),
 )
 FALSE = Literal(
-    "False",
+    ID("False", location=Location((1, 1), Path(str(const.BUILTINS_PACKAGE)), (1, 1))),
     type_=ty.BOOLEAN,
-    location=Location((1, 1), Path(str(const.BUILTINS_PACKAGE)), (1, 1)),
 )
 
 
 class Attribute(Name):
     def __init__(self, prefix: StrID | Expr) -> None:
         if isinstance(prefix, ID):
-            prefix = Variable(prefix, location=prefix.location)
+            prefix = Variable(prefix)
         if isinstance(prefix, str):
             prefix = Variable(prefix)
 
@@ -1120,7 +1080,7 @@ class Attribute(Name):
     def __neg__(self) -> Neg:
         return Neg(self)
 
-    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
+    def findall(self, match: Callable[[Expr], bool]) -> list[Expr]:
         return [self] if match(self) else self.prefix.findall(match)
 
     def substituted(self, func: Callable[[Expr], Expr]) -> Expr:
@@ -1293,7 +1253,7 @@ class Val(Attribute):
     def variables(self) -> list[Variable]:
         raise NotImplementedError
 
-    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
+    def findall(self, match: Callable[[Expr], bool]) -> list[Expr]:
         raise NotImplementedError
 
     def substituted(self, func: Callable[[Expr], Expr]) -> Expr:  # noqa: ARG002
@@ -1342,7 +1302,7 @@ class Selected(Name):
     def __neg__(self) -> Neg:
         return Neg(self)
 
-    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
+    def findall(self, match: Callable[[Expr], bool]) -> list[Expr]:
         return [
             *([self] if match(self) else []),
             *self.prefix.findall(match),
@@ -1459,12 +1419,12 @@ class Call(Name):
         return f"{self.identifier}{args}"
 
     def variables(self) -> list[Variable]:
-        result = [Variable(self.identifier, location=self.location)]
+        result = [Variable(self.identifier)]
         for t in self.args:
             result.extend(t.variables())
         return result
 
-    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
+    def findall(self, match: Callable[[Expr], bool]) -> list[Expr]:
         return [
             *([self] if match(self) else []),
             *[e for a in self.args for e in a.findall(match)],
@@ -2305,7 +2265,7 @@ class MessageAggregate(Expr):
 
         error = RecordFluxError()
 
-        for i, (field, expr) in enumerate(self.field_values.items()):
+        for i, (field, expression) in enumerate(self.field_values.items()):
             if field not in self.type_.types:
                 error.extend(
                     [
@@ -2323,12 +2283,12 @@ class MessageAggregate(Expr):
 
             if field_type == ty.OPAQUE:
                 if not any(
-                    r.field == field and expr.type_.is_compatible(r.sdu)
+                    r.field == field and expression.type_.is_compatible(r.sdu)
                     for r in self.type_.refinements
                 ):
-                    error.extend(expr.check_type(field_type).entries)
+                    error.extend(expression.check_type(field_type).entries)
             else:
-                error.extend(expr.check_type(field_type).entries)
+                error.extend(expression.check_type(field_type).entries)
 
             if not self._matching_field_combinations(i):
                 error.push(
@@ -2376,7 +2336,7 @@ class MessageAggregate(Expr):
     def __neg__(self) -> Expr:
         raise NotImplementedError
 
-    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
+    def findall(self, match: Callable[[Expr], bool]) -> list[Expr]:
         return [
             *([self] if match(self) else []),
             *[e for v in self.field_values.values() for e in v.findall(match)],
@@ -2602,9 +2562,9 @@ class CaseExpr(Expr):
         result_type: ty.Type = ty.Any()
         literals = [c for (choice, _) in self.choices for c in choice]
 
-        for _, expr in self.choices:
-            error.extend(expr.check_type_instance(ty.Any).entries)
-            result_type = result_type.common_type(expr.type_)
+        for _, expression in self.choices:
+            error.extend(expression.check_type_instance(ty.Any).entries)
+            result_type = result_type.common_type(expression.type_)
 
         for i1, (_, e1) in enumerate(self.choices):
             for i2, (_, e2) in enumerate(self.choices):
@@ -2679,7 +2639,7 @@ class CaseExpr(Expr):
     def __neg__(self) -> Expr:
         raise NotImplementedError
 
-    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
+    def findall(self, match: Callable[[Expr], bool]) -> list[Expr]:
         return [
             *([self] if match(self) else []),
             *self.expr.findall(match),

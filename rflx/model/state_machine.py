@@ -1101,10 +1101,9 @@ def normalize_identifiers(
             return expr.Literal(
                 ID(
                     enum_literals_map[expression.identifier],
-                    location=expression.identifier.location,
+                    location=expression.location,
                 ),
                 expression.type_,
-                location=expression.location,
             )
         if expression.identifier in functions_map:
             return expr.Call(
@@ -1115,9 +1114,8 @@ def normalize_identifiers(
             )
         if expression.identifier in variables_map:
             return expr.Variable(
-                ID(variables_map[expression.identifier], location=expression.identifier.location),
+                ID(variables_map[expression.identifier], location=expression.location),
                 expression.type_,
-                location=expression.location,
             )
 
     if isinstance(expression, expr.Call) and expression.identifier in functions_map:

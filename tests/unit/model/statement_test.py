@@ -107,7 +107,7 @@ def test_reset_check_type_error_undefined_argument_type() -> None:
 
     reset = stmt.Reset(
         "X",
-        {ID("Y"): expr.Selected(expr.Variable("M", location=Location((1, 2))), "F")},
+        {ID("Y"): expr.Selected(expr.Variable(ID("M", location=Location((1, 2)))), "F")},
     )
     with pytest.raises(
         RecordFluxError,

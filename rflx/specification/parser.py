@@ -596,14 +596,12 @@ def create_paren_expression(
 
 def create_variable(error: RecordFluxError, expression: lang.Expr, filename: Path) -> expr.Expr:
     assert isinstance(expression, lang.Variable)
-    location = node_location(expression, filename)
     if expression.f_identifier.text.lower() in ("true", "false"):
         return expr.Literal(
             create_id(error, expression.f_identifier, filename),
-            location=location,
             type_=ty.BOOLEAN,
         )
-    return expr.Variable(create_id(error, expression.f_identifier, filename), location=location)
+    return expr.Variable(create_id(error, expression.f_identifier, filename))
 
 
 def create_math_attribute(
@@ -1302,7 +1300,7 @@ def create_message_structure(
         condition = (
             create_bool_expression(error, then.f_condition, filename)
             if then.f_condition
-            else expr.Literal("True", type_=ty.BOOLEAN, location=node_location(then, filename))
+            else expr.Literal(ID("True", node_location(then, filename)), type_=ty.BOOLEAN)
         )
         size, first = extract_aspect(then.f_aspects)
         return target, condition, size, first, node_location(then, filename)

@@ -1140,7 +1140,7 @@ class Generator:
             )
             .substituted(
                 lambda e: (
-                    e.copy(identifier=const.PREFIX_ID * e.identifier)
+                    expr.Literal(identifier=const.PREFIX_ID * e.identifier, type_=e.type_)
                     if isinstance(e, expr.Literal) and e.identifier not in BOOLEAN.literals
                     else e
                 ),

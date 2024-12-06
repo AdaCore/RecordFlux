@@ -11,6 +11,7 @@ use pyo3::prelude::*;
 
 mod consts;
 mod diagnostics;
+mod expr;
 mod identifier;
 mod logging;
 mod source_code;
@@ -35,6 +36,9 @@ fn rapidflux(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
 
     // Constants module
     register_submodule!(consts, py, m);
+
+    // Expr module
+    register_submodule!(expr, py, m);
 
     // Logging module
     register_submodule!(logging, py, m);

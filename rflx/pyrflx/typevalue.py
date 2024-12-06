@@ -50,7 +50,7 @@ from rflx.model import (
 )
 from rflx.pyrflx.bitstring import Bitstring
 from rflx.pyrflx.error import PyRFLXError
-from rflx.rapidflux import Severity
+from rflx.rapidflux import Location, Severity
 
 
 class ChecksumFunction(Protocol):
@@ -577,7 +577,7 @@ class MessageValue(TypeValue):
         model: Message,
         refinements: abc.Sequence[RefinementValue] | None = None,
         skip_verification: bool = False,
-        parameters: abc.Mapping[Name, Expr] | None = None,
+        parameters: abc.Mapping[Expr, Expr] | None = None,
         state: MessageValue.State | None = None,
     ) -> None:
         super().__init__(model)
@@ -615,7 +615,7 @@ class MessageValue(TypeValue):
         initial = self._fields[INITIAL.name]
         initial.first = Number(0)
         initial.typeval.assign(b"")
-        self._simplified_mapping: dict[Name, Expr] = dict.fromkeys(
+        self._simplified_mapping: dict[Expr, Expr] = dict.fromkeys(
             [initial.name_size, initial.name_last, initial.name_first, self._message_first_name],
             Number(0),
         )
@@ -660,7 +660,7 @@ class MessageValue(TypeValue):
             if isinstance(t, Enumeration) and t.package == self.package
             for l in t.literals
         }
-        params: dict[Name, Expr] = {}
+        params: dict[Expr, Expr] = {}
         expr: Expr
         for name, value in parameters.items():
             if isinstance(value, bool):
@@ -840,7 +840,10 @@ class MessageValue(TypeValue):
             size = self._fields[prv].typeval.size
             assert isinstance(first, Number)
             assert isinstance(size, Number)
-            return first + size
+            return Number(
+                first.value + size.value,
+                location=Location.merge([first.location, size.location]),
+            )
         if prv and UNDEFINED not in (self._fields[prv].first, self._fields[prv].typeval.size):
             first = self._simplified(Add(self._fields[prv].first, self._fields[prv].typeval.size))
             return first if isinstance(first, Number) else None
@@ -1364,7 +1367,9 @@ class MessageValue(TypeValue):
                 Number(message_size - 1) if message_size else last
             )
             self._simplified_mapping[self._message_size_name] = (
-                Number(message_size) if message_size else last + Number(1)
+                Number(message_size)
+                if message_size
+                else Number(last.value + 1, location=last.location)
             )
             return
 
@@ -1398,7 +1403,9 @@ class MessageValue(TypeValue):
                     Number(message_size - 1) if message_size else last
                 )
                 self._simplified_mapping[self._message_size_name] = (
-                    Number(message_size) if message_size else last + Number(1)
+                    Number(message_size)
+                    if message_size
+                    else Number(last.value + 1, location=last.location)
                 )
 
         # Eng/RecordFlux/RecordFlux#422

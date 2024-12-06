@@ -538,7 +538,7 @@ def test_undeclared_variable() -> None:
                     Transition(
                         target=ID("null"),
                         condition=expr.Equal(
-                            expr.Variable("Undefined", location=Location((10, 20))),
+                            expr.Variable(ID("Undefined", location=Location((10, 20)))),
                             expr.TRUE,
                         ),
                     ),
@@ -654,7 +654,7 @@ def test_undeclared_local_variable() -> None:
                     Transition(
                         target=ID("null"),
                         condition=expr.Equal(
-                            expr.Variable("Local", location=Location((10, 20))),
+                            expr.Variable(ID("Local", location=Location((10, 20)))),
                             expr.Variable("Global"),
                         ),
                     ),
@@ -799,7 +799,7 @@ def test_assignment_from_undeclared_variable() -> None:
                 actions=[
                     stmt.VariableAssignment(
                         "Global",
-                        expr.Variable("Undefined", location=Location((10, 20))),
+                        expr.Variable(ID("Undefined", location=Location((10, 20)))),
                     ),
                 ],
             ),
@@ -1025,7 +1025,7 @@ def test_call_undeclared_variable() -> None:
                         expr.Call(
                             "SubProg",
                             ty.BOOLEAN,
-                            [expr.Variable("Undefined", location=Location((10, 20)))],
+                            [expr.Variable(ID("Undefined", location=Location((10, 20))))],
                         ),
                     ),
                 ],
@@ -1056,7 +1056,7 @@ def test_call_invalid_argument_type() -> None:
                         expr.Call(
                             "Function",
                             ty.BOOLEAN,
-                            [expr.Variable("Channel", location=Location((10, 20)))],
+                            [expr.Variable(ID("Channel", location=Location((10, 20))))],
                         ),
                     ),
                 ],
@@ -1331,7 +1331,7 @@ def test_undeclared_variable_in_function_call() -> None:
                         expr.Call(
                             "SubProg",
                             ty.BOOLEAN,
-                            [expr.Variable("Undefined", location=Location((10, 20)))],
+                            [expr.Variable(ID("Undefined", location=Location((10, 20))))],
                         ),
                     ),
                 ],
@@ -1547,7 +1547,7 @@ def test_renaming_undefined() -> None:
             decl.RenamingDeclaration(
                 "M",
                 "Boolean",
-                expr.Selected(expr.Variable("Message", location=Location((10, 20))), "Field"),
+                expr.Selected(expr.Variable(ID("Message", location=Location((10, 20)))), "Field"),
             ),
         ],
         parameters=[],
@@ -1645,7 +1645,7 @@ def test_append_message_unsupported() -> None:
                 exception_transition=Transition(target=ID("null")),
                 declarations=[],
                 actions=[
-                    stmt.Append("List", expr.Variable("Element", location=Location((10, 20)))),
+                    stmt.Append("List", expr.Variable(ID("Element", location=Location((10, 20))))),
                 ],
             ),
         ],
@@ -1719,7 +1719,7 @@ def test_message_aggregate_with_undefined_parameter() -> None:
                         "Data",
                         expr.MessageAggregate(
                             "TLV::Message",
-                            {"Tag": expr.Variable("Undef", location=Location((10, 20)))},
+                            {"Tag": expr.Variable(ID("Undef", location=Location((10, 20))))},
                         ),
                     ),
                 ],
@@ -1990,7 +1990,7 @@ def test_conversion_invalid_argument() -> None:
                         "Converted",
                         expr.Conversion(
                             "TLV::Message",
-                            expr.Variable("Message", location=Location((10, 20))),
+                            expr.Variable(ID("Message", location=Location((10, 20)))),
                         ),
                     ),
                 ],
@@ -2307,11 +2307,11 @@ def test_type_error_in_renaming_declaration() -> None:
             [
                 stmt.Read(
                     "C1",
-                    expr.Variable("M1", location=Location((1, 1))),
+                    expr.Variable(ID("M1", location=Location((1, 1)))),
                 ),
                 stmt.Write(
                     "C2",
-                    expr.Variable("M1", location=Location((2, 1))),
+                    expr.Variable(ID("M1", location=Location((2, 1)))),
                 ),
             ],
             '<stdin>:1:1: error: message "M1" may be read or written'

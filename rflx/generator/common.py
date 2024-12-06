@@ -222,7 +222,7 @@ def substitution_facts(
     embedded: bool = False,
     public: bool = False,
     target_type: ty.NamedType = ty.BASE_INTEGER,
-) -> dict[expr.Name, expr.Expr]:
+) -> dict[expr.Expr, expr.Expr]:
     def prefixed(name: str) -> expr.Expr:
         return expr.Variable(ID("Ctx") * name) if not embedded else expr.Variable(name)
 

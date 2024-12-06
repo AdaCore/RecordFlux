@@ -133,7 +133,7 @@ def test_not_type() -> None:
 
 def test_not_type_error() -> None:
     assert_type_error(
-        Not(Variable("X", type_=INT_TY, location=Location((10, 20)))),
+        Not(Variable(ID("X", location=Location((10, 20))), type_=INT_TY)),
         r'^<stdin>:10:20: error: expected enumeration type "__BUILTINS__::Boolean"\n'
         r'<stdin>:10:20: error: found integer type "I" \(10 \.\. 100\)$',
     )
@@ -400,7 +400,10 @@ def test_bool_expr_type(operation: Callable[[Expr, Expr], Expr]) -> None:
 def test_bool_expr_type_error(operation: Callable[[Expr, Expr], Expr]) -> None:
     assert_type_error(
         operation(
-            Variable("X", type_=ty.Integer("A", ty.Bounds(0, 100)), location=Location((10, 20))),
+            Variable(
+                ID("X", location=Location((10, 20))),
+                type_=ty.Integer("A", ty.Bounds(0, 100)),
+            ),
             Number(1, location=Location((10, 30))),
         ),
         r'^<stdin>:10:20: error: expected enumeration type "__BUILTINS__::Boolean"\n'
@@ -627,8 +630,8 @@ def test_math_expr_type(operation: Callable[[Expr, Expr], Expr]) -> None:
 def test_math_expr_type_error(operation: Callable[[Expr, Expr], Expr]) -> None:
     assert_type_error(
         operation(
-            Variable("X", type_=ty.BOOLEAN, location=Location((10, 20))),
-            Variable("True", type_=ty.BOOLEAN, location=Location((10, 30))),
+            Variable(ID("X", location=Location((10, 20))), type_=ty.BOOLEAN),
+            Variable(ID("True", location=Location((10, 30))), type_=ty.BOOLEAN),
         ),
         r"^<stdin>:10:20: error: expected integer type\n"
         r'<stdin>:10:20: error: found enumeration type "__BUILTINS__::Boolean"\n'
@@ -651,7 +654,7 @@ def test_neg_type() -> None:
 
 def test_neg_type_error() -> None:
     assert_type_error(
-        Neg(Variable("X", type_=ty.BOOLEAN, location=Location((10, 20)))),
+        Neg(Variable(ID("X", location=Location((10, 20))), type_=ty.BOOLEAN)),
         r"^<stdin>:10:20: error: expected integer type\n"
         r'<stdin>:10:20: error: found enumeration type "__BUILTINS__::Boolean"$',
     )
@@ -1062,7 +1065,7 @@ def test_variable_type() -> None:
 
 def test_variable_type_error() -> None:
     assert_type_error(
-        Variable("X", location=Location((10, 20))),
+        Variable(ID("X", location=Location((10, 20)))),
         r'^<stdin>:10:20: error: undefined variable "X"$',
     )
 
@@ -1135,9 +1138,8 @@ def test_attribute() -> None:
         (
             Head,
             Variable(
-                "Z",
+                ID("Z", location=Location((10, 20))),
                 type_=ty.Sequence("Universal::Options", ty.Message("Universal::Option")),
-                location=Location((10, 20)),
             ),
             ty.Message("Universal::Option"),
         ),
@@ -1154,16 +1156,15 @@ def test_attribute_type(attribute: Callable[[Expr], Expr], expr: Expr, expected:
     ("expr", "match"),
     [
         (
-            Present(Variable("X", location=Location((10, 30)))),
+            Present(Variable(ID("X", location=Location((10, 30))))),
             r"^<stdin>:10:30: error: invalid prefix for attribute Present$",
         ),
         (
             Head(
                 Opaque(
                     Variable(
-                        "X",
+                        ID("X", location=Location((10, 30))),
                         type_=ty.Sequence("A", INT_TY),
-                        location=Location((10, 30)),
                     ),
                 ),
             ),
@@ -1174,7 +1175,7 @@ def test_attribute_type(attribute: Callable[[Expr], Expr], expr: Expr, expected:
                 Call(
                     "X",
                     ty.UNDEFINED,
-                    [Variable("Y", location=Location((10, 30)))],
+                    [Variable(ID("Y", location=Location((10, 30))))],
                     location=Location((10, 20)),
                 ),
             ),
@@ -1229,7 +1230,7 @@ def test_attribute_substituted() -> None:
 
 
 def test_attribute_substituted_location() -> None:
-    expr = First(Variable("X", location=Location((1, 2)))).substituted(lambda x: x)
+    expr = First(Variable(ID("X", location=Location((1, 2))))).substituted(lambda x: x)
     assert expr.location
 
 
@@ -1337,7 +1338,7 @@ def test_relation_integer_type_error(relation: Callable[[Expr, Expr], Expr]) -> 
     assert_type_error(
         relation(
             Variable("X", type_=INT_TY),
-            Variable("True", type_=ty.BOOLEAN, location=Location((10, 30))),
+            Variable(ID("True", location=Location((10, 30))), type_=ty.BOOLEAN),
         ),
         rf"^<stdin>:10:30: error: expected {integer_type}\n"
         r'<stdin>:10:30: error: found enumeration type "__BUILTINS__::Boolean"$',
@@ -1359,8 +1360,8 @@ def test_relation_composite_type(relation: Callable[[Expr, Expr], Expr]) -> None
 def test_relation_composite_type_error(relation: Callable[[Expr, Expr], Expr]) -> None:
     assert_type_error(
         relation(
-            Variable("X", type_=INT_TY, location=Location((10, 20))),
-            Variable("True", type_=ty.BOOLEAN, location=Location((10, 30))),
+            Variable(ID("X", location=Location((10, 20))), type_=INT_TY),
+            Variable(ID("True", location=Location((10, 30))), type_=ty.BOOLEAN),
         ),
         r"^<stdin>:10:30: error: expected aggregate"
         r' with element integer type "I" \(10 \.\. 100\)\n'
@@ -1368,8 +1369,8 @@ def test_relation_composite_type_error(relation: Callable[[Expr, Expr], Expr]) -
     )
     assert_type_error(
         relation(
-            Variable("X", type_=INT_TY, location=Location((10, 20))),
-            Variable("Y", type_=ty.Sequence("A", ty.BOOLEAN), location=Location((10, 30))),
+            Variable(ID("X", location=Location((10, 20))), type_=INT_TY),
+            Variable(ID("Y", location=Location((10, 30))), type_=ty.Sequence("A", ty.BOOLEAN)),
         ),
         r"^<stdin>:10:30: error: expected aggregate"
         r' with element integer type "I" \(10 \.\. 100\)\n'
@@ -1636,8 +1637,8 @@ def test_value_range_type() -> None:
 def test_value_range_type_error() -> None:
     assert_type_error(
         ValueRange(
-            Variable("X", type_=ty.BOOLEAN, location=Location((10, 30))),
-            Variable("Y", type_=ty.Sequence("A", INT_TY), location=Location((10, 40))),
+            Variable(ID("X", location=Location((10, 30))), type_=ty.BOOLEAN),
+            Variable(ID("Y", location=Location((10, 40))), type_=ty.Sequence("A", INT_TY)),
             location=Location((10, 20)),
         ),
         r"^"
@@ -1694,8 +1695,8 @@ def test_quantified_expression_type(expr: Callable[[str, Expr, Expr], Expr]) -> 
     ("iterable", "predicate", "match"),
     [
         (
-            Variable("Y", type_=ty.BOOLEAN, location=Location((10, 30))),
-            Variable("Z", type_=ty.Sequence("A", INT_TY), location=Location((10, 40))),
+            Variable(ID("Y", location=Location((10, 30))), type_=ty.BOOLEAN),
+            Variable(ID("Z", location=Location((10, 40))), type_=ty.Sequence("A", INT_TY)),
             r"^<stdin>:10:30: error: expected composite type\n"
             r'<stdin>:10:30: error: found enumeration type "__BUILTINS__::Boolean"\n'
             r'<stdin>:10:40: error: expected enumeration type "__BUILTINS__::Boolean"\n'
@@ -1703,7 +1704,7 @@ def test_quantified_expression_type(expr: Callable[[str, Expr, Expr], Expr]) -> 
             r' with element integer type "I" \(10 \.\. 100\)$',
         ),
         (
-            Variable("Y", type_=ty.BOOLEAN, location=Location((10, 30))),
+            Variable(ID("Y", location=Location((10, 30))), type_=ty.BOOLEAN),
             Equal(Variable("X"), Number(1)),
             r"^<stdin>:10:30: error: expected composite type\n"
             r'<stdin>:10:30: error: found enumeration type "__BUILTINS__::Boolean"$',
@@ -1979,7 +1980,7 @@ def test_selected_type() -> None:
     ("expr", "match"),
     [
         (
-            Selected(Variable("X", type_=ty.BOOLEAN, location=Location((10, 20))), "Y"),
+            Selected(Variable(ID("X", location=Location((10, 20))), type_=ty.BOOLEAN), "Y"),
             r"^<stdin>:10:20: error: expected message type\n"
             r'<stdin>:10:20: error: found enumeration type "__BUILTINS__::Boolean"$',
         ),
@@ -2035,7 +2036,7 @@ def test_selected_substituted() -> None:
 
 
 def test_selected_substituted_location() -> None:
-    expr = Selected(Variable("X"), "Y", location=Location((1, 2))).substituted(lambda x: x)
+    expr = Selected(Variable(ID("X", location=Location((1, 2)))), "Y").substituted(lambda x: x)
     assert expr.location
 
 
@@ -2068,7 +2069,7 @@ def test_call_type_error() -> None:
         Call(
             "X",
             ty.UNDEFINED,
-            [Variable("Y", location=Location((10, 30)))],
+            [Variable(ID("Y", location=Location((10, 30))))],
             location=Location((10, 20)),
         ),
         r'^<stdin>:10:30: error: undefined variable "Y"\n'
@@ -2079,8 +2080,8 @@ def test_call_type_error() -> None:
             "X",
             ty.BOOLEAN,
             [
-                Variable("Y", type_=INT_TY, location=Location((10, 30))),
-                Variable("Z", type_=ty.BOOLEAN, location=Location((10, 40))),
+                Variable(ID("Y", location=Location((10, 30))), type_=INT_TY),
+                Variable(ID("Z", location=Location((10, 40))), type_=ty.BOOLEAN),
             ],
             argument_types=[
                 ty.BOOLEAN,
@@ -2133,7 +2134,7 @@ def test_conversion_type_error() -> None:
     assert_type_error(
         Conversion(
             "X",
-            Selected(Variable("Y", location=Location((10, 30))), "Z"),
+            Selected(Variable(ID("Y", location=Location((10, 30)))), "Z"),
             location=Location((10, 20)),
         ),
         r'^<stdin>:10:30: error: undefined variable "Y"\n'
@@ -2214,8 +2215,8 @@ def test_comprehension_type_error() -> None:
     assert_type_error(
         Comprehension(
             "X",
-            Variable("Y", location=Location((10, 20))),
-            Variable("X", location=Location((10, 30))),
+            Variable(ID("Y", location=Location((10, 20)))),
+            Variable(ID("X", location=Location((10, 30)))),
             TRUE,
         ),
         r'^<stdin>:10:20: error: undefined variable "Y"$',
@@ -2331,8 +2332,8 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: ty.Ty
     [
         (
             {
-                "X": Variable("A", location=Location((10, 30))),
-                "Y": Variable("B", location=Location((10, 40))),
+                "X": Variable(ID("A", location=Location((10, 30)))),
+                "Y": Variable(ID("B", location=Location((10, 40)))),
             },
             ty.Message(
                 "M",
@@ -2403,8 +2404,8 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: ty.Ty
         ),
         (
             {
-                "X": Variable("A", location=Location((10, 40))),
-                "Y": Variable("B", location=Location((10, 30))),
+                "X": Variable(ID("A", location=Location((10, 40)))),
+                "Y": Variable(ID("B", location=Location((10, 30)))),
             },
             ty.Message(
                 "M",
@@ -2424,8 +2425,8 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: ty.Ty
         ),
         (
             {
-                "X": Variable("A", location=Location((10, 40))),
-                "Y": Literal("B", location=Location((10, 30))),
+                "X": Variable(ID("A", location=Location((10, 40)))),
+                "Y": Literal(ID("B", location=Location((10, 30)))),
             },
             ty.Undefined(),
             r'^<stdin>:10:40: error: undefined variable "A"\n'
@@ -2539,8 +2540,8 @@ def test_delta_message_aggregate_type(field_values: Mapping[StrID, Expr], type_:
     [
         (
             {
-                "X": Variable("A", location=Location((10, 30))),
-                "Y": Variable("B", location=Location((10, 40))),
+                "X": Variable(ID("A", location=Location((10, 30)))),
+                "Y": Variable(ID("B", location=Location((10, 40)))),
             },
             ty.Message(
                 "M",
@@ -2595,8 +2596,8 @@ def test_delta_message_aggregate_type(field_values: Mapping[StrID, Expr], type_:
         ),
         (
             {
-                "X": Variable("A", location=Location((10, 40))),
-                "Y": Variable("B", location=Location((10, 30))),
+                "X": Variable(ID("A", location=Location((10, 40)))),
+                "Y": Variable(ID("B", location=Location((10, 30)))),
             },
             ty.Undefined(),
             r'^<stdin>:10:40: error: undefined variable "A"\n'
@@ -2754,14 +2755,13 @@ def test_case_type() -> None:
                 Variable(
                     ID("X", location=Location((1, 1))),
                     type_=ty.Message(ID("A", location=Location((1, 2)))),
-                    location=Location((1, 3)),
                 ),
             ),
             [([ID("V", location=Location((1, 4)))], Number(1, location=Location((1, 5))))],
         ),
-        r'^<stdin>:1:3: error: invalid discrete choice with sequence type "__INTERNAL__::Opaque" '
+        r'^<stdin>:1:1: error: invalid discrete choice with sequence type "__INTERNAL__::Opaque" '
         r'with element integer type "__INTERNAL__::Byte" \(0 .. 255\)\n'
-        r"<stdin>:1:3: note: expected enumeration or integer type$",
+        r"<stdin>:1:1: note: expected enumeration or integer type$",
     )
 
 

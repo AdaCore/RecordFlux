@@ -230,7 +230,10 @@ class Integer(Scalar):
 
     @property
     def value_count(self) -> expr.Number:
-        return self.last - self.first + expr.Number(1)
+        return expr.Number(
+            self.last.value - self.first.value + 1,
+            location=Location.merge([self.last.location, self.first.location]),
+        )
 
     @property
     def first(self) -> expr.Number:
@@ -423,8 +426,8 @@ class Enumeration(Scalar):
             raise self.error
 
         if self.literals.values():
-            min_literal_value = min(map(int, self.literals.values()))
-            max_literal_value = max(map(int, self.literals.values()))
+            min_literal_value = min(n.value for n in self.literals.values())
+            max_literal_value = max(n.value for n in self.literals.values())
             if min_literal_value < 0 or max_literal_value > 2**const.MAX_SCALAR_SIZE - 1:
                 self.error.push(
                     ErrorEntry(
@@ -542,7 +545,7 @@ class Enumeration(Scalar):
                 *[
                     expr.Equal(
                         expr.Variable(name, type_=self.type_),
-                        expr.Literal(l, location=l.location),
+                        expr.Literal(l),
                         self.location,
                     )
                     for l in literals
@@ -552,7 +555,7 @@ class Enumeration(Scalar):
         ]
         result.extend(
             [
-                expr.Equal(expr.Literal(l, type_=self.type_, location=l.location), v, self.location)
+                expr.Equal(expr.Literal(l, type_=self.type_), v, self.location)
                 for l, v in literals.items()
             ],
         )

@@ -116,7 +116,7 @@ def tlv_message() -> Message:
                 Field(ID("Length", location=Location((6, 6)))),
                 Field(ID("Value", location=Location((6, 6)))),
                 size=Mul(
-                    Variable(ID("Length", location=Location((7, 7))), location=Location((7, 7))),
+                    Variable(ID("Length", location=Location((7, 7)))),
                     Number(8),
                     location=Location((7, 7)),
                 ),

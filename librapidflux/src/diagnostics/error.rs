@@ -379,6 +379,10 @@ impl Error {
         &self.entries
     }
 
+    pub fn into_entries(self) -> Vec<Entry> {
+        self.entries
+    }
+
     pub fn set_max_error(max: u64) {
         MAX_ERROR_COUNT.store(max, Ordering::Relaxed);
     }

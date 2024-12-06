@@ -33,7 +33,7 @@ def test_stmt_location() -> None:
         "X",
         ir.IntVar("Y", INT_TY),
         INT_TY,
-        origin=expr.Variable("X", location=Location((1, 2))),
+        origin=expr.Variable(ID("X", location=Location((1, 2)))),
     ).location == Location((1, 2))
 
 
@@ -320,7 +320,7 @@ def test_expr_location() -> None:
     assert ir.IntVar(
         "X",
         INT_TY,
-        origin=expr.Variable("X", location=Location((1, 2))),
+        origin=expr.Variable(ID("X", location=Location((1, 2)))),
     ).location == Location((1, 2))
 
 
@@ -1714,7 +1714,7 @@ def test_add_required_checks() -> None:
                 ir.Div(
                     ir.IntVar("Y", INT_TY),
                     ir.IntVar("Z", INT_TY),
-                    origin=expr.Variable("X", location=Location((1, 2))),
+                    origin=expr.Variable(ID("X", location=Location((1, 2)))),
                 ),
                 INT_TY,
             ),
@@ -1725,7 +1725,7 @@ def test_add_required_checks() -> None:
             ir.NotEqual(
                 ir.IntVar("Z", INT_TY),
                 ir.IntVal(0),
-                origin=expr.Variable("X", location=Location((1, 2))),
+                origin=expr.Variable(ID("X", location=Location((1, 2)))),
             ),
         ),
         ir.Assign(
@@ -1733,7 +1733,7 @@ def test_add_required_checks() -> None:
             ir.Div(
                 ir.IntVar("Y", INT_TY),
                 ir.IntVar("Z", INT_TY),
-                origin=expr.Variable("X", location=Location((1, 2))),
+                origin=expr.Variable(ID("X", location=Location((1, 2)))),
             ),
             INT_TY,
         ),

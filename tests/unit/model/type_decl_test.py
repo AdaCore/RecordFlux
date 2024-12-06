@@ -109,7 +109,7 @@ def test_integer_invalid_first_variable() -> None:
     ):
         Integer(
             "P::T",
-            Add(Number(1), Variable("X", location=Location((5, 4))), location=Location((5, 3))),
+            Add(Number(1), Variable(ID("X", location=Location((5, 4)))), location=Location((5, 3))),
             Number(15),
             Number(4),
             Location((5, 3)),
@@ -124,7 +124,11 @@ def test_integer_invalid_last_variable() -> None:
         Integer(
             "P::T",
             Number(1),
-            Add(Number(1), Variable("X", location=Location((80, 4))), location=Location((80, 5))),
+            Add(
+                Number(1),
+                Variable(ID("X", location=Location((80, 4)))),
+                location=Location((80, 5)),
+            ),
             Number(4),
             Location((80, 6)),
         )
@@ -181,7 +185,11 @@ def test_integer_invalid_size_variable() -> None:
             "P::T",
             Number(0, location=Location((22, 2))),
             Number(256, location=Location((22, 3))),
-            Add(Number(8), Variable("X", location=Location((22, 5))), location=Location((22, 4))),
+            Add(
+                Number(8),
+                Variable(ID("X", location=Location((22, 5)))),
+                location=Location((22, 4)),
+            ),
             Location((22, 4)),
         )
 

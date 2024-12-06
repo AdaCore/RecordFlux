@@ -87,7 +87,7 @@ M_NO_REF = UncheckedMessage(
             Field(ID("F2", location=Location((4, 4)))),
             Field(ID("F3", location=Location((4, 4)))),
             LessEqual(
-                Variable(ID("F2", location=Location((5, 5)))),
+                Variable(ID(ID("F2", location=Location((5, 5))))),
                 Number(100),
                 location=Location((5, 5)),
             ),
@@ -98,7 +98,7 @@ M_NO_REF = UncheckedMessage(
             Field(ID("F2", location=Location((7, 7)))),
             Field(ID("F4", location=Location((8, 8)))),
             GreaterEqual(
-                Variable("F2", location=Location((9, 9))),
+                Variable(ID("F2", location=Location((9, 9)))),
                 Number(200),
                 location=Location((9, 9)),
             ),
@@ -395,7 +395,7 @@ def test_unsupported_expression() -> None:
             condition=LessEqual(
                 Pow(
                     Number(2),
-                    Add(Variable("X", location=Location((10, 23))), Number(1)),
+                    Add(Variable(ID("X", location=Location((10, 23)))), Number(1)),
                     location=Location((10, 19)),
                 ),
                 Number(1024),
@@ -818,18 +818,18 @@ def test_field_identifier_locations() -> None:
 @pytest.mark.parametrize(
     "expression",
     [
-        Variable(models.integer().identifier, location=Location((1, 2))),
+        Variable(ID(models.integer().identifier, location=Location((1, 2)))),
         And(
             TRUE,
-            Variable(models.integer().identifier, location=Location((1, 2))),
+            Variable(ID(models.integer().identifier, location=Location((1, 2)))),
             location=Location((3, 4)),
         ),
         Equal(
-            Add(Variable(models.integer().identifier, location=Location((1, 2))), Number(1)),
+            Add(Variable(ID(models.integer().identifier, location=Location((1, 2)))), Number(1)),
             Number(1),
         ),
         Equal(
-            Variable(models.integer().identifier, location=Location((1, 2))),
+            Variable(ID(models.integer().identifier, location=Location((1, 2)))),
             Variable("X"),
         ),
     ],
@@ -851,9 +851,9 @@ def test_invalid_use_of_type_name(expression: Expr) -> None:
 @pytest.mark.parametrize(
     "expression",
     [
-        Variable("Zero", location=Location((1, 2))),
-        And(TRUE, Variable("Zero", location=Location((1, 2)))),
-        Equal(Add(Variable("Zero", location=Location((1, 2))), Number(1)), Number(1)),
+        Variable(ID("Zero", location=Location((1, 2)))),
+        And(TRUE, Variable(ID("Zero", location=Location((1, 2))))),
+        Equal(Add(Variable(ID("Zero", location=Location((1, 2)))), Number(1)), Number(1)),
     ],
 )
 def test_invalid_use_of_enum_literal(expression: Expr) -> None:
@@ -899,8 +899,8 @@ def test_unused_parameter() -> None:
 @pytest.mark.parametrize(
     "condition",
     [
-        (Variable("F1"), Variable("X", location=Location((10, 20)))),
-        (Variable("X", location=Location((10, 20))), Variable("F1")),
+        (Variable("F1"), Variable(ID("X", location=Location((10, 20))))),
+        (Variable(ID("X", location=Location((10, 20)))), Variable("F1")),
     ],
 )
 @pytest.mark.parametrize(
@@ -945,7 +945,7 @@ def test_undefined_variable_boolean_condition_value() -> None:
     mod_type = UnsignedInteger("P::MT", Number(32))
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), condition=Variable("X", location=Location((10, 20)))),
+        Link(Field("F1"), Field("F2"), condition=Variable(ID("X", location=Location((10, 20))))),
         Link(Field("F2"), FINAL),
     ]
     types = {Field("F1"): mod_type, Field("F2"): mod_type}
@@ -961,7 +961,11 @@ def test_undefined_variable_size() -> None:
     mod_type = UnsignedInteger("P::MT", Number(32))
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), size=Variable("Field_Size", location=Location((10, 20)))),
+        Link(
+            Field("F1"),
+            Field("F2"),
+            size=Variable(ID("Field_Size", location=Location((10, 20)))),
+        ),
         Link(Field("F2"), FINAL),
     ]
     types = {Field("F1"): mod_type, Field("F2"): OPAQUE}
@@ -977,7 +981,11 @@ def test_undefined_variable_first() -> None:
     mod_type = UnsignedInteger("P::MT", Number(32))
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), size=Variable("Field_First", location=Location((10, 20)))),
+        Link(
+            Field("F1"),
+            Field("F2"),
+            size=Variable(ID("Field_First", location=Location((10, 20)))),
+        ),
         Link(Field("F2"), FINAL),
     ]
     types = {Field("F1"): mod_type, Field("F2"): OPAQUE}
@@ -996,8 +1004,8 @@ def test_undefined_variables() -> None:
             Field("F1"),
             Field("F2"),
             Equal(
-                Variable("X", location=Location((10, 20))),
-                Variable("Y", location=Location((10, 30))),
+                Variable(ID("X", location=Location((10, 20)))),
+                Variable(ID("Y", location=Location((10, 30)))),
             ),
         ),
         Link(Field("F2"), FINAL),
@@ -1019,7 +1027,7 @@ def test_subsequent_variable() -> None:
     t = UnsignedInteger("P::T", Number(32))
     structure = [
         Link(INITIAL, f1),
-        Link(f1, f2, Equal(Variable("F2", location=Location((1024, 57))), Number(42))),
+        Link(f1, f2, Equal(Variable(ID("F2", location=Location((1024, 57)))), Number(42))),
         Link(f2, FINAL),
     ]
 
@@ -1051,7 +1059,11 @@ def test_reference_to_optional_field_1() -> None:
         Link(
             Field(ID("F3", location=Location((5, 5)))),
             FINAL,
-            Equal(Variable("F2", location=Location((10, 30))), TRUE, location=Location((10, 20))),
+            Equal(
+                Variable(ID("F2", location=Location((10, 30)))),
+                TRUE,
+                location=Location((10, 20)),
+            ),
         ),
     ]
 
@@ -1072,12 +1084,12 @@ def test_reference_to_optional_field_1() -> None:
     ("size_expression"),
     [
         Mul(
-            Variable("Opt", location=Location((10, 30))),
+            Variable(ID("Opt", location=Location((10, 30)))),
             Number(8),
             location=Location((10, 20)),
         ),
         Sub(
-            Variable("Opt", location=Location((10, 30))),
+            Variable(ID("Opt", location=Location((10, 30)))),
             Number(8),
             location=Location((10, 20)),
         ),
@@ -1170,7 +1182,7 @@ def test_invalid_relation_to_aggregate() -> None:
             Field(ID("F1", location=Location((2, 2)))),
             FINAL,
             LessEqual(
-                Variable("F1", location=Location((10, 20))),
+                Variable(ID("F1", location=Location((10, 20)))),
                 Aggregate(Number(1), Number(2), location=Location((10, 30))),
             ),
         ),
@@ -1536,7 +1548,7 @@ def test_opaque_size_not_multiple_of_8_dynamic() -> None:
                 Link(
                     Field(ID("L", location=Location((44, 2)))),
                     o,
-                    size=Variable("L", location=Location((44, 3))),
+                    size=Variable(ID("L", location=Location((44, 3)))),
                     location=Location((44, 4)),
                 ),
                 Link(o, FINAL, location=Location((45, 3))),
@@ -1554,7 +1566,7 @@ def test_opaque_size_valid_multiple_of_8_dynamic_cond() -> None:
             Link(
                 Field(ID("L", location=Location((2, 2)))),
                 Field(ID("O", location=Location((2, 2)))),
-                size=Variable("L", location=Location((3, 3))),
+                size=Variable(ID("L", location=Location((3, 3)))),
                 condition=Equal(
                     Mod(Variable("L"), Number(8)),
                     Number(0),
@@ -2083,7 +2095,7 @@ def test_invalid_type_condition_enum() -> None:
             Field(ID("F2", location=Location((2, 3)))),
             condition=Equal(
                 Variable("F1"),
-                Variable("E4", location=Location((10, 20))),
+                Variable(ID("E4", location=Location((10, 20)))),
                 location=Location((10, 10)),
             ),
         ),
@@ -2237,7 +2249,11 @@ def test_invalid_first_is_last() -> None:
 def test_invalid_first_forward_reference() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), first=First(Variable("F3", location=Location((10, 20))))),
+        Link(
+            Field("F1"),
+            Field("F2"),
+            first=First(Variable(ID("F3", location=Location((10, 20))))),
+        ),
         Link(Field("F2"), Field("F3")),
         Link(Field("F3"), FINAL),
     ]
@@ -2277,7 +2293,7 @@ def test_invalid_size_forward_reference() -> None:
         Link(
             Field(ID("F1", location=Location((2, 2)))),
             Field(ID("F2", location=Location((2, 3)))),
-            size=Variable("F2", location=Location((10, 20))),
+            size=Variable(ID("F2", location=Location((10, 20)))),
         ),
         Link(Field(ID("F2", location=Location((3, 3)))), FINAL),
     ]
@@ -3474,7 +3490,7 @@ def test_no_unreachable_field_multi() -> None:
         ),
         And(
             Equal(
-                Variable(ID("Flag", location=Location((10, 10))), location=Location((10, 10))),
+                Variable(ID("Flag", location=Location((10, 10)))),
                 Number(1),
             ),
             Greater(
@@ -3690,7 +3706,7 @@ def test_checksum(checksums: abc.Mapping[ID, abc.Sequence[Expr]], condition: Exp
             r' in definition of checksum "F3"$',
         ),
         (
-            {ID("F3"): [Variable("X", location=Location((20, 30)))]},
+            {ID("F3"): [Variable(ID("X", location=Location((20, 30))))]},
             ValidChecksum("F3"),
             r'^<stdin>:20:30: error: unknown field "X" referenced'
             r' in definition of checksum "F3"$',
@@ -4014,7 +4030,6 @@ def test_size() -> None:
                 Field(ID("Data", location=Location((2, 2)))),
                 condition=Variable(
                     ID("Has_Data", location=Location((3, 3))),
-                    location=Location((3, 3)),
                 ),
                 size=Mul(
                     Variable(ID("Length", location=Location((4, 4)))),
@@ -4336,7 +4351,7 @@ def test_size_subpath() -> None:
                     location=Location((4, 4)),
                 ),
                 size=Mul(
-                    Variable("Length", location=Location((5, 5))),
+                    Variable(ID("Length", location=Location((5, 5)))),
                     Number(8),
                     location=Location((5, 5)),
                 ),
@@ -4346,7 +4361,7 @@ def test_size_subpath() -> None:
                 Field(ID("Length", location=Location((6, 6)))),
                 Field(ID("Data", location=Location((6, 6)))),
                 condition=Equal(
-                    Variable("Has_Data", location=Location((7, 7))),
+                    Variable(ID("Has_Data", location=Location((7, 7)))),
                     FALSE,
                     location=Location((7, 7)),
                 ),
@@ -4430,7 +4445,7 @@ def test_size_subpath() -> None:
                 Field(ID("A", location=Location((6, 6)))),
                 Field(ID("B", location=Location((6, 6)))),
                 condition=Greater(
-                    Variable("A", location=Location((7, 7))),
+                    Variable(ID("A", location=Location((7, 7)))),
                     Number(0),
                     location=Location((7, 7)),
                 ),
@@ -5039,7 +5054,7 @@ def test_merge_message_simple_derived() -> None:
                         Field(ID("NR_F2", location=Location((10, 10)))),
                         Field(ID("NR_F4", location=Location((10, 10)))),
                         GreaterEqual(
-                            Variable("NR_F2", location=Location((11, 11))),
+                            Variable(ID("NR_F2", location=Location((11, 11)))),
                             Number(200),
                             location=Location((11, 11)),
                         ),
@@ -6227,7 +6242,6 @@ def test_refinement_inconsistent_identifier_casing() -> None:
                     Variable(ID("tag", location=Location((2, 2)))),
                     Variable(
                         ID("tlv::msg_data", location=Location((3, 3))),
-                        location=Location((3, 3)),
                     ),
                     location=Location((3, 3)),
                 ),
@@ -6331,7 +6345,7 @@ def test_refinement_undefined_variable_in_condition() -> None:
             message,
             Field("X"),
             message,
-            Equal(Variable("Y", location=Location((10, 20))), Number(1)),
+            Equal(Variable(ID("Y", location=Location((10, 20)))), Number(1)),
         )
 
 
@@ -6366,7 +6380,7 @@ def test_refinement_unqualified_literal_in_condition() -> None:
             message,
             y,
             message,
-            Equal(Variable("X"), Variable("E1", location=Location((10, 20)))),
+            Equal(Variable("X"), Variable(ID("E1", location=Location((10, 20))))),
         )
 
 
@@ -6407,7 +6421,10 @@ def test_refinement_type_error_in_condition() -> None:
             message,
             Field("P"),
             message,
-            Equal(Variable("L"), Literal("True", type_=ty.BOOLEAN, location=Location((10, 20)))),
+            Equal(
+                Variable("L"),
+                Literal(ID("True", location=Location((10, 20))), type_=ty.BOOLEAN),
+            ),
         )
 
 
