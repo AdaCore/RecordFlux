@@ -29,7 +29,7 @@ is
       Buffer_First : constant RFLX_Types.Index := Buffer'First;
       Buffer_Last : constant RFLX_Types.Index := Buffer'Last;
    begin
-      Ctx := (Buffer_First, Buffer_Last, First, Last, First - 1, (if Written_Last = 0 then First - 1 else Written_Last), Buffer, (F_Length => (State => S_Invalid, others => <>), others => <>));
+      Ctx := (Buffer_First, Buffer_Last, First, Last, First - 1, (if Written_Last = 0 then First - 1 else Written_Last), Buffer, (others => <>));
       Buffer := null;
    end Initialize;
 
@@ -40,7 +40,7 @@ is
 
    procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) is
    begin
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, First, Last, First - 1, First - 1, Ctx.Buffer, (F_Length => (State => S_Invalid, others => <>), others => <>));
+      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, First, Last, First - 1, First - 1, Ctx.Buffer, (others => <>));
    end Reset;
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr) is
@@ -130,7 +130,7 @@ is
                                 and Field_Size (Ctx, Fld) = Field_Size (Ctx, Fld)'Loop_Entry);
          pragma Loop_Invariant ((for all F in Field =>
                                     (if F <= Fld_Loop then Ctx.Cursors (F) = Ctx.Cursors'Loop_Entry (F) else Invalid (Ctx, F))));
-         Ctx.Cursors (Fld_Loop) := (State => S_Invalid, others => <>);
+         Ctx.Cursors (Fld_Loop) := (others => <>);
       end loop;
    end Reset_Dependent_Fields;
 
@@ -527,7 +527,7 @@ is
          Ctx.Cursors (F_Integer_Vector) := (State => S_Valid, First => Ctx.Cursors (F_Integer_Vector).First, Last => Ctx.Cursors (F_Integer_Vector).Last, Value => Ctx.Cursors (F_Integer_Vector).Value);
       else
          Reset_Dependent_Fields (Ctx, F_Integer_Vector);
-         Ctx.Cursors (F_Integer_Vector) := (State => S_Invalid, others => <>);
+         Ctx.Cursors (F_Integer_Vector) := (others => <>);
       end if;
    end Update_Integer_Vector;
 
@@ -541,7 +541,7 @@ is
          Ctx.Cursors (F_Enumeration_Vector) := (State => S_Valid, First => Ctx.Cursors (F_Enumeration_Vector).First, Last => Ctx.Cursors (F_Enumeration_Vector).Last, Value => Ctx.Cursors (F_Enumeration_Vector).Value);
       else
          Reset_Dependent_Fields (Ctx, F_Enumeration_Vector);
-         Ctx.Cursors (F_Enumeration_Vector) := (State => S_Invalid, others => <>);
+         Ctx.Cursors (F_Enumeration_Vector) := (others => <>);
       end if;
    end Update_Enumeration_Vector;
 
@@ -555,7 +555,7 @@ is
          Ctx.Cursors (F_AV_Enumeration_Vector) := (State => S_Valid, First => Ctx.Cursors (F_AV_Enumeration_Vector).First, Last => Ctx.Cursors (F_AV_Enumeration_Vector).Last, Value => Ctx.Cursors (F_AV_Enumeration_Vector).Value);
       else
          Reset_Dependent_Fields (Ctx, F_AV_Enumeration_Vector);
-         Ctx.Cursors (F_AV_Enumeration_Vector) := (State => S_Invalid, others => <>);
+         Ctx.Cursors (F_AV_Enumeration_Vector) := (others => <>);
       end if;
    end Update_AV_Enumeration_Vector;
 

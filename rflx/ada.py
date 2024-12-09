@@ -662,9 +662,22 @@ class String(Aggregate):
 
 
 class NamedAggregate(Expr):
-    def __init__(self, *elements: tuple[StrID | Expr, Expr]) -> None:
+    def __init__(
+        self,
+        *elements: tuple[StrID | Expr, Expr],
+        implicit_elements: list[tuple[StrID | Expr, Expr]] | None = None,
+    ) -> None:
+        """
+        Array aggregate with named associations.
+
+        `implicit_elements` must contain a semantically equivalent representation of `elements`
+        that does not use the box notation `<>`.
+        """
         super().__init__()
         self.elements = [(ID(n) if isinstance(n, str) else n, e) for n, e in elements]
+        self.implicit_elements = [
+            (ID(n) if isinstance(n, str) else n, e) for n, e in implicit_elements or []
+        ]
 
     def __str__(self) -> str:
         assert len(self.elements) > 0

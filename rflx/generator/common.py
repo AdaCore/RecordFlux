@@ -994,14 +994,33 @@ def initialize_conditions(message: model.Message) -> list[Expr]:
 
 def context_cursors_initialization(message: model.Message) -> Expr:
     return NamedAggregate(
-        (
-            message.fields[0].affixed_name,
-            NamedAggregate(
-                ("State", Variable("S_Invalid")),
-                ("others", Variable("<>")),
-            ),
-        ),
         ("others", Variable("<>")),
+        implicit_elements=[
+            (field.affixed_name, field_cursor_aggregate()) for field in message.all_fields
+        ],
+    )
+
+
+def field_cursor_aggregate(
+    state: Expr | None = None,
+    first: Expr | None = None,
+    last: Expr | None = None,
+    value: Expr | None = None,
+) -> NamedAggregate:
+    return NamedAggregate(
+        *[
+            *([("State", state)] if state else []),
+            *([("First", first)] if first else []),
+            *([("Last", last)] if last else []),
+            *([("Value", value)] if value else []),
+            *([("others", Variable("<>"))] if not (state and first and last and value) else []),
+        ],
+        implicit_elements=[
+            ("State", state or Variable("S_Invalid")),
+            ("First", first or First(const.TYPES_BIT_INDEX)),
+            ("Last", last or First(const.TYPES_BIT_LENGTH)),
+            ("Value", value or Number(0)),
+        ],
     )
 
 

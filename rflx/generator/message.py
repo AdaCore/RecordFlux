@@ -993,7 +993,7 @@ def create_context_type(message: Message) -> UnitPart:
                     Component(
                         "Cursors",
                         "Field_Cursors",
-                        NamedAggregate(("others", Variable("<>"))),
+                        common.context_cursors_initialization(message),
                     ),
                 ],
                 discriminants,
@@ -2906,10 +2906,7 @@ def create_reset_dependent_fields_procedure(message: Message) -> UnitPart:
                                     Variable("Ctx.Cursors"),
                                     Variable("Fld_Loop"),
                                 ),
-                                NamedAggregate(
-                                    ("State", Variable("S_Invalid")),
-                                    ("others", Variable("<>")),
-                                ),
+                                common.field_cursor_aggregate(),
                             ),
                         ],
                         reverse=True,
@@ -3425,10 +3422,7 @@ def create_update_procedures(
                                     Variable("Ctx.Cursors"),
                                     Variable(f.affixed_name),
                                 ),
-                                NamedAggregate(
-                                    ("State", Variable("S_Invalid")),
-                                    ("others", Variable("<>")),
-                                ),
+                                common.field_cursor_aggregate(),
                             ),
                         ],
                     ),

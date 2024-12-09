@@ -448,9 +448,7 @@ class ParserGenerator:
                                                                         Variable("Ctx.Cursors"),
                                                                         Variable("Fld"),
                                                                     ),
-                                                                    NamedAggregate(
-                                                                        ("others", Variable("<>")),
-                                                                    ),
+                                                                    common.field_cursor_aggregate(),
                                                                 ),
                                                             ],
                                                         ),
@@ -463,9 +461,8 @@ class ParserGenerator:
                                                         Variable("Ctx.Cursors"),
                                                         Variable("Fld"),
                                                     ),
-                                                    NamedAggregate(
-                                                        ("State", Variable("S_Incomplete")),
-                                                        ("others", Variable("<>")),
+                                                    common.field_cursor_aggregate(
+                                                        state=Variable("S_Incomplete"),
                                                     ),
                                                 ),
                                             ],
