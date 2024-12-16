@@ -658,6 +658,486 @@ impl Neg {
     }
 }
 
+#[pyclass(extends = Expr, module = "rflx.rapidflux.expr")]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct Sub(lib::BinExpr);
+
+#[pymethods]
+impl Sub {
+    #[new]
+    fn new(
+        left: &Bound<'_, Expr>,
+        right: &Bound<'_, Expr>,
+        location: Option<Location>,
+    ) -> (Self, Expr) {
+        (
+            Self(lib::BinExpr {
+                op: lib::BinOp::Sub,
+                left: Box::new(to_expr(left)),
+                right: Box::new(to_expr(right)),
+                location: location.unwrap_or(NO_LOCATION).0,
+            }),
+            Expr,
+        )
+    }
+
+    fn __getnewargs__(&self, py: Python<'_>) -> (PyObject, PyObject, Location) {
+        (self.left(py), self.right(py), self.location())
+    }
+
+    fn __str__(&self) -> String {
+        self.0.to_string()
+    }
+
+    fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
+        Ok(format!(
+            "Sub({}, {}, {})",
+            to_py(&self.0.left, py).call_method0(py, "__repr__")?,
+            to_py(&self.0.right, py).call_method0(py, "__repr__")?,
+            self.location().__repr__()
+        ))
+    }
+
+    fn __richcmp__(&self, other: &Bound<'_, PyAny>, op: CompareOp) -> bool {
+        if let Ok(other) = other.extract::<Self>() {
+            match op {
+                CompareOp::Eq => self.0.left == other.0.left && self.0.right == other.0.right,
+                CompareOp::Ne => self.0.left != other.0.left || self.0.right != other.0.right,
+                _ => false,
+            }
+        } else {
+            matches!(op, CompareOp::Ne)
+        }
+    }
+
+    #[allow(clippy::unused_self)]
+    fn __hash__(&self) -> usize {
+        0
+    }
+
+    fn __neg__(&self, py: Python<'_>) -> PyObject {
+        to_py(&self.0.clone().into_negated(), py)
+    }
+
+    #[getter]
+    fn location(&self) -> Location {
+        Location(self.0.location.clone())
+    }
+
+    #[getter]
+    fn precedence(&self) -> Precedence {
+        Precedence(self.0.precedence().clone())
+    }
+
+    #[getter]
+    fn type_(&self, py: Python<'_>) -> PyObject {
+        ty::to_py(&self.0.ty(), py)
+    }
+
+    #[getter]
+    fn left(&self, py: Python<'_>) -> PyObject {
+        to_py(&self.0.left, py)
+    }
+
+    #[getter]
+    fn right(&self, py: Python<'_>) -> PyObject {
+        to_py(&self.0.right, py)
+    }
+
+    fn check_type(&self, expected: &Bound<'_, PyAny>) -> error::Error {
+        error::Error(lib::Expr::BinExpr(self.0.clone()).check_type(&to_ty_list(expected)))
+    }
+
+    fn check_type_instance(&self, expected: &Bound<'_, PyAny>, py: Python<'_>) -> error::Error {
+        error::Error(
+            lib::Expr::BinExpr(self.0.clone())
+                .check_type_instance(&to_ty_discriminants_list(expected, py)),
+        )
+    }
+
+    fn variables(&self, py: Python<'_>) -> Vec<PyObject> {
+        to_py_list(&lib::Expr::BinExpr(self.0.clone()).variables(), py)
+    }
+
+    fn findall(&self, r#match: &Bound<'_, PyAny>, py: Python<'_>) -> Vec<PyObject> {
+        to_py_list(
+            &lib::Expr::BinExpr(self.0.clone()).find_all(&to_fn_expr_bool(r#match, py)),
+            py,
+        )
+    }
+
+    fn substituted(&self, func: &Bound<'_, PyAny>, py: Python<'_>) -> PyObject {
+        to_py(
+            &lib::Expr::BinExpr(self.0.clone()).into_substituted(&to_fn_expr_expr(func, py)),
+            py,
+        )
+    }
+
+    fn simplified(&self, py: Python<'_>) -> PyObject {
+        to_py(&lib::Expr::BinExpr(self.0.clone()).into_simplified(), py)
+    }
+}
+
+#[pyclass(extends = Expr, module = "rflx.rapidflux.expr")]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct Div(lib::BinExpr);
+
+#[pymethods]
+impl Div {
+    #[new]
+    fn new(
+        left: &Bound<'_, Expr>,
+        right: &Bound<'_, Expr>,
+        location: Option<Location>,
+    ) -> (Self, Expr) {
+        (
+            Self(lib::BinExpr {
+                op: lib::BinOp::Div,
+                left: Box::new(to_expr(left)),
+                right: Box::new(to_expr(right)),
+                location: location.unwrap_or(NO_LOCATION).0,
+            }),
+            Expr,
+        )
+    }
+
+    fn __getnewargs__(&self, py: Python<'_>) -> (PyObject, PyObject, Location) {
+        (self.left(py), self.right(py), self.location())
+    }
+
+    fn __str__(&self) -> String {
+        self.0.to_string()
+    }
+
+    fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
+        Ok(format!(
+            "Div({}, {}, {})",
+            to_py(&self.0.left, py).call_method0(py, "__repr__")?,
+            to_py(&self.0.right, py).call_method0(py, "__repr__")?,
+            self.location().__repr__()
+        ))
+    }
+
+    fn __richcmp__(&self, other: &Bound<'_, PyAny>, op: CompareOp) -> bool {
+        if let Ok(other) = other.extract::<Self>() {
+            match op {
+                CompareOp::Eq => self.0.left == other.0.left && self.0.right == other.0.right,
+                CompareOp::Ne => self.0.left != other.0.left || self.0.right != other.0.right,
+                _ => false,
+            }
+        } else {
+            matches!(op, CompareOp::Ne)
+        }
+    }
+
+    #[allow(clippy::unused_self)]
+    fn __hash__(&self) -> usize {
+        0
+    }
+
+    fn __neg__(&self, py: Python<'_>) -> PyObject {
+        to_py(&self.0.clone().into_negated(), py)
+    }
+
+    #[getter]
+    fn location(&self) -> Location {
+        Location(self.0.location.clone())
+    }
+
+    #[getter]
+    fn precedence(&self) -> Precedence {
+        Precedence(self.0.precedence().clone())
+    }
+
+    #[getter]
+    fn type_(&self, py: Python<'_>) -> PyObject {
+        ty::to_py(&self.0.ty(), py)
+    }
+
+    #[getter]
+    fn left(&self, py: Python<'_>) -> PyObject {
+        to_py(&self.0.left, py)
+    }
+
+    #[getter]
+    fn right(&self, py: Python<'_>) -> PyObject {
+        to_py(&self.0.right, py)
+    }
+
+    fn check_type(&self, expected: &Bound<'_, PyAny>) -> error::Error {
+        error::Error(lib::Expr::BinExpr(self.0.clone()).check_type(&to_ty_list(expected)))
+    }
+
+    fn check_type_instance(&self, expected: &Bound<'_, PyAny>, py: Python<'_>) -> error::Error {
+        error::Error(
+            lib::Expr::BinExpr(self.0.clone())
+                .check_type_instance(&to_ty_discriminants_list(expected, py)),
+        )
+    }
+
+    fn variables(&self, py: Python<'_>) -> Vec<PyObject> {
+        to_py_list(&lib::Expr::BinExpr(self.0.clone()).variables(), py)
+    }
+
+    fn findall(&self, r#match: &Bound<'_, PyAny>, py: Python<'_>) -> Vec<PyObject> {
+        to_py_list(
+            &lib::Expr::BinExpr(self.0.clone()).find_all(&to_fn_expr_bool(r#match, py)),
+            py,
+        )
+    }
+
+    fn substituted(&self, func: &Bound<'_, PyAny>, py: Python<'_>) -> PyObject {
+        to_py(
+            &lib::Expr::BinExpr(self.0.clone()).into_substituted(&to_fn_expr_expr(func, py)),
+            py,
+        )
+    }
+
+    fn simplified(&self, py: Python<'_>) -> PyObject {
+        to_py(&lib::Expr::BinExpr(self.0.clone()).into_simplified(), py)
+    }
+}
+
+#[pyclass(extends = Expr, module = "rflx.rapidflux.expr")]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct Pow(lib::BinExpr);
+
+#[pymethods]
+impl Pow {
+    #[new]
+    fn new(
+        left: &Bound<'_, Expr>,
+        right: &Bound<'_, Expr>,
+        location: Option<Location>,
+    ) -> (Self, Expr) {
+        (
+            Self(lib::BinExpr {
+                op: lib::BinOp::Pow,
+                left: Box::new(to_expr(left)),
+                right: Box::new(to_expr(right)),
+                location: location.unwrap_or(NO_LOCATION).0,
+            }),
+            Expr,
+        )
+    }
+
+    fn __getnewargs__(&self, py: Python<'_>) -> (PyObject, PyObject, Location) {
+        (self.left(py), self.right(py), self.location())
+    }
+
+    fn __str__(&self) -> String {
+        self.0.to_string()
+    }
+
+    fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
+        Ok(format!(
+            "Pow({}, {}, {})",
+            to_py(&self.0.left, py).call_method0(py, "__repr__")?,
+            to_py(&self.0.right, py).call_method0(py, "__repr__")?,
+            self.location().__repr__()
+        ))
+    }
+
+    fn __richcmp__(&self, other: &Bound<'_, PyAny>, op: CompareOp) -> bool {
+        if let Ok(other) = other.extract::<Self>() {
+            match op {
+                CompareOp::Eq => self.0.left == other.0.left && self.0.right == other.0.right,
+                CompareOp::Ne => self.0.left != other.0.left || self.0.right != other.0.right,
+                _ => false,
+            }
+        } else {
+            matches!(op, CompareOp::Ne)
+        }
+    }
+
+    #[allow(clippy::unused_self)]
+    fn __hash__(&self) -> usize {
+        0
+    }
+
+    fn __neg__(&self, py: Python<'_>) -> PyObject {
+        to_py(&self.0.clone().into_negated(), py)
+    }
+
+    #[getter]
+    fn location(&self) -> Location {
+        Location(self.0.location.clone())
+    }
+
+    #[getter]
+    fn precedence(&self) -> Precedence {
+        Precedence(self.0.precedence().clone())
+    }
+
+    #[getter]
+    fn type_(&self, py: Python<'_>) -> PyObject {
+        ty::to_py(&self.0.ty(), py)
+    }
+
+    #[getter]
+    fn left(&self, py: Python<'_>) -> PyObject {
+        to_py(&self.0.left, py)
+    }
+
+    #[getter]
+    fn right(&self, py: Python<'_>) -> PyObject {
+        to_py(&self.0.right, py)
+    }
+
+    fn check_type(&self, expected: &Bound<'_, PyAny>) -> error::Error {
+        error::Error(lib::Expr::BinExpr(self.0.clone()).check_type(&to_ty_list(expected)))
+    }
+
+    fn check_type_instance(&self, expected: &Bound<'_, PyAny>, py: Python<'_>) -> error::Error {
+        error::Error(
+            lib::Expr::BinExpr(self.0.clone())
+                .check_type_instance(&to_ty_discriminants_list(expected, py)),
+        )
+    }
+
+    fn variables(&self, py: Python<'_>) -> Vec<PyObject> {
+        to_py_list(&lib::Expr::BinExpr(self.0.clone()).variables(), py)
+    }
+
+    fn findall(&self, r#match: &Bound<'_, PyAny>, py: Python<'_>) -> Vec<PyObject> {
+        to_py_list(
+            &lib::Expr::BinExpr(self.0.clone()).find_all(&to_fn_expr_bool(r#match, py)),
+            py,
+        )
+    }
+
+    fn substituted(&self, func: &Bound<'_, PyAny>, py: Python<'_>) -> PyObject {
+        to_py(
+            &lib::Expr::BinExpr(self.0.clone()).into_substituted(&to_fn_expr_expr(func, py)),
+            py,
+        )
+    }
+
+    fn simplified(&self, py: Python<'_>) -> PyObject {
+        to_py(&lib::Expr::BinExpr(self.0.clone()).into_simplified(), py)
+    }
+}
+
+#[pyclass(extends = Expr, module = "rflx.rapidflux.expr")]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct Mod(lib::BinExpr);
+
+#[pymethods]
+impl Mod {
+    #[new]
+    fn new(
+        left: &Bound<'_, Expr>,
+        right: &Bound<'_, Expr>,
+        location: Option<Location>,
+    ) -> (Self, Expr) {
+        (
+            Self(lib::BinExpr {
+                op: lib::BinOp::Mod,
+                left: Box::new(to_expr(left)),
+                right: Box::new(to_expr(right)),
+                location: location.unwrap_or(NO_LOCATION).0,
+            }),
+            Expr,
+        )
+    }
+
+    fn __getnewargs__(&self, py: Python<'_>) -> (PyObject, PyObject, Location) {
+        (self.left(py), self.right(py), self.location())
+    }
+
+    fn __str__(&self) -> String {
+        self.0.to_string()
+    }
+
+    fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
+        Ok(format!(
+            "Mod({}, {}, {})",
+            to_py(&self.0.left, py).call_method0(py, "__repr__")?,
+            to_py(&self.0.right, py).call_method0(py, "__repr__")?,
+            self.location().__repr__()
+        ))
+    }
+
+    fn __richcmp__(&self, other: &Bound<'_, PyAny>, op: CompareOp) -> bool {
+        if let Ok(other) = other.extract::<Self>() {
+            match op {
+                CompareOp::Eq => self.0.left == other.0.left && self.0.right == other.0.right,
+                CompareOp::Ne => self.0.left != other.0.left || self.0.right != other.0.right,
+                _ => false,
+            }
+        } else {
+            matches!(op, CompareOp::Ne)
+        }
+    }
+
+    #[allow(clippy::unused_self)]
+    fn __hash__(&self) -> usize {
+        0
+    }
+
+    fn __neg__(&self, py: Python<'_>) -> PyObject {
+        to_py(&self.0.clone().into_negated(), py)
+    }
+
+    #[getter]
+    fn location(&self) -> Location {
+        Location(self.0.location.clone())
+    }
+
+    #[getter]
+    fn precedence(&self) -> Precedence {
+        Precedence(self.0.precedence().clone())
+    }
+
+    #[getter]
+    fn type_(&self, py: Python<'_>) -> PyObject {
+        ty::to_py(&self.0.ty(), py)
+    }
+
+    #[getter]
+    fn left(&self, py: Python<'_>) -> PyObject {
+        to_py(&self.0.left, py)
+    }
+
+    #[getter]
+    fn right(&self, py: Python<'_>) -> PyObject {
+        to_py(&self.0.right, py)
+    }
+
+    fn check_type(&self, expected: &Bound<'_, PyAny>) -> error::Error {
+        error::Error(lib::Expr::BinExpr(self.0.clone()).check_type(&to_ty_list(expected)))
+    }
+
+    fn check_type_instance(&self, expected: &Bound<'_, PyAny>, py: Python<'_>) -> error::Error {
+        error::Error(
+            lib::Expr::BinExpr(self.0.clone())
+                .check_type_instance(&to_ty_discriminants_list(expected, py)),
+        )
+    }
+
+    fn variables(&self, py: Python<'_>) -> Vec<PyObject> {
+        to_py_list(&lib::Expr::BinExpr(self.0.clone()).variables(), py)
+    }
+
+    fn findall(&self, r#match: &Bound<'_, PyAny>, py: Python<'_>) -> Vec<PyObject> {
+        to_py_list(
+            &lib::Expr::BinExpr(self.0.clone()).find_all(&to_fn_expr_bool(r#match, py)),
+            py,
+        )
+    }
+
+    fn substituted(&self, func: &Bound<'_, PyAny>, py: Python<'_>) -> PyObject {
+        to_py(
+            &lib::Expr::BinExpr(self.0.clone()).into_substituted(&to_fn_expr_expr(func, py)),
+            py,
+        )
+    }
+
+    fn simplified(&self, py: Python<'_>) -> PyObject {
+        to_py(&lib::Expr::BinExpr(self.0.clone()).into_simplified(), py)
+    }
+}
+
 fn to_expr(obj: &Bound<'_, PyAny>) -> lib::Expr {
     if let Ok(var) = obj.extract::<PyRef<Variable>>() {
         lib::Expr::Var(var.0.clone())
@@ -667,6 +1147,14 @@ fn to_expr(obj: &Bound<'_, PyAny>) -> lib::Expr {
         lib::Expr::Num(num.0.clone())
     } else if let Ok(neg) = obj.extract::<PyRef<Neg>>() {
         lib::Expr::Neg(neg.0.clone())
+    } else if let Ok(sub) = obj.extract::<PyRef<Sub>>() {
+        lib::Expr::BinExpr(sub.0.clone())
+    } else if let Ok(div) = obj.extract::<PyRef<Div>>() {
+        lib::Expr::BinExpr(div.0.clone())
+    } else if let Ok(pow) = obj.extract::<PyRef<Pow>>() {
+        lib::Expr::BinExpr(pow.0.clone())
+    } else if let Ok(r#mod) = obj.extract::<PyRef<Mod>>() {
+        lib::Expr::BinExpr(r#mod.0.clone())
     } else {
         panic!("unknown expression \"{obj:?}\"")
     }
@@ -725,16 +1213,30 @@ fn to_ty_discriminants_list(
 
 fn to_py(obj: &lib::Expr, py: Python<'_>) -> PyObject {
     match obj {
-        lib::Expr::Var(num) => Py::new(py, (Variable(num.clone()), Expr))
+        lib::Expr::Var(var) => Py::new(py, (Variable(var.clone()), Expr))
             .unwrap()
             .into_py(py),
-        lib::Expr::Lit(num) => Py::new(py, (Literal(num.clone()), Expr))
+        lib::Expr::Lit(lit) => Py::new(py, (Literal(lit.clone()), Expr))
             .unwrap()
             .into_py(py),
         lib::Expr::Num(num) => Py::new(py, (Number(num.clone()), Expr))
             .unwrap()
             .into_py(py),
-        lib::Expr::Neg(num) => Py::new(py, (Neg(num.clone()), Expr)).unwrap().into_py(py),
+        lib::Expr::Neg(neg) => Py::new(py, (Neg(neg.clone()), Expr)).unwrap().into_py(py),
+        lib::Expr::BinExpr(bin_expr) => match bin_expr.op {
+            lib::BinOp::Sub => Py::new(py, (Sub(bin_expr.clone()), Expr))
+                .unwrap()
+                .into_py(py),
+            lib::BinOp::Div => Py::new(py, (Div(bin_expr.clone()), Expr))
+                .unwrap()
+                .into_py(py),
+            lib::BinOp::Pow => Py::new(py, (Pow(bin_expr.clone()), Expr))
+                .unwrap()
+                .into_py(py),
+            lib::BinOp::Mod => Py::new(py, (Mod(bin_expr.clone()), Expr))
+                .unwrap()
+                .into_py(py),
+        },
     }
 }
 
@@ -742,10 +1244,10 @@ fn to_py_list(obj: &[lib::Expr], py: Python<'_>) -> Vec<PyObject> {
     obj.iter().map(|e| to_py(e, py)).collect::<Vec<_>>()
 }
 
-impl_states!(Expr, Precedence, Variable, Literal, Number, Neg);
+impl_states!(Expr, Precedence, Variable, Literal, Number, Neg, Sub, Div, Pow, Mod);
 register_submodule_declarations!(
     expr,
     [],
-    [Expr, Precedence, Variable, Literal, Number, Neg],
+    [Expr, Precedence, Variable, Literal, Number, Neg, Sub, Div, Pow, Mod],
     []
 );

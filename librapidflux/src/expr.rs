@@ -33,6 +33,7 @@ pub enum Expr {
     Lit(Sym),
     Num(Num),
     Neg(Neg),
+    BinExpr(BinExpr),
 }
 
 impl Expr {
@@ -67,34 +68,49 @@ impl Expr {
         })
     }
 
+    pub fn bin_expr(op: BinOp, left: Expr, right: Expr, location: Location) -> Self {
+        Self::BinExpr(BinExpr {
+            op,
+            left: Box::new(left),
+            right: Box::new(right),
+            location,
+        })
+    }
+
     pub fn location(&self) -> &Location {
         match self {
             Self::Var(sym) | Self::Lit(sym) => sym.id.location(),
             Self::Num(num) => &num.location,
             Self::Neg(neg) => &neg.location,
+            Self::BinExpr(bin_expr) => &bin_expr.location,
         }
     }
 
     pub fn check_type(&self, expected: &[ty::Ty]) -> Error {
         let mut error = self.check_sub_expr_type();
-        error.extend(
-            ty::check_type(&self.ty(), expected, self.location(), &self.expr_name()).into_entries(),
-        );
+        if error.entries().is_empty() {
+            error.extend(
+                ty::check_type(&self.ty(), expected, self.location(), &self.expr_name())
+                    .into_entries(),
+            );
+        }
         error
     }
 
     pub fn check_type_instance(&self, expected: &[ty::TyDiscriminants]) -> Error {
         let mut error = self.check_sub_expr_type();
-        error.extend(
-            ty::check_type_instance(
-                &self.ty(),
-                expected,
-                self.location(),
-                &self.expr_name(),
-                &[],
-            )
-            .into_entries(),
-        );
+        if error.entries().is_empty() {
+            error.extend(
+                ty::check_type_instance(
+                    &self.ty(),
+                    expected,
+                    self.location(),
+                    &self.expr_name(),
+                    &[],
+                )
+                .into_entries(),
+            );
+        }
         error
     }
 
@@ -102,6 +118,7 @@ impl Expr {
         match self {
             Self::Num(..) | Self::Var(..) | Self::Lit(..) => Error::default(),
             Self::Neg(neg) => neg.check_sub_expr_type(),
+            Self::BinExpr(bin_expr) => bin_expr.check_sub_expr_type(),
         }
     }
 
@@ -119,6 +136,7 @@ impl Expr {
                 }
             }
             Self::Neg(neg) => neg.find_all(f),
+            Self::BinExpr(bin_expr) => bin_expr.find_all(f),
         }
     }
 
@@ -131,6 +149,7 @@ impl Expr {
             Self::Lit(..) => panic!("literal cannot be negated"),
             Self::Num(num) => num.into_negated(),
             Self::Neg(neg) => neg.into_negated(),
+            Self::BinExpr(bin_expr) => bin_expr.into_negated(),
         }
     }
 
@@ -138,6 +157,7 @@ impl Expr {
         match self {
             Self::Var(..) | Self::Lit(..) | Self::Num(..) => self,
             Self::Neg(neg) => neg.into_simplified(),
+            Self::BinExpr(bin_expr) => bin_expr.into_simplified(),
         }
     }
 
@@ -145,6 +165,7 @@ impl Expr {
         match self {
             Self::Var(..) | Self::Lit(..) | Self::Num(..) => f(&self),
             Self::Neg(neg) => f(&neg.into_substituted(f)),
+            Self::BinExpr(bin_expr) => f(&bin_expr.into_substituted(f)),
         }
     }
 
@@ -153,17 +174,18 @@ impl Expr {
             Self::Var(sym) | Self::Lit(sym) => sym.ty.clone(),
             Self::Num(num) => num.ty(),
             Self::Neg(neg) => neg.ty(),
+            Self::BinExpr(bin_expr) => bin_expr.ty(),
         }
     }
 
     fn expr_name(&self) -> String {
         let expr_type = match self {
-            Self::Num(..) | Self::Neg(..) => "expression",
+            Self::Num(..) | Self::Neg(..) | Self::BinExpr(..) => "expression",
             Self::Var(..) => "variable",
             Self::Lit(..) => "literal",
         };
         let expr_name = match self {
-            Self::Num(..) | Self::Neg(..) => self.to_string(),
+            Self::Num(..) | Self::Neg(..) | Self::BinExpr(..) => self.to_string(),
             Self::Var(sym) | Self::Lit(sym) => sym.id.to_string(),
         };
         format!("{expr_type} \"{expr_name}\"")
@@ -182,6 +204,7 @@ impl Expr {
             Self::Var(sym) | Self::Lit(sym) => sym.precedence(),
             Self::Num(num) => num.precedence(),
             Self::Neg(neg) => neg.precedence(),
+            Self::BinExpr(bin_expr) => bin_expr.precedence(),
         }
     }
 }
@@ -195,6 +218,7 @@ impl Display for Expr {
                 Self::Num(num) => num.to_string(),
                 Self::Var(sym) | Self::Lit(sym) => sym.id.to_string(),
                 Self::Neg(neg) => neg.to_string(),
+                Self::BinExpr(bin_expr) => bin_expr.to_string(),
             }
         )
     }
@@ -346,6 +370,222 @@ impl Display for Neg {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum BinOp {
+    Sub,
+    Div,
+    Pow,
+    Mod,
+}
+
+impl Display for BinOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Sub => "-",
+                Self::Div => "/",
+                Self::Pow => "**",
+                Self::Mod => "mod",
+            }
+        )
+    }
+}
+
+#[allow(clippy::module_name_repetitions)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct BinExpr {
+    pub op: BinOp,
+    pub left: Box<Expr>,
+    pub right: Box<Expr>,
+    pub location: Location,
+}
+
+impl BinExpr {
+    pub fn find_all(&self, f: &impl Fn(&Expr) -> bool) -> Vec<Expr> {
+        let mut result = vec![];
+        let e = Expr::BinExpr(self.clone());
+        if f(&e) {
+            result.push(e);
+        }
+        result.extend(self.left.find_all(f));
+        result.extend(self.right.find_all(f));
+        result
+    }
+
+    pub fn into_negated(self) -> Expr {
+        match self.op {
+            BinOp::Sub => Expr::BinExpr(BinExpr {
+                op: self.op,
+                left: self.right,
+                right: self.left,
+                location: self.location.clone(),
+            }),
+            BinOp::Div => Expr::BinExpr(BinExpr {
+                op: self.op,
+                left: Box::new(self.left.into_negated()),
+                right: self.right,
+                location: self.location.clone(),
+            }),
+            BinOp::Pow | BinOp::Mod => Expr::neg(
+                Expr::BinExpr(BinExpr {
+                    op: self.op,
+                    left: self.left,
+                    right: self.right,
+                    location: self.location.clone(),
+                }),
+                self.location.clone(),
+            ),
+        }
+    }
+
+    /// # Panics
+    ///
+    /// Will panic if the expression contains an invalid operation.
+    pub fn into_simplified(self) -> Expr {
+        let left = self.left.clone().into_simplified();
+        let right = self.right.clone().into_simplified();
+        match (left, right) {
+            (
+                Expr::Num(Num {
+                    value: l,
+                    base: _,
+                    location: _,
+                }),
+                Expr::Num(Num {
+                    value: r,
+                    base: _,
+                    location: _,
+                }),
+            ) => match self.op {
+                BinOp::Sub => Expr::Num(Num {
+                    value: l - r,
+                    base: NumBase::Default,
+                    location: self.location,
+                }),
+                BinOp::Div => {
+                    if l % r == 0 {
+                        Expr::Num(Num {
+                            value: l / r,
+                            base: NumBase::Default,
+                            location: self.location,
+                        })
+                    } else {
+                        Expr::BinExpr(self)
+                    }
+                }
+                BinOp::Pow => {
+                    if r >= 0 {
+                        Expr::Num(Num {
+                            value: l.pow(u32::try_from(r).expect("too big exponent")),
+                            base: NumBase::Default,
+                            location: self.location,
+                        })
+                    } else {
+                        panic!("negative exponent")
+                    }
+                }
+                BinOp::Mod => {
+                    if r != 0 {
+                        Expr::Num(Num {
+                            value: l.rem_euclid(r) + if r < 0 { r } else { 0 },
+                            base: NumBase::Default,
+                            location: self.location,
+                        })
+                    } else {
+                        panic!("modulo by zero")
+                    }
+                }
+            },
+            (
+                Expr::Num(Num {
+                    value: 0,
+                    base: _,
+                    location,
+                }),
+                other,
+            ) => match self.op {
+                BinOp::Sub => other.into_negated().into_simplified(),
+                BinOp::Div | BinOp::Pow | BinOp::Mod => Expr::num(0, location),
+            },
+            (
+                other,
+                Expr::Num(Num {
+                    value: 0,
+                    base: _,
+                    location,
+                }),
+            ) => match self.op {
+                BinOp::Sub => other.into_simplified(),
+                BinOp::Div => panic!("division by zero"),
+                BinOp::Pow => Expr::num(1, location),
+                BinOp::Mod => panic!("modulo by zero"),
+            },
+            (Expr::Lit(_), Expr::Lit(_)) => panic!("invalid operation"),
+            _ => Expr::BinExpr(BinExpr {
+                op: self.op,
+                left: Box::new(self.left.into_simplified()),
+                right: Box::new(self.right.into_simplified()),
+                location: self.location,
+            }),
+        }
+    }
+
+    pub fn into_substituted(self, f: &impl Fn(&Expr) -> Expr) -> Expr {
+        f(&Expr::bin_expr(
+            self.op,
+            self.left.into_substituted(f),
+            self.right.into_substituted(f),
+            self.location,
+        ))
+    }
+
+    pub fn precedence(&self) -> Precedence {
+        match self.op {
+            BinOp::Sub => Precedence::BinaryAddingOperator,
+            BinOp::Div | BinOp::Mod => Precedence::MultiplyingOperator,
+            BinOp::Pow => Precedence::HighestPrecedenceOperator,
+        }
+    }
+
+    pub fn ty(&self) -> ty::Ty {
+        ty::common_type(&[self.left.ty().clone(), self.right.ty().clone()])
+    }
+
+    fn check_sub_expr_type(&self) -> Error {
+        let mut error = Error::default();
+
+        for e in &[&self.left, &self.right] {
+            error.extend(
+                e.check_type_instance(&[ty::TyDiscriminants::AnyInteger])
+                    .into_entries(),
+            );
+        }
+
+        error
+    }
+}
+
+impl PartialEq for BinExpr {
+    fn eq(&self, other: &Self) -> bool {
+        self.op == other.op && self.left == other.left && self.right == other.right
+    }
+}
+
+impl Display for BinExpr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let self_expr = Expr::BinExpr(self.clone());
+        write!(
+            f,
+            "{} {} {}",
+            self_expr.parenthesized(&self.left),
+            self.op,
+            self_expr.parenthesized(&self.right),
+        )
+    }
+}
+
 lazy_static! {
     static ref TRUE_SYM: Sym = Sym {
         id: create_id!(["True"], Location::None),
@@ -408,6 +648,12 @@ mod tests {
     #[case::lit(lit("X", location(1)))]
     #[case::num(Expr::num(42, location(1)))]
     #[case::neg(Expr::neg(Expr::num(42, location(2)), location(1)))]
+    #[case::bin_expr(Expr::bin_expr(
+        BinOp::Sub,
+        Expr::num(2, location(3)),
+        Expr::num(1, location(2)),
+        location(1)
+    ))]
     fn test_expr_location(#[case] expression: Expr) {
         assert_eq!(*expression.location(), location(1));
     }
@@ -428,6 +674,14 @@ mod tests {
     #[case::neg(
         Expr::neg(Expr::num(42, location(2)), location(1)),
         vec![]
+    )]
+    #[case::bin_expr(
+        Expr::bin_expr(BinOp::Sub, Expr::num(2, location(3)), Expr::num(1, location(2)), location(1)),
+        vec![]
+    )]
+    #[case::bin_expr(
+        Expr::bin_expr(BinOp::Sub, var("X", location(2)), var("Y", location(3)), location(1)),
+        vec![var("X", location(2)), var("Y", location(3))]
     )]
     fn test_expr_variables(#[case] expression: Expr, #[case] expected: Vec<Expr>) {
         assert_eq!(*expression.variables(), expected);
@@ -479,6 +733,21 @@ mod tests {
         |e: &Expr| matches!(e, Expr::Neg(_)),
         vec![Expr::neg(Expr::num(42, location(2)), location(1))]
     )]
+    #[case::bin_expr(
+        Expr::bin_expr(BinOp::Sub, Expr::num(2, location(3)), Expr::num(1, location(2)), location(1)),
+        |_: &Expr| false,
+        vec![]
+    )]
+    #[case::bin_expr(
+        Expr::bin_expr(BinOp::Sub, Expr::num(2, location(3)), Expr::num(1, location(2)), location(1)),
+        |e: &Expr| matches!(e, Expr::Num(_)),
+        vec![Expr::num(2, location(3)), Expr::num(1, location(2))]
+    )]
+    #[case::bin_expr(
+        Expr::bin_expr(BinOp::Sub, var("X", location(2)), var("Y", location(3)), location(1)),
+        |e: &Expr| matches!(e, Expr::BinExpr(_)),
+        vec![Expr::bin_expr(BinOp::Sub, var("X", location(2)), var("Y", location(3)), location(1))]
+    )]
     fn test_expr_find_all(
         #[case] expression: Expr,
         #[case] f: impl Fn(&Expr) -> bool,
@@ -498,6 +767,51 @@ mod tests {
     #[case::neg(
         Expr::neg(Expr::num(42, location(2)), location(1)),
         Expr::num(42, location(2))
+    )]
+    #[case::sub(
+        Expr::bin_expr(
+            BinOp::Sub,
+            var("X", location(2)),
+            Expr::num(1, location(3)),
+            location(1)
+        ),
+        Expr::bin_expr(
+            BinOp::Sub,
+            Expr::num(1, location(3)),
+            var("X", location(2)),
+            location(1)
+        )
+    )]
+    #[case::div(
+        Expr::bin_expr(
+            BinOp::Div,
+            Expr::num(2, location(3)),
+            var("X", location(2)),
+            location(1)
+        ),
+        Expr::bin_expr(
+            BinOp::Div,
+            Expr::num(-2, location(3)),
+            var("X", location(2)),
+            location(1)
+        ),
+    )]
+    #[case::pow(
+        Expr::bin_expr(
+            BinOp::Pow,
+            Expr::num(2, location(3)),
+            var("X", location(2)),
+            location(1)
+        ),
+        Expr::neg(
+            Expr::bin_expr(
+                BinOp::Pow,
+                Expr::num(2, location(3)),
+                var("X", location(2)),
+                location(1)
+            ),
+            location(1)
+        )
     )]
     fn test_expr_into_negated(#[case] expression: Expr, #[case] expected: Expr) {
         assert_eq!(expression.into_negated(), expected);
@@ -543,6 +857,317 @@ mod tests {
         ),
         Expr::num(-42, Location::None)
     )]
+    #[case::sub_ident(
+        Expr::bin_expr(
+            BinOp::Sub,
+            Expr::num(1, Location::None),
+            var("X", Location::None),
+            location(1)
+        ),
+        Expr::bin_expr(
+            BinOp::Sub,
+            Expr::num(1, Location::None),
+            var("X", Location::None),
+            location(1)
+        )
+    )]
+    #[case::sub_num(
+        Expr::bin_expr(
+            BinOp::Sub,
+            Expr::num(1, Location::None),
+            Expr::num(2, Location::None),
+            location(1)
+        ),
+        Expr::num(-1, location(1))
+    )]
+    #[case::sub_nested(
+        Expr::bin_expr(
+            BinOp::Sub,
+            Expr::bin_expr(
+                BinOp::Sub,
+                Expr::num(1, Location::None),
+                Expr::num(2, Location::None),
+                Location::None,
+            ),
+            Expr::bin_expr(
+                BinOp::Sub,
+                Expr::num(1, Location::None),
+                Expr::bin_expr(
+                    BinOp::Sub,
+                    Expr::num(2, Location::None),
+                    Expr::num(3, Location::None),
+                    Location::None,
+                ),
+                Location::None,
+            ),
+            location(1)
+        ),
+        Expr::num(-3, location(1))
+    )]
+    #[case::sub_zero(
+        Expr::bin_expr(
+            BinOp::Sub,
+            Expr::bin_expr(
+                BinOp::Sub,
+                var("X", Location::None),
+                Expr::num(0, Location::None),
+                Location::None,
+            ),
+            Expr::bin_expr(
+                BinOp::Sub,
+                Expr::num(0, Location::None),
+                var("Y", Location::None),
+                Location::None,
+            ),
+            location(1)
+        ),
+        Expr::bin_expr(
+            BinOp::Sub,
+            var("X", Location::None),
+            Expr::neg(var("Y", Location::None), Location::None),
+            location(1)
+        )
+    )]
+    #[case::div_ident(
+        Expr::bin_expr(
+            BinOp::Div,
+            Expr::num(1, Location::None),
+            Expr::num(2, Location::None),
+            location(1)
+        ),
+        Expr::bin_expr(
+            BinOp::Div,
+            Expr::num(1, Location::None),
+            Expr::num(2, Location::None),
+            location(1)
+        )
+    )]
+    #[case::div_num(
+        Expr::bin_expr(
+            BinOp::Div,
+            Expr::num(4, Location::None),
+            Expr::num(2, Location::None),
+            location(1)
+        ),
+        Expr::num(2, location(1))
+    )]
+    #[case::div_nested(
+        Expr::bin_expr(
+            BinOp::Div,
+            Expr::bin_expr(
+                BinOp::Div,
+                Expr::num(8, Location::None),
+                Expr::num(2, Location::None),
+                Location::None,
+            ),
+            Expr::bin_expr(
+                BinOp::Div,
+                Expr::num(6, Location::None),
+                Expr::num(3, Location::None),
+                Location::None,
+            ),
+            location(1)
+        ),
+        Expr::num(2, location(1))
+    )]
+    #[case::div_zero_dividend(
+        Expr::bin_expr(
+            BinOp::Div,
+            Expr::num(0, location(1)),
+            var("X", Location::None),
+            Location::None
+        ),
+        Expr::num(0, location(1))
+    )]
+    #[should_panic(expected = "division by zero")]
+    #[case::div_zero_divisor(
+        Expr::bin_expr(
+            BinOp::Div,
+            var("X", Location::None),
+            Expr::num(0, location(1)),
+            Location::None
+        ),
+        Expr::num(0, location(1))
+    )]
+    #[case::pow_ident(
+        Expr::bin_expr(
+            BinOp::Pow,
+            var("X", Location::None),
+            Expr::num(2, Location::None),
+            location(1)
+        ),
+        Expr::bin_expr(
+            BinOp::Pow,
+            var("X", Location::None),
+            Expr::num(2, Location::None),
+            location(1)
+        )
+    )]
+    #[case::pow_num(
+        Expr::bin_expr(
+            BinOp::Pow,
+            Expr::num(4, Location::None),
+            Expr::num(2, Location::None),
+            location(1)
+        ),
+        Expr::num(16, location(1))
+    )]
+    #[case::pow_nested(
+        Expr::bin_expr(
+            BinOp::Pow,
+            Expr::bin_expr(
+                BinOp::Pow,
+                Expr::num(2, Location::None),
+                Expr::num(3, Location::None),
+                Location::None,
+            ),
+            Expr::bin_expr(
+                BinOp::Pow,
+                Expr::num(2, Location::None),
+                Expr::num(2, Location::None),
+                Location::None,
+            ),
+            location(1)
+        ),
+        Expr::num(4096, location(1))
+    )]
+    #[case::pow_zero_base(
+        Expr::bin_expr(
+            BinOp::Pow,
+            Expr::num(0, Location::None),
+            var("X", Location::None),
+            location(1)
+        ),
+        Expr::num(0, location(1))
+    )]
+    #[case::pow_zero_exponent(
+        Expr::bin_expr(
+            BinOp::Pow,
+            var("X", Location::None),
+            Expr::num(0, Location::None),
+            location(1)
+        ),
+        Expr::num(1, location(1))
+    )]
+    #[should_panic(expected = "negative exponent")]
+    #[case::pow_negative_exponent(
+        Expr::bin_expr(
+            BinOp::Pow,
+            Expr::num(2, Location::None),
+            Expr::num(-1, Location::None),
+            Location::None
+        ),
+        Expr::bin_expr(
+            BinOp::Pow,
+            Expr::num(2, Location::None),
+            Expr::num(-1, Location::None),
+            Location::None
+        )
+    )]
+    #[should_panic(expected = "too big exponent")]
+    #[case::pow_too_big_exponent(
+        Expr::bin_expr(
+            BinOp::Pow,
+            Expr::num(2, Location::None),
+            Expr::num(i64::MAX, Location::None),
+            Location::None
+        ),
+        Expr::bin_expr(
+            BinOp::Pow,
+            Expr::num(2, Location::None),
+            Expr::num(i64::MAX, Location::None),
+            Location::None
+        )
+    )]
+    #[case::mod_ident(
+        Expr::bin_expr(
+            BinOp::Mod,
+            var("X", Location::None),
+            Expr::num(2, Location::None),
+            location(1)
+        ),
+        Expr::bin_expr(
+            BinOp::Mod,
+            var("X", Location::None),
+            Expr::num(2, Location::None),
+            location(1)
+        )
+    )]
+    #[case::mod_num(
+        Expr::bin_expr(
+            BinOp::Mod,
+            Expr::num(4, Location::None),
+            Expr::num(3, Location::None),
+            location(1)
+        ),
+        Expr::num(1, location(1))
+    )]
+    #[case::mod_num_neg(
+        Expr::bin_expr(
+            BinOp::Mod,
+            Expr::num(-7, Location::None),
+            Expr::num(-3, Location::None),
+            location(1)
+        ),
+        Expr::num(-1, location(1))
+    )]
+    #[case::mod_nested(
+        Expr::bin_expr(
+            BinOp::Mod,
+            Expr::bin_expr(
+                BinOp::Mod,
+                Expr::num(8, Location::None),
+                Expr::num(5, Location::None),
+                Location::None,
+            ),
+            Expr::bin_expr(
+                BinOp::Mod,
+                Expr::num(5, Location::None),
+                Expr::num(3, Location::None),
+                Location::None,
+            ),
+            location(1)
+        ),
+        Expr::num(1, location(1))
+    )]
+    #[case::mod_zero_dividend(
+        Expr::bin_expr(
+            BinOp::Mod,
+            Expr::num(0, location(1)),
+            var("X", Location::None),
+            Location::None
+        ),
+        Expr::num(0, location(1))
+    )]
+    #[should_panic(expected = "modulo by zero")]
+    #[case::mod_zero_divisor_num(
+        Expr::bin_expr(
+            BinOp::Mod,
+            Expr::num(2, location(1)),
+            Expr::num(0, location(1)),
+            Location::None
+        ),
+        Expr::num(0, location(1))
+    )]
+    #[should_panic(expected = "modulo by zero")]
+    #[case::mod_zero_divisor_var(
+        Expr::bin_expr(
+            BinOp::Mod,
+            var("X", Location::None),
+            Expr::num(0, location(1)),
+            Location::None
+        ),
+        Expr::num(0, location(1))
+    )]
+    #[should_panic(expected = "invalid operation")]
+    #[case::sub_invalid_operation(
+        Expr::bin_expr(
+            BinOp::Sub,
+            TRUE.clone(),
+            FALSE.clone(),
+        location(1)),
+        TRUE.clone()
+    )]
     fn test_expr_into_simplified(#[case] expression: Expr, #[case] expected: Expr) {
         assert_eq!(expression.into_simplified(), expected);
     }
@@ -583,6 +1208,26 @@ mod tests {
         },
         Expr::neg(var("X", location(1)), location(1)),
     )]
+    #[case::bin_expr(
+        Expr::bin_expr(BinOp::Sub, Expr::num(2, location(3)), Expr::num(1, location(2)), location(1)),
+        &|e: &Expr|
+        if matches!(e, Expr::BinExpr(_)) {
+            var("X", e.location().clone())
+        } else {
+            e.clone()
+        },
+        var("X", location(1))
+    )]
+    #[case::bin_expr_nested(
+        Expr::bin_expr(BinOp::Sub, Expr::num(2, location(3)), Expr::num(1, location(2)), location(1)),
+        &|e: &Expr|
+        if matches!(e, Expr::Num(_)) {
+            var("X", e.location().clone())
+        } else {
+            e.clone()
+        },
+        Expr::bin_expr(BinOp::Sub, var("X", location(3)), var("X", location(2)), location(1)),
+    )]
     fn test_expr_into_substituted(
         #[case] expression: Expr,
         #[case] f: &impl Fn(&Expr) -> Expr,
@@ -601,6 +1246,34 @@ mod tests {
     #[case::neg(
         Expr::neg(Expr::num(1, Location::None), Location::None),
         ty::Ty::UniversalInteger(ty::UniversalInteger { bounds: ty::Bounds::new(1, 1) })
+    )]
+    #[case::sub(
+        Expr::bin_expr(
+            BinOp::Sub,
+            Expr::bin_expr(
+                BinOp::Sub,
+                var("X", Location::None),
+                Expr::num(1, Location::None),
+                Location::None
+            ),
+            Expr::num(2, Location::None),
+            Location::None
+        ),
+        ty::BASE_INTEGER.clone()
+    )]
+    #[case::div(
+        Expr::bin_expr(
+            BinOp::Div,
+            Expr::bin_expr(
+                BinOp::Div,
+                var("X", Location::None),
+                Expr::num(1, Location::None),
+                Location::None
+            ),
+            TRUE.clone(),
+            Location::None
+        ),
+        ty::Ty::Undefined
     )]
     fn test_expr_ty(#[case] expression: Expr, #[case] expected: ty::Ty) {
         assert_eq!(expression.ty(), expected);
@@ -627,6 +1300,48 @@ mod tests {
             bounds: ty::Bounds::new(1, 1),
         })
     )]
+    #[case::sub(
+        Expr::bin_expr(
+            BinOp::Sub,
+            Expr::bin_expr(
+                BinOp::Sub,
+                Expr::var(create_id!(["X"], Location::None), int_ty()),
+                Expr::num(1, Location::None),
+                Location::None
+            ),
+            Expr::num(2, Location::None),
+            Location::None
+        ),
+        int_ty()
+    )]
+    #[case::div(
+        Expr::bin_expr(
+            BinOp::Div,
+            Expr::bin_expr(
+                BinOp::Div,
+                Expr::var(create_id!(["X"], Location::None), int_ty()),
+                Expr::num(1, Location::None),
+                Location::None
+            ),
+            Expr::num(2, Location::None),
+            Location::None
+        ),
+        int_ty()
+    )]
+    #[case::pow(
+        Expr::bin_expr(
+            BinOp::Pow,
+            Expr::bin_expr(
+                BinOp::Pow,
+                Expr::var(create_id!(["X"], Location::None), int_ty()),
+                Expr::num(1, Location::None),
+                Location::None
+            ),
+            Expr::num(2, Location::None),
+            Location::None
+        ),
+        int_ty()
+    )]
     fn test_expr_check_type(#[case] expression: Expr, #[case] expected: ty::Ty) {
         assert_eq!(expression.check_type(&[expected.clone()]).entries(), vec![]);
         assert_eq!(expression.ty(), expected);
@@ -647,6 +1362,50 @@ mod tests {
                         location(1),
                     )
                 ],
+                false
+            )
+        ]
+    )]
+    #[case::bin_expr(
+        Expr::bin_expr(
+            BinOp::Div,
+            Expr::bin_expr(
+                BinOp::Sub,
+                var("X", Location::None),
+                Expr::neg(Expr::num(1, Location::None), Location::None),
+                Location::None
+            ),
+            Expr::num(2, Location::None),
+            location(1)
+        ),
+        &[
+            Entry::new(
+                "expected enumeration type \"__BUILTINS__::Boolean\"".to_string(),
+                Severity::Error,
+                location(1),
+                vec![Annotation::new(Some("found integer type \"__BUILTINS__::Base_Integer\" (0 .. 2**63 - 1)".to_string()), Severity::Error, location(1) )],
+                false
+            )
+        ]
+    )]
+    #[case::bin_expr_sub_expr(
+        Expr::bin_expr(
+            BinOp::Div,
+            Expr::bin_expr(
+                BinOp::Sub,
+                Expr::var(create_id!(["X"], location(1)), ty::BOOLEAN.clone()),
+                Expr::neg(Expr::num(1, Location::None), Location::None),
+                Location::None
+            ),
+            Expr::num(2, Location::None),
+                Location::None
+        ),
+        &[
+            Entry::new(
+                "expected integer type".to_string(),
+                Severity::Error,
+                location(1),
+                vec![Annotation::new(Some("found enumeration type \"__BUILTINS__::Boolean\"".to_string()), Severity::Error, location(1) )],
                 false
             )
         ]
@@ -678,6 +1437,20 @@ mod tests {
         Expr::neg(Expr::num(42, location(2)), location(1)),
         Expr::neg(Expr::num(42, location(4)), location(3))
     )]
+    #[case::bin_expr(
+        Expr::bin_expr(
+            BinOp::Sub,
+            Expr::num(2, location(3)),
+            Expr::num(1, location(2)),
+            location(1)
+        ),
+        Expr::bin_expr(
+            BinOp::Sub,
+            Expr::num(2, location(6)),
+            Expr::num(1, location(5)),
+            location(4)
+        )
+    )]
     fn test_expr_eq(#[case] left: Expr, #[case] right: Expr) {
         assert_eq!(left, right);
     }
@@ -689,6 +1462,48 @@ mod tests {
     #[case::neg(
         Expr::neg(Expr::num(42, Location::None), Location::None),
         Expr::neg(var("X", Location::None), Location::None)
+    )]
+    #[case::bin_expr_op(
+        Expr::bin_expr(
+            BinOp::Sub,
+            Expr::num(2, location(3)),
+            Expr::num(1, location(2)),
+            location(1)
+        ),
+        Expr::bin_expr(
+            BinOp::Div,
+            Expr::num(2, location(6)),
+            Expr::num(1, location(5)),
+            location(4)
+        )
+    )]
+    #[case::bin_expr_left(
+        Expr::bin_expr(
+            BinOp::Sub,
+            Expr::num(2, location(3)),
+            Expr::num(1, location(2)),
+            location(1)
+        ),
+        Expr::bin_expr(
+            BinOp::Sub,
+            Expr::num(1, location(6)),
+            Expr::num(1, location(5)),
+            location(4)
+        )
+    )]
+    #[case::bin_expr_right(
+        Expr::bin_expr(
+            BinOp::Sub,
+            Expr::num(2, location(3)),
+            Expr::num(1, location(2)),
+            location(1)
+        ),
+        Expr::bin_expr(
+            BinOp::Sub,
+            Expr::num(2, location(6)),
+            Expr::num(2, location(5)),
+            location(4)
+        )
     )]
     fn test_expr_ne(#[case] left: Expr, #[case] right: Expr) {
         assert_ne!(left, right);
@@ -708,6 +1523,30 @@ mod tests {
         Expr::neg(Expr::neg(var("X", Location::None), Location::None), Location::None),
         "-(-X)"
     )]
+    #[case::bin_expr(
+        Expr::bin_expr(
+            BinOp::Mod,
+            Expr::bin_expr(
+                BinOp::Div,
+                Expr::bin_expr(
+                    BinOp::Sub,
+                    Expr::bin_expr(
+                        BinOp::Pow,
+                        var("X", Location::None),
+                        Expr::num(2, Location::None),
+                        Location::None
+                    ),
+                    Expr::num(1, Location::None),
+                    Location::None
+                ),
+                Expr::neg(Expr::num(2, Location::None), Location::None),
+                Location::None
+            ),
+            Expr::num(3, Location::None),
+            Location::None
+        ),
+        "((X ** 2 - 1) / (-2)) mod 3"
+    )]
     fn test_expr_display(#[case] expression: Expr, #[case] expected: &str) {
         assert_eq!(expression.to_string(), expected);
     }
@@ -717,6 +1556,17 @@ mod tests {
     #[case::lit(lit("X", location(1)))]
     #[case::num(Expr::num(42, location(1)))]
     #[case::neg(Expr::neg(Expr::num(42, location(2)), location(1)))]
+    #[case::bin_expr(Expr::bin_expr(
+        BinOp::Div,
+        Expr::bin_expr(
+            BinOp::Sub,
+            var("X", Location::None),
+            Expr::num(1, Location::None),
+            Location::None
+        ),
+        Expr::neg(Expr::num(2, Location::None), Location::None),
+        Location::None
+    ))]
     fn test_expr_serde(#[case] expr: Expr) {
         let bytes = bincode::serialize(&expr).expect("failed to serialize");
         let deserialized_expr: Expr = bincode::deserialize(&bytes).expect("failed to deserialize");

@@ -9,7 +9,7 @@ import pytest
 
 from rflx import ty
 from rflx.rapidflux import ID, Location, RecordFluxError
-from rflx.rapidflux.expr import Expr, Literal, Neg, Number, Variable
+from rflx.rapidflux.expr import Div, Expr, Literal, Mod, Neg, Number, Pow, Sub, Variable
 from tests.utils import check_regex
 
 INT_TY = ty.Integer("I", ty.Bounds(10, 100))
@@ -430,6 +430,418 @@ def test_neg_substituted() -> None:
 )
 def test_neg_simplified(expr: Expr, expected: Expr) -> None:
     assert expr.simplified() == expected
+
+
+def test_sub_str() -> None:
+    assert str(Sub(Variable("X"), Number(1))) == "X - 1"
+    assert str(Sub(Neg(Variable("X")), Number(-1))) == "-X - (-1)"
+
+
+def test_sub_repr() -> None:
+    assert repr(Sub(Variable("X"), Number(1))) == (
+        'Sub(Variable(ID("X", Location((1, 1), "<unknown>", (1, 1))), Undefined()),'
+        ' Number(1, Location((1, 1), "<unknown>", (1, 1))), Location((1, 1), "<unknown>", (1, 1)))'
+    )
+
+
+def test_sub_eq() -> None:
+    assert Sub(Variable("X"), Number(1), location=Location((1, 2))) == Sub(Variable("X"), Number(1))
+
+
+def test_sub_ne() -> None:
+    assert Sub(Variable("X"), Number(1)) != Sub(Variable("Y"), Number(1))
+    assert Sub(Variable("X"), Number(1)) != Sub(Variable("X"), Number(2))
+
+
+def test_sub_neg() -> None:
+    assert -Sub(Number(1), Variable("X")) == Sub(Variable("X"), Number(1))
+
+
+@pytest.mark.parametrize(
+    ("left", "right"),
+    [
+        # 0 in argument
+        (0, 0),
+        (0, 5),
+        (1, 0),
+        # Argument sign variations
+        (1, 5),
+        (-1, 5),
+        (1, -5),
+        (-1, -5),
+    ],
+)
+def test_sub_neg_eval(left: int, right: int) -> None:
+    assert (-Sub(Number(left), Number(right))).simplified() == Number(-(left - right))
+
+
+def test_sub_location() -> None:
+    assert Sub(Variable("X"), Number(1), location=Location((1, 2))).location == Location((1, 2))
+
+
+def test_sub_type() -> None:
+    assert_type(
+        Sub(Variable("X", type_=INT_TY), Number(1)),
+        ty.BASE_INTEGER,
+    )
+    assert_type_instance(
+        Sub(Variable("X", type_=INT_TY), Number(1)),
+        ty.Integer,
+    )
+
+
+def test_sub_type_error() -> None:
+    assert_type_error(
+        Sub(Variable(ID("X", location=Location((1, 2))), type_=ty.BOOLEAN), Number(1)),
+        r"^"
+        r"<stdin>:1:2: error: expected integer type\n"
+        r'<stdin>:1:2: error: found enumeration type "__BUILTINS__::Boolean"'
+        r"$",
+    )
+
+
+def test_sub_left() -> None:
+    assert Sub(Variable("X"), Variable("Y")).left == Variable("X")
+
+
+def test_sub_right() -> None:
+    assert Sub(Variable("X"), Variable("Y")).right == Variable("Y")
+
+
+def test_sub_variables() -> None:
+    assert Sub(Variable("X"), Variable("Y")).variables() == [Variable("X"), Variable("Y")]
+
+
+def test_sub_findall() -> None:
+    assert Sub(Variable("X"), Variable("Y")).findall(lambda x: isinstance(x, Variable)) == [
+        Variable("X"),
+        Variable("Y"),
+    ]
+
+
+def test_sub_substituted() -> None:
+    assert Sub(Variable("X"), Variable("Y")).substituted(
+        lambda x: Number(42) if x == Variable("X") else x,
+    ) == Sub(Number(42), Variable("Y"))
+
+
+def test_sub_simplified() -> None:
+    assert Sub(Number(6), Number(2)).simplified() == Number(4)
+    assert Sub(Number(6), Sub(Number(4), Number(2))).simplified() == Number(4)
+
+
+def test_sub_simplified_location() -> None:
+    simplified = Sub(Number(5), Number(2), location=Location((1, 1))).simplified()
+    assert simplified == Number(3)
+    assert simplified.location == Location((1, 1))
+
+
+def test_div_str() -> None:
+    assert str(Div(Variable("X"), Number(1))) == "X / 1"
+    assert str(Div(Neg(Variable("X")), Number(-1))) == "(-X) / (-1)"
+
+
+def test_div_repr() -> None:
+    assert repr(Div(Variable("X"), Number(1))) == (
+        'Div(Variable(ID("X", Location((1, 1), "<unknown>", (1, 1))), Undefined()),'
+        ' Number(1, Location((1, 1), "<unknown>", (1, 1))), Location((1, 1), "<unknown>", (1, 1)))'
+    )
+
+
+def test_div_eq() -> None:
+    assert Div(Variable("X"), Number(1), location=Location((1, 2))) == Div(Variable("X"), Number(1))
+
+
+def test_div_ne() -> None:
+    assert Div(Variable("X"), Number(1)) != Div(Variable("Y"), Number(1))
+    assert Div(Variable("X"), Number(1)) != Div(Variable("X"), Number(2))
+
+
+def test_div_neg() -> None:
+    assert -Div(Variable("X"), Number(5)) == Div(-(Variable("X")), Number(5))
+
+
+@pytest.mark.parametrize(
+    ("left", "right"),
+    [
+        # 0 in argument
+        (0, 5),
+        # Argument sign variations
+        (10, 5),
+        (-10, 5),
+        (10, -5),
+        (-10, -5),
+    ],
+)
+def test_div_neg_eval(left: int, right: int) -> None:
+    assert (-Div(Number(left), Number(right))).simplified() == Number(-(left // right))
+
+
+def test_div_location() -> None:
+    assert Div(Variable("X"), Number(1), location=Location((1, 2))).location == Location((1, 2))
+
+
+def test_div_type() -> None:
+    assert_type(
+        Div(Variable("X", type_=INT_TY), Number(1)),
+        ty.BASE_INTEGER,
+    )
+    assert_type_instance(
+        Div(Variable("X", type_=INT_TY), Number(1)),
+        ty.Integer,
+    )
+
+
+def test_div_type_error() -> None:
+    assert_type_error(
+        Div(Variable(ID("X", location=Location((1, 2))), type_=ty.BOOLEAN), Number(1)),
+        r"^"
+        r"<stdin>:1:2: error: expected integer type\n"
+        r'<stdin>:1:2: error: found enumeration type "__BUILTINS__::Boolean"'
+        r"$",
+    )
+
+
+def test_div_left() -> None:
+    assert Div(Variable("X"), Variable("Y")).left == Variable("X")
+
+
+def test_div_right() -> None:
+    assert Div(Variable("X"), Variable("Y")).right == Variable("Y")
+
+
+def test_div_variables() -> None:
+    assert Div(Variable("X"), Variable("Y")).variables() == [Variable("X"), Variable("Y")]
+
+
+def test_div_findall() -> None:
+    assert Div(Variable("X"), Variable("Y")).findall(lambda x: isinstance(x, Variable)) == [
+        Variable("X"),
+        Variable("Y"),
+    ]
+
+
+def test_div_substituted() -> None:
+    assert Div(Variable("X"), Variable("Y")).substituted(
+        lambda x: Number(42) if x == Variable("X") else x,
+    ) == Div(Number(42), Variable("Y"))
+
+
+def test_div_simplified() -> None:
+    assert Div(Variable("X"), Number(1)).simplified() == Div(Variable("X"), Number(1))
+    assert Div(Number(6), Number(2)).simplified() == Number(3)
+    assert Div(Number(9), Number(2)).simplified() == Div(Number(9), Number(2))
+
+
+def test_div_simplified_location() -> None:
+    simplified = Div(Number(6), Number(2), location=Location((1, 1))).simplified()
+    assert simplified == Number(3)
+    assert simplified.location == Location((1, 1))
+
+
+def test_pow_str() -> None:
+    assert str(Pow(Variable("X"), Number(1))) == "X ** 1"
+    assert str(Pow(Neg(Variable("X")), Number(-1))) == "(-X) ** (-1)"
+
+
+def test_pow_repr() -> None:
+    assert repr(Pow(Variable("X"), Number(1))) == (
+        'Pow(Variable(ID("X", Location((1, 1), "<unknown>", (1, 1))), Undefined()),'
+        ' Number(1, Location((1, 1), "<unknown>", (1, 1))), Location((1, 1), "<unknown>", (1, 1)))'
+    )
+
+
+def test_pow_eq() -> None:
+    assert Pow(Variable("X"), Number(1), location=Location((1, 2))) == Pow(Variable("X"), Number(1))
+
+
+def test_pow_ne() -> None:
+    assert Pow(Variable("X"), Number(1)) != Pow(Variable("Y"), Number(1))
+    assert Pow(Variable("X"), Number(1)) != Pow(Variable("X"), Number(2))
+
+
+def test_pow_neg() -> None:
+    assert -Pow(Variable("X"), Number(5)) == -Pow(Variable("X"), Number(5))
+
+
+@pytest.mark.parametrize(
+    ("left", "right"),
+    [
+        # 0 in argument
+        (0, 0),
+        (-10, 0),
+        (0, 4),
+        # Argument sign variations
+        # Constraints:
+        # * The second argument cannot be negative.
+        # * The second argument must be tested with an even and odd value.
+        (10, 4),
+        (-10, 4),
+        (10, 5),
+        (-10, 5),
+    ],
+)
+def test_pow_neg_eval(left: int, right: int) -> None:
+    assert (-Pow(Number(left), Number(right))).simplified() == Number(-(left**right))
+
+
+def test_pow_location() -> None:
+    assert Pow(Variable("X"), Number(1), location=Location((1, 2))).location == Location((1, 2))
+
+
+def test_pow_type() -> None:
+    assert_type(
+        Pow(Variable("X", type_=INT_TY), Number(1)),
+        ty.BASE_INTEGER,
+    )
+    assert_type_instance(
+        Pow(Variable("X", type_=INT_TY), Number(1)),
+        ty.Integer,
+    )
+
+
+def test_pow_type_error() -> None:
+    assert_type_error(
+        Pow(Variable(ID("X", location=Location((1, 2))), type_=ty.BOOLEAN), Number(1)),
+        r"^"
+        r"<stdin>:1:2: error: expected integer type\n"
+        r'<stdin>:1:2: error: found enumeration type "__BUILTINS__::Boolean"'
+        r"$",
+    )
+
+
+def test_pow_left() -> None:
+    assert Pow(Variable("X"), Variable("Y")).left == Variable("X")
+
+
+def test_pow_right() -> None:
+    assert Pow(Variable("X"), Variable("Y")).right == Variable("Y")
+
+
+def test_pow_variables() -> None:
+    assert Pow(Variable("X"), Variable("Y")).variables() == [Variable("X"), Variable("Y")]
+
+
+def test_pow_findall() -> None:
+    assert Pow(Variable("X"), Variable("Y")).findall(lambda x: isinstance(x, Variable)) == [
+        Variable("X"),
+        Variable("Y"),
+    ]
+
+
+def test_pow_substituted() -> None:
+    assert Pow(Variable("X"), Variable("Y")).substituted(
+        lambda x: Number(42) if x == Variable("X") else x,
+    ) == Pow(Number(42), Variable("Y"))
+
+
+def test_pow_simplified() -> None:
+    assert Pow(Variable("X"), Number(1)).simplified() == Pow(Variable("X"), Number(1))
+    assert Pow(Number(6), Number(2)).simplified() == Number(36)
+
+
+def test_pow_simplified_location() -> None:
+    simplified = Pow(Number(6), Number(2), location=Location((1, 1))).simplified()
+    assert simplified == Number(36)
+    assert simplified.location == Location((1, 1))
+
+
+def test_mod_str() -> None:
+    assert str(Mod(Variable("X"), Number(1))) == "X mod 1"
+    assert str(Mod(Neg(Variable("X")), Number(-1))) == "(-X) mod (-1)"
+
+
+def test_mod_repr() -> None:
+    assert repr(Mod(Variable("X"), Number(1))) == (
+        'Mod(Variable(ID("X", Location((1, 1), "<unknown>", (1, 1))), Undefined()),'
+        ' Number(1, Location((1, 1), "<unknown>", (1, 1))), Location((1, 1), "<unknown>", (1, 1)))'
+    )
+
+
+def test_mod_eq() -> None:
+    assert Mod(Variable("X"), Number(1), location=Location((1, 2))) == Mod(Variable("X"), Number(1))
+
+
+def test_mod_ne() -> None:
+    assert Mod(Variable("X"), Number(1)) != Mod(Variable("Y"), Number(1))
+    assert Mod(Variable("X"), Number(1)) != Mod(Variable("X"), Number(2))
+
+
+def test_mod_neg() -> None:
+    assert -Mod(Variable("X"), Number(5)) == -Mod(Variable("X"), Number(5))
+
+
+@pytest.mark.parametrize(
+    ("left", "right"),
+    [
+        # 0 in argument
+        (0, 3),
+        # Argument sign variations
+        (7, 3),
+        (-7, 3),
+        (7, -3),
+        (-7, -3),
+    ],
+)
+def test_mod_neg_eval(left: int, right: int) -> None:
+    assert (-Mod(Number(left), Number(right))).simplified() == Number(-(left % right))
+
+
+def test_mod_type() -> None:
+    assert_type(
+        Mod(Variable("X", type_=INT_TY), Number(1)),
+        ty.BASE_INTEGER,
+    )
+    assert_type_instance(
+        Mod(Variable("X", type_=INT_TY), Number(1)),
+        ty.Integer,
+    )
+
+
+def test_mod_type_error() -> None:
+    assert_type_error(
+        Mod(Variable(ID("X", location=Location((1, 2))), type_=ty.BOOLEAN), Number(1)),
+        r"^"
+        r"<stdin>:1:2: error: expected integer type\n"
+        r'<stdin>:1:2: error: found enumeration type "__BUILTINS__::Boolean"'
+        r"$",
+    )
+
+
+def test_mod_left() -> None:
+    assert Mod(Variable("X"), Variable("Y")).left == Variable("X")
+
+
+def test_mod_right() -> None:
+    assert Mod(Variable("X"), Variable("Y")).right == Variable("Y")
+
+
+def test_mod_variables() -> None:
+    assert Mod(Variable("X"), Variable("Y")).variables() == [Variable("X"), Variable("Y")]
+
+
+def test_mod_findall() -> None:
+    assert Mod(Variable("X"), Variable("Y")).findall(lambda x: isinstance(x, Variable)) == [
+        Variable("X"),
+        Variable("Y"),
+    ]
+
+
+def test_mod_substituted() -> None:
+    assert Mod(Variable("X"), Variable("Y")).substituted(
+        lambda x: Number(42) if x == Variable("X") else x,
+    ) == Mod(Number(42), Variable("Y"))
+
+
+def test_mod_simplified() -> None:
+    assert Mod(Variable("X"), Number(1)).simplified() == Mod(Variable("X"), Number(1))
+    assert Mod(Number(6), Number(2)).simplified() == Number(0)
+
+
+def test_mod_simplified_location() -> None:
+    simplified = Mod(Number(5), Number(2), location=Location((1, 1))).simplified()
+    assert simplified == Number(1)
+    assert simplified.location == Location((1, 1))
 
 
 @pytest.mark.parametrize(
