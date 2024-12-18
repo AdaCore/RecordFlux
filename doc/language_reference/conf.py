@@ -10,7 +10,6 @@ from pathlib import Path
 
 from sphinx.highlighting import lexers
 
-from rflx import __version__
 from tools.rflxlexer import RFLXLexer
 
 lexers["rflx"] = RFLXLexer(startinline=True)
@@ -25,10 +24,9 @@ project = "RecordFlux"
 copyright = f"2023-{datetime.now().year}, AdaCore"  # noqa: A001, DTZ005
 author = "AdaCore"
 
-# Ignore development versions in document creation
-recordflux_version = __version__.split(".dev")[0]
-version = recordflux_version
-release = recordflux_version
+# Omit version to prevent conflicts caused by dynamic versioning
+version = " "
+release = " "
 
 # -- General configuration ---------------------------------------------------
 
