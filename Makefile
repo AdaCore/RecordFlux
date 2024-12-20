@@ -574,7 +574,7 @@ $(CI_SIM_VENV):
 
 .PHONY: ci_sim_%
 
-ci_sim_%: $(CI_SIM_VENV)
+ci_sim_%: $(CI_SIM_VENV) $(BUILD_DIR)
 	@if [ -z "$(CI_USER)" ]; then \
 		echo "Error: Environment variable CI_USER is not set." >&2; \
 		exit 1; \
@@ -590,7 +590,7 @@ ci_sim_%: $(CI_SIM_VENV)
 	  $(CI_SIM_VENV)/bin/python tools/extract_ci_jobs.py $(MAKEFILE_DIR)/.gitlab-ci.yml \
 	  --var CLEAN_RECORDFLUX_SETUP=$(CI_SIM_CLEAN_SETUP) \
 	  --job $*; \
-	} | $(CONTAINER_ENGINE) exec -i -u $(CI_USER) -w /home/$(CI_USER) $(CI_CONTAINER) bash
+	} | $(CONTAINER_ENGINE) exec -i -u $(CI_USER) -w /home/$(CI_USER) $(CI_CONTAINER) bash 2>&1 | tee  $(BUILD_DIR)/ci_sim_$*.log
 
 # --- Development tools ---
 
