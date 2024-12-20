@@ -18,6 +18,7 @@ CHECK_VENV_FULL_SYNC ?=
 # Engine for CI simulation. Supported values are podman and docker.
 CONTAINER_ENGINE ?= podman
 CI_CONTAINER ?= recordflux-ci
+CI_SIM_CLEAN_SETUP ?= 1
 
 # --- Dependencies ---
 
@@ -586,7 +587,9 @@ ci_sim_%: $(CI_SIM_VENV)
 	    ". /it/bin/ci-init-script" \
 	    "export E3_CATHOD_CACHE_DIR=~/cathod-cache && mkdir -p \$$E3_CATHOD_CACHE_DIR" \
 	    "export CI_PROJECT_DIR=~/RecordFlux"; \
-	  $(CI_SIM_VENV)/bin/python tools/extract_ci_jobs.py $(MAKEFILE_DIR)/.gitlab-ci.yml --job $*; \
+	  $(CI_SIM_VENV)/bin/python tools/extract_ci_jobs.py $(MAKEFILE_DIR)/.gitlab-ci.yml \
+	  --var CLEAN_RECORDFLUX_SETUP=$(CI_SIM_CLEAN_SETUP) \
+	  --job $*; \
 	} | $(CONTAINER_ENGINE) exec -i -u $(CI_USER) -w /home/$(CI_USER) $(CI_CONTAINER) bash
 
 # --- Development tools ---
