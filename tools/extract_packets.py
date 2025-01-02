@@ -18,8 +18,9 @@ from math import ceil, log
 from pathlib import Path
 from pydoc import locate
 
-import scapy.layers  # type: ignore[import-untyped]
-from scapy.utils import hexdump, rdpcap  # type: ignore[import-untyped]
+import scapy.layers
+from scapy.packet import Packet
+from scapy.utils import hexdump, rdpcap
 
 
 def main(argv: Sequence[str]) -> bool | str:
@@ -90,11 +91,14 @@ The script is based on Scapy https://scapy.net/.
     if layer is None:
         return f'layer "{args.layer}" not found'
 
+    assert isinstance(layer, type(Packet))
+
     pkts = rdpcap(str(args.pcap))
 
     for i, pkt in enumerate(pkts):
         if pkt.haslayer(layer):
             p = pkt.getlayer(layer)
+            assert p
             if args.payload:
                 p = p.payload
             prefix = args.pcap.stem.replace(" ", "_")
