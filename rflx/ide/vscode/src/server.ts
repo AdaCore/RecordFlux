@@ -125,7 +125,7 @@ async function createServer(
     initializationOptions: IInitOptions
 ): Promise<LanguageClient> {
     const command = settings.interpreter[0];
-    const cwd = settings.cwd;
+    const cwd = process.cwd();
 
     const newEnv = { ...process.env };
     newEnv.USE_DEBUGPY = "False";

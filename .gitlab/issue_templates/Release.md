@@ -1,5 +1,7 @@
 - [ ] Test GNAT Studio plugin
-   - Check verification, generation and display of message graph for example apps
+   - Check verification of specification, code generation and display of message graph for example apps
+- [ ] Test VS Code extension
+   - Check verification of specification and display of message graph for example apps
 - [ ] Add release to `CHANGELOG`
 - [ ] Check if any GitHub issues are not yet mentioned in `CHANGELOG` (especially issue numbers below #1288)
 - [ ] Bring changes to `main` branch
