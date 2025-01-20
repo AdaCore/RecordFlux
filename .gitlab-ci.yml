@@ -719,7 +719,7 @@ python_wheels:
     - image:recordflux
     - security_group:GitLabRunnerTasksExecPrivilegedSG
   variables:
-    PYTHON: "python3.9"
+    PYTHON: "python3.12"
   script:
     - make python_wheels_archive
   artifacts:

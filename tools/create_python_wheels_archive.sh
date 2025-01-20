@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------------
 #  Purpose:      Download the Python dependencies and archive the results.
 #
-#  Dependencies: Python 3.9 - This is the version that is currently
+#  Dependencies: Python 3.12 - This is the version that is currently
 #                expected by the Anod spec.
 #
 #  Arguments:
@@ -22,7 +22,7 @@ fi
 TARGET_DIR=$1
 ARCHIVE_NAME=$2
 
-PYTHON_VERSION="3.9"
+PYTHON_VERSION="3.12"
 PYTHON_EXECUTABLE="${PYTHON_EXECUTABLE:-python${PYTHON_VERSION}}"
 
 # Validate Python availability
