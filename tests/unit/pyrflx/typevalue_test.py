@@ -1512,3 +1512,11 @@ def test_aggregate_in_relation_valid(aggregate_in_relation_package: Package) -> 
     msg.parse(b"\xAA\xAA\xBB\xCC\xCC\xAA\xAA")
     assert msg.bytestring == b"\xAA\xAA\xBB\xCC\xCC\xAA\xAA"
     assert msg.valid_message
+
+
+def test_null_message(null_message_value: MessageValue) -> None:
+    assert null_message_value.valid_message
+
+    null_message_value.parse(b"")
+
+    assert null_message_value.valid_message

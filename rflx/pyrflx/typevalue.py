@@ -1340,7 +1340,7 @@ class MessageValue(TypeValue):
 
     @property
     def valid_message(self) -> bool:
-        return (
+        return not self.fields or (
             bool(self.valid_fields)
             and self._next_field(self.valid_fields[-1]) == FINAL.name
             and all(

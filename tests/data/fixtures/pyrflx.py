@@ -181,6 +181,16 @@ def fixture_tlv_message_value(tlv_package: pyrflx.Package) -> pyrflx.MessageValu
     return tlv_package.new_message("Message")
 
 
+@pytest.fixture(name="null_message_package", scope="session")
+def fixture_null_message_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
+    return pyrflx_.package("Null_Message")
+
+
+@pytest.fixture(name="null_message_value")
+def fixture_null_message_value(null_message_package: pyrflx.Package) -> pyrflx.MessageValue:
+    return null_message_package.new_message("Message")
+
+
 @pytest.fixture(name="sequence_message_package", scope="session")
 def fixture_sequence_message_package(pyrflx_: pyrflx.PyRFLX) -> pyrflx.Package:
     return pyrflx_.package("Sequence_Message")

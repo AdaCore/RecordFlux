@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Display of message graphs in VS Code (AdaCore/RecordFlux#1307, eng/recordflux/RecordFlux#1838)
+- Validity of null messages in PyRFLX (eng/recordflux/RecordFlux#1841)
 
 ## [0.26.0] - 2024-12-18
 
