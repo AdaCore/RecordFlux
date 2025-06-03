@@ -78,7 +78,7 @@ pydantic = ">=2, <3"
 pydotplus = ">=2, <3"
 pygls = ">=1.1, <2"
 "ruamel.yaml" = ">=0.18, <0.19"
-setuptools = ">=41"  # required by z3-solver <4.12.3
+setuptools = ">=41, <80.9"  # required by z3-solver <4.12.3
 z3-solver = ">=4, <4.12.3"
 
 [tool.poetry.group.build.dependencies]
