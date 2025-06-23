@@ -135,6 +135,11 @@ setup:
     # Prevent the regeneration and rebuild of RecordFlux and its components
     - make touch_build_tree
 
+.setup_npm: &setup_npm
+    - npm config delete registry
+    - npm config list
+
+
 changelog:
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
@@ -271,6 +276,7 @@ tests_rflx:
     - *setup_gnat
     - *setup_gnat_cross
     - *setup_python
+    - *setup_npm
     - make test_rflx
 
 tests_rapidflux:
@@ -570,6 +576,7 @@ packaging:
   script:
     - git fetch --unshallow
     - *setup_gnat
+    - *setup_npm
     - make pypi_dist
   artifacts:
     expose_as: "Distribution archives"
