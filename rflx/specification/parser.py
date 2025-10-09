@@ -1828,6 +1828,31 @@ class Parser:
 
         self._specifications = _sort_specs_topologically(self._specifications)
 
+        # TODO(eng/recordflux/RecordFlux#1840): Remove when parser bug has been fixed
+        error = RecordFluxError(
+            [
+                (
+                    ErrorEntry(
+                        entry.message,
+                        entry.severity,
+                        entry.location,
+                        [
+                            Annotation(
+                                "might be fixed by making this the first aspect"
+                                " of the message type",
+                                Severity.HELP,
+                                entry.location,
+                            ),
+                        ],
+                        generate_default_annotation=False,
+                    )
+                    if "Expected 'Byte_Order', got 'First'" in str(entry)
+                    else entry
+                )
+                for entry in error.entries
+            ],
+        )
+
         error.propagate()
 
     def parse_string(

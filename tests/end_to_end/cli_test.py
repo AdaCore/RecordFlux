@@ -1,5 +1,6 @@
 import re
 import subprocess
+import tempfile
 import textwrap
 from pathlib import Path
 
@@ -103,6 +104,57 @@ the package name "Test"
         tests/data/specs/invalid/incorrect_name.rflx:3:5: help: rename to "Incorrect_Name"
         """,
     )
+
+
+# TODO(eng/recordflux/RecordFlux#1840): Remove when parser bug has been fixed
+def test_check_error_message_type_aspect_ordering() -> None:
+    with tempfile.NamedTemporaryFile("w+b") as f:
+        spec_file = Path(f.name)
+        spec_file.write_text(
+            textwrap.dedent(
+                """\
+                package Test is
+
+                   type M is
+                      message
+                         Data : Opaque;
+                         CRC  : Opaque
+                            then null
+                               if CRC'Valid_Checksum;
+                      end message
+                         with Byte_Order => Low_Order_First,
+                              Checksum   => (CRC => (Data'First .. Data'Last));
+
+                end Test;
+                """,
+            ),
+        )
+        p = subprocess.run(
+            [
+                "rflx",
+                "--no-caching",
+                "check",
+                spec_file,
+            ],
+            capture_output=True,
+            check=False,
+        )
+        assert p.returncode == 1
+        assert p.stdout.decode("utf-8") == ""
+        assert p.stderr.decode("utf-8").replace(f.name, "SPEC_FILE") == textwrap.dedent(
+            """\
+            info: Parsing SPEC_FILE
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            error: Expected 'Byte_Order', got 'First'
+              --> SPEC_FILE:11:15
+               |
+            11 |               Checksum   => (CRC => (Data'First .. Data'Last));
+               |               -------- help: might be fixed by making this the first aspect \
+of the message type
+               |
+            """,
+        )
 
 
 def test_check_no_verification() -> None:
