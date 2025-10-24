@@ -593,6 +593,7 @@ publishing_to_pypi:
   rules:
     - if: $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+$/
   script:
+    - export PATH=$HOME/.local/bin:$PATH
     - python$PYTHON_VERSION -m pip install twine
     - twine upload --non-interactive dist/*
   variables:
@@ -610,6 +611,7 @@ publishing_to_test_pypi:
   rules:
     - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   script:
+    - export PATH=$HOME/.local/bin:$PATH
     - python$PYTHON_VERSION -m pip install twine
     - twine upload --verbose --non-interactive --repository-url https://test.pypi.org/legacy/ dist/*
   variables:
