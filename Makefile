@@ -519,7 +519,7 @@ test_package: $(PROJECT_MANAGEMENT)
 ifndef PACKAGE
 	$(error PACKAGE is undefined, set PACKAGE to the name or path of the package to be tested)
 endif
-	$(POETRY) run python -m venv --clear $(BUILD_DIR)/venv
+	$(POETRY) run $(PYTHON) -m venv --clear $(BUILD_DIR)/venv
 	$(BUILD_DIR)/venv/bin/pip install $(PIP_ARGS) $(PACKAGE) pytest
 	$(BUILD_DIR)/venv/bin/rflx --version
 	mkdir -p $(BUILD_DIR)/tests
