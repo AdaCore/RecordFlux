@@ -209,7 +209,7 @@ class SerializerGenerator:
     @staticmethod
     def requires_set_procedure(message: Message) -> bool:
         return any(
-            message.is_possibly_empty(f) or isinstance(t, (Scalar, Sequence))
+            message.is_possibly_empty(f) or isinstance(t, Scalar | Sequence)
             for f, t in message.field_types.items()
         )
 
@@ -1402,7 +1402,7 @@ class SerializerGenerator:
             [
                 s
                 for f, t in message.field_types.items()
-                if isinstance(t, (Opaque, Sequence))
+                if isinstance(t, Opaque | Sequence)
                 for s in [
                     *(
                         [
@@ -1496,7 +1496,7 @@ class SerializerGenerator:
             [
                 s
                 for f, t in message.field_types.items()
-                if isinstance(t, (Opaque, Sequence))
+                if isinstance(t, Opaque | Sequence)
                 for s in [
                     SubprogramBody(
                         specification_private(f),

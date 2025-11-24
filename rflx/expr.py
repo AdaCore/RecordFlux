@@ -355,7 +355,7 @@ class AssExpr(Expr):
             else:
                 terms.append(t)
 
-        if isinstance(self, (And, Or)):
+        if isinstance(self, And | Or):
             terms = self._simplified_boolean_expressions(terms, total)
         else:
             if not terms:
@@ -1206,7 +1206,7 @@ class Head(Attribute):
         self.type_ = (
             self.prefix.type_.element if isinstance(self.prefix.type_, ty.Composite) else ty.Any()
         )
-        if not isinstance(self.prefix, (Variable, Selected, Comprehension)):
+        if not isinstance(self.prefix, Variable | Selected | Comprehension):
             error.push(
                 ErrorEntry(
                     "prefix of attribute Head must be a name or comprehension",
@@ -1886,7 +1886,7 @@ class QuantifiedExpr(Expr):
     def _check_type_subexpr(self) -> RecordFluxError:
         def typify_variable(expr: Expr) -> Expr:
             if isinstance(expr, Variable) and expr.identifier == self.parameter_identifier:
-                if isinstance(self.iterable.type_, (ty.Aggregate, ty.Sequence)):
+                if isinstance(self.iterable.type_, ty.Aggregate | ty.Sequence):
                     expr.type_ = self.iterable.type_.element
                 else:
                     expr.type_ = ty.Any()
@@ -2117,7 +2117,7 @@ class QualifiedExpr(Expr):
     def _update_str(self) -> None:
         operand = (
             str(self.expression)
-            if isinstance(self.expression, (Aggregate, NamedAggregate))
+            if isinstance(self.expression, Aggregate | NamedAggregate)
             else f"({self.expression})"
         )
         self._str = intern(f"{self.type_identifier}'{operand}")
@@ -2158,7 +2158,7 @@ class Comprehension(Expr):
     def _check_type_subexpr(self) -> RecordFluxError:
         def typify_variable(expr: Expr) -> Expr:
             if isinstance(expr, Variable) and expr.identifier == self.iterator:
-                if isinstance(self.sequence.type_, (ty.Aggregate, ty.Sequence)):
+                if isinstance(self.sequence.type_, ty.Aggregate | ty.Sequence):
                     expr.type_ = self.sequence.type_.element
                 else:
                     expr.type_ = ty.Any()
@@ -2414,7 +2414,7 @@ def _entity_name(expr: Expr) -> str:
                     if isinstance(expr, Conversion)
                     else (
                         "message"
-                        if isinstance(expr, (MessageAggregate, DeltaMessageAggregate))
+                        if isinstance(expr, MessageAggregate | DeltaMessageAggregate)
                         else "expression"
                     )
                 )
@@ -2423,7 +2423,7 @@ def _entity_name(expr: Expr) -> str:
     )
     expr_name = (
         str(expr.identifier)
-        if isinstance(expr, (Variable, Call, Conversion, MessageAggregate, DeltaMessageAggregate))
+        if isinstance(expr, Variable | Call | Conversion | MessageAggregate | DeltaMessageAggregate)
         else str(expr)
     )
     return f'{expr_type} "{expr_name}"'
@@ -2450,7 +2450,7 @@ class CaseExpr(Expr):
 
         error = RecordFluxError()
         literals = [
-            c.name for (choice, _) in self.choices for c in choice if isinstance(c, (str, ID))
+            c.name for (choice, _) in self.choices for c in choice if isinstance(c, str | ID)
         ]
         type_literals = [l.name for l in self.expr.type_.literals]
         missing = set(type_literals) - set(literals)

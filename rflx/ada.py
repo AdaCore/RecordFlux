@@ -1571,7 +1571,7 @@ class GenericPackageInstantiation(PackageDeclaration):
         self.identifier = ID(identifier)
         self.generic_package = ID(generic_package)
         self.associations: list[tuple[ID | None, Expr]] = [
-            (ID(i) if i else None, Variable(e) if isinstance(e, (str, ID)) else e)
+            (ID(i) if i else None, Variable(e) if isinstance(e, str | ID) else e)
             for i, e in associations or []
         ]
 
@@ -2036,7 +2036,7 @@ class PragmaStatement(Statement):
             if (
                 self.identifier.ada_str == "Assert"
                 and len(self.pragma_parameters) == 1
-                and isinstance(self.pragma_parameters[0], (IfExpr, CaseExpr))
+                and isinstance(self.pragma_parameters[0], IfExpr | CaseExpr)
             ):
                 parameters = f" {parameters}"
             else:
@@ -2579,7 +2579,7 @@ class Pragma(Declaration, ContextItem):
             if (
                 self.identifier.ada_str == "Assert"
                 and len(self.pragma_parameters) == 1
-                and isinstance(self.pragma_parameters[0], (IfExpr, CaseExpr))
+                and isinstance(self.pragma_parameters[0], IfExpr | CaseExpr)
             ):
                 parameters = f" {parameters}"
             else:
@@ -2637,7 +2637,7 @@ class PackageUnit(Unit):
         self.formal_parameters = formal_parameters
 
     def __iadd__(self, other: object) -> Self:
-        if isinstance(other, (UnitPart, SubprogramUnitPart)):
+        if isinstance(other, UnitPart | SubprogramUnitPart):
             self.declaration.declarations = [*self.declaration.declarations, *other.specification]
             self.declaration.private_declarations = [
                 *self.declaration.private_declarations,

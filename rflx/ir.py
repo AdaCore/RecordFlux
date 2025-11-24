@@ -726,7 +726,7 @@ class Size(IntAttr):
     def type_(self) -> ty.AnyInteger:
         return (
             ty.BIT_LENGTH
-            if isinstance(self.prefix_type, (ty.Composite, ty.Compound))
+            if isinstance(self.prefix_type, ty.Composite | ty.Compound)
             else ty.UNIVERSAL_INTEGER
         )
 
@@ -2203,7 +2203,7 @@ def add_conversions(statements: Sequence[Stmt]) -> list[Stmt]:
 def _convert_expression(expression: Expr, target_type: ty.Type) -> Expr:
     if target_type.is_compatible_strong(expression.type_) or not isinstance(
         target_type,
-        (ty.Integer, ty.Enumeration),
+        ty.Integer | ty.Enumeration,
     ):
         return expression
 
@@ -2315,7 +2315,7 @@ def add_checks(statements: Sequence[Stmt], variable_id: Generator[ID, None, None
 
         if isinstance(statement, Assign) and isinstance(
             statement.expression,
-            (Comprehension, Find),
+            Comprehension | Find,
         ):
             statement.expression = statement.expression.__class__(
                 statement.expression.iterator,

@@ -57,7 +57,7 @@ class ChecksumFunction(Protocol):
     def __call__(self, message: bytes, **kwargs: object) -> int: ...  # pragma: no cover
 
 
-# TODO(eng/recordflux/RecordFlux#1424): Replace with PEP604 union
+# typing.Union cannot be replaced by PEP604 union due to forward references
 ValueType = Union[
     "MessageValue",
     ty.Sequence["TypeValue"],
@@ -757,7 +757,7 @@ class MessageValue(TypeValue):
                 field["value"] = field_value.bytestring.hex()
             elif isinstance(field_value, bytes):
                 field["value"] = field_value.hex()
-            elif isinstance(field_value, (int, str)):
+            elif isinstance(field_value, int | str):
                 field["value"] = field_value
             elif isinstance(field_value, list):
                 field["value"] = [f.as_json() for f in field_value]
@@ -1140,14 +1140,14 @@ class MessageValue(TypeValue):
 
             for e in [lower, value_range.upper]:
                 if isinstance(e, Sub):
-                    assert isinstance(e.left, (First, Last))
+                    assert isinstance(e.left, First | Last)
                     expr[e] = str(e.left.prefix)
                 elif isinstance(e, Add):
                     for t in e.terms:
-                        if isinstance(t, (First, Last)):
+                        if isinstance(t, First | Last):
                             expr[e] = str(t.prefix)
                 else:
-                    assert isinstance(e, (First, Last))
+                    assert isinstance(e, First | Last)
                     expr[e] = str(e.prefix)
 
             field = expr.get(lower)
@@ -1253,11 +1253,6 @@ class MessageValue(TypeValue):
                 or not isinstance(field_val.first, Number)
                 or not field_val.first.value <= len(bits)
             ):
-                # https://github.com/nedbat/coveragepy/issues/772
-                # A dummy statement is needed to disable the peephole optimizer, so that the break
-                # statement is detected during coverage analysis.
-                # CPython 3.8 and 3.9 are affected. The issue is fixed in CPython 3.10.
-                dummy = 0  # noqa: F841
                 break
             added_bits = str(self._fields[field].typeval.bitstring)
             added_bits_adjusted = (
@@ -1471,7 +1466,7 @@ class MessageValue(TypeValue):
 
             self.parameters: list[Expressiontuple] = []
             for expr in parameters:
-                assert isinstance(expr, (ValueRange, Attribute, Variable))
+                assert isinstance(expr, ValueRange | Attribute | Variable)
                 self.parameters.append(Expressiontuple(expr))
 
     class Field(Base):

@@ -578,8 +578,8 @@ class Message(type_decl.TypeDecl):
         return any(
             r
             for l in links
-            for r in l.condition.findall(lambda x: isinstance(x, (expr.Equal, expr.NotEqual)))
-            if isinstance(r, (expr.Equal, expr.NotEqual))
+            for r in l.condition.findall(lambda x: isinstance(x, expr.Equal | expr.NotEqual))
+            if isinstance(r, expr.Equal | expr.NotEqual)
             and r.findall(lambda x: isinstance(x, expr.Aggregate))
             and any(
                 r.left == expr.Variable(f.identifier) or r.right == expr.Variable(f.identifier)
@@ -600,12 +600,12 @@ class Message(type_decl.TypeDecl):
             len(self.paths(FINAL)) <= 1
             and not self.has_implicit_size
             and all(
-                not l.condition.findall(lambda x: isinstance(x, (expr.First, expr.Last)))
+                not l.condition.findall(lambda x: isinstance(x, expr.First | expr.Last))
                 for l in self.structure
                 for v in l.condition.variables()
             )
             and all(
-                not l.size.findall(lambda x: isinstance(x, (expr.First, expr.Last)))
+                not l.size.findall(lambda x: isinstance(x, expr.First | expr.Last))
                 for l in self.structure
                 for v in l.size.variables()
             )
@@ -949,7 +949,7 @@ class Message(type_decl.TypeDecl):
         for f, t in types.items():
             if f in structure_fields and not isinstance(
                 t,
-                (type_decl.Scalar, type_decl.Composite, Message),
+                type_decl.Scalar | type_decl.Composite | Message,
             ):
                 self.error.extend(
                     [
@@ -1250,7 +1250,7 @@ class Message(type_decl.TypeDecl):
         for link in structure:
             if link.size == expr.UNDEFINED and link.target in types:
                 t = types[link.target]
-                if isinstance(t, (type_decl.Opaque, type_decl.Sequence)) and all(
+                if isinstance(t, type_decl.Opaque | type_decl.Sequence) and all(
                     l.target == FINAL for l in self.outgoing(link.target)
                 ):
                     if link.source == INITIAL:
@@ -1699,7 +1699,7 @@ class Message(type_decl.TypeDecl):
             )
         if link.target != FINAL and link.target in self.types:
             t = self.types[link.target]
-            unconstrained = isinstance(t, (type_decl.Opaque, type_decl.Sequence))
+            unconstrained = isinstance(t, type_decl.Opaque | type_decl.Sequence)
             if not unconstrained and link.size != expr.UNDEFINED:
                 assert isinstance(t, type_decl.Scalar)
                 self.error.extend(
@@ -1765,7 +1765,7 @@ class Message(type_decl.TypeDecl):
 
             for e in expressions:
                 if not (
-                    isinstance(e, (expr.Variable, expr.Size))
+                    isinstance(e, expr.Variable | expr.Size)
                     or (
                         isinstance(e, expr.ValueRange)
                         and valid_lower(e.lower)
@@ -1963,13 +1963,17 @@ class Message(type_decl.TypeDecl):
         def starts_with(path: tuple[Link, ...], paths: set[tuple[Link, ...]]) -> bool:
             """Check if any path of `paths` is a proper prefix of `path`."""
             return any(
-                p for p in paths if len(p) < len(path) and all(a == b for a, b in zip(p, path))
+                p
+                for p in paths
+                if len(p) < len(path) and all(a == b for a, b in zip(p, path, strict=False))
             )
 
         def is_proper_prefix(path: tuple[Link, ...], paths: set[tuple[Link, ...]]) -> bool:
             """Check if `path` is a proper prefix of any path of `paths`."""
             return any(
-                p for p in paths if len(p) > len(path) and all(a == b for a, b in zip(p, path))
+                p
+                for p in paths
+                if len(p) > len(path) and all(a == b for a, b in zip(p, path, strict=False))
             )
 
         unreachable_paths: set[tuple[Link, ...]] = set()
@@ -2240,7 +2244,7 @@ class Message(type_decl.TypeDecl):
         field_size_constraints = [
             expr.Equal(expr.Mod(expr.Size(f.name), expr.Number(8)), expr.Number(0))
             for f, t in self.types.items()
-            if isinstance(t, (type_decl.Opaque, type_decl.Sequence))
+            if isinstance(t, type_decl.Opaque | type_decl.Sequence)
         ]
 
         for path in [p[:-1] for p in self.paths(FINAL) if p]:
@@ -3443,8 +3447,8 @@ def aggregate_constraints(
         return [result]
 
     aggregate_constraints: list[expr.Expr] = []
-    for r in expression.findall(lambda x: isinstance(x, (expr.Equal, expr.NotEqual))):
-        assert isinstance(r, (expr.Equal, expr.NotEqual))
+    for r in expression.findall(lambda x: isinstance(x, expr.Equal | expr.NotEqual)):
+        assert isinstance(r, expr.Equal | expr.NotEqual)
         if isinstance(r.left, expr.Aggregate) and isinstance(r.right, expr.Variable):
             aggregate_constraints.extend(get_constraints(r.left, r.right, r.location))
         if isinstance(r.left, expr.Variable) and isinstance(r.right, expr.Aggregate):
@@ -3532,7 +3536,7 @@ def normalize_identifiers(
         )
 
     if (
-        isinstance(expression, (expr.Variable, expr.Literal))
+        isinstance(expression, expr.Variable | expr.Literal)
         and expression.identifier in enum_literals_map
     ):
         return expr.Literal(
@@ -3544,7 +3548,7 @@ def normalize_identifiers(
         )
 
     if (
-        isinstance(expression, (expr.Variable, expr.TypeName))
+        isinstance(expression, expr.Variable | expr.TypeName)
         and expression.identifier in type_names
     ):
         return expr.TypeName(

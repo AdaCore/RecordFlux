@@ -128,7 +128,7 @@ class LSModel:
 
     @staticmethod
     def _to_symbols(declaration: UncheckedTopLevelDeclaration) -> list[Symbol]:
-        if isinstance(declaration, (UncheckedInteger, UncheckedUnsignedInteger)):
+        if isinstance(declaration, UncheckedInteger | UncheckedUnsignedInteger):
             return [
                 Symbol(declaration.identifier, SymbolCategory.NUMERIC, declaration.location, None),
             ]

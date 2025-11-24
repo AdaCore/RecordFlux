@@ -142,28 +142,26 @@ class State(Base):
                 expression.findall(
                     lambda x: isinstance(
                         x,
-                        (
-                            expr.Variable,
-                            expr.Selected,
-                            expr.Head,
-                            expr.Comprehension,
-                            expr.MessageAggregate,
-                            expr.DeltaMessageAggregate,
-                            expr.Conversion,
-                            expr.Opaque,
-                            expr.Add,
-                            expr.Sub,
-                            expr.Mul,
-                            expr.Div,
-                            expr.Mod,
-                            expr.Pow,
-                        ),
+                        expr.Variable
+                        | expr.Selected
+                        | expr.Head
+                        | expr.Comprehension
+                        | expr.MessageAggregate
+                        | expr.DeltaMessageAggregate
+                        | expr.Conversion
+                        | expr.Opaque
+                        | expr.Add
+                        | expr.Sub
+                        | expr.Mul
+                        | expr.Div
+                        | expr.Mod
+                        | expr.Pow,
                     ),
                 ),
             )
 
         return any(
-            isinstance(a, (stmt.Append, stmt.Extend, stmt.MessageFieldAssignment))
+            isinstance(a, stmt.Append | stmt.Extend | stmt.MessageFieldAssignment)
             or (
                 isinstance(a, stmt.VariableAssignment)
                 and (isinstance(a.type_, ty.Message) or (has_expression_exceptions(a.expression)))
@@ -287,7 +285,7 @@ class State(Base):
         def substituted(expression: expr.Expr, structure: ty.Structure) -> expr.Expr:
             def replace_expression_type(expression: expr.Expr) -> expr.Expr:
                 if (
-                    isinstance(expression, (expr.Variable, expr.Call))
+                    isinstance(expression, expr.Variable | expr.Call)
                     and isinstance(expression.type_, ty.Message)
                     and expression.type_.identifier == structure.identifier
                 ):
@@ -793,7 +791,7 @@ class StateMachine(TopLevelDeclaration):
                 ],
             )
         if (
-            not isinstance(parameter_type, (type_decl.Scalar, Message))
+            not isinstance(parameter_type, type_decl.Scalar | Message)
             and parameter_type.identifier != ty.OPAQUE.identifier
         ):
             self.error.extend(
@@ -831,7 +829,7 @@ class StateMachine(TopLevelDeclaration):
                     ),
                 ],
             )
-        if not isinstance(return_type, (type_decl.Scalar, Message)):
+        if not isinstance(return_type, type_decl.Scalar | Message):
             self.error.extend(
                 [
                     ErrorEntry(
@@ -1012,15 +1010,13 @@ class StateMachine(TopLevelDeclaration):
     ) -> expr.Expr:
         if isinstance(
             expression,
-            (
-                expr.Variable,
-                expr.Literal,
-                expr.TypeName,
-                expr.Call,
-                expr.Conversion,
-                expr.MessageAggregate,
-                expr.DeltaMessageAggregate,
-            ),
+            expr.Variable
+            | expr.Literal
+            | expr.TypeName
+            | expr.Call
+            | expr.Conversion
+            | expr.MessageAggregate
+            | expr.DeltaMessageAggregate,
         ):
             identifier = expression.identifier
 
@@ -1159,7 +1155,7 @@ FINAL_STATE: Final[State] = State("Final")
 
 def error_on_unsupported_expression(expression: expr.Expr, error: RecordFluxError) -> expr.Expr:
     # TODO(eng/recordflux/RecordFlux#1497): Support comparisons of opaque fields
-    if isinstance(expression, (expr.Equal, expr.NotEqual)):
+    if isinstance(expression, expr.Equal | expr.NotEqual):
         for e in [expression.left, expression.right]:
             if isinstance(e, expr.Selected) and e.type_ == ty.OPAQUE:
                 error.push(

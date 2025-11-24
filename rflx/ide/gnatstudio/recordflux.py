@@ -1,6 +1,7 @@
 # type: ignore # noqa: PGH003
 
 """RecordFlux support for GNAT Studio."""
+
 from __future__ import annotations
 
 import json

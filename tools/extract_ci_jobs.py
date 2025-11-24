@@ -320,9 +320,9 @@ def _get_all_cmds(
 
         # If keys map to lists of values, we need to combine them
         if isinstance(matrix, dict):
-            keys, values = zip(*matrix.items())
+            keys, values = zip(*matrix.items(), strict=False)
             for combination in product(*values):
-                yield dict(zip(keys, combination))
+                yield dict(zip(keys, combination, strict=False))
         # If we already have a list of dicts, iterate directly
         elif isinstance(matrix, list):
             yield from matrix

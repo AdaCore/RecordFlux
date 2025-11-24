@@ -222,11 +222,6 @@ def _check_token_spacing(  # noqa: PLR0912
             continue
 
         if any(match.start() in r for r in strings) or any(match.end() in r for r in strings):
-            # https://github.com/nedbat/coveragepy/issues/772
-            # A dummy statement is needed to disable the peephole optimizer, so that the continue
-            # statement is detected during coverage analysis.
-            # CPython 3.8 and 3.9 are affected. The issue is fixed in CPython 3.10.
-            dummy = 0  # noqa: F841
             continue
 
         token = match.group(0)

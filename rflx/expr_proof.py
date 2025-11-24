@@ -6,7 +6,7 @@ from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from enum import Enum
 from functools import singledispatch
-from typing import Final, Union
+from typing import Final
 
 import z3
 
@@ -18,8 +18,7 @@ from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Se
 PROVER_TIMEOUT: Final = 1800000
 
 
-# TODO(eng/recordflux/RecordFlux#1424): Replace with PEP604 union
-ArithBoolRef = Union[z3.ArithRef, z3.BoolRef]
+ArithBoolRef = z3.ArithRef | z3.BoolRef
 
 
 class ProofResult(Enum):
@@ -299,7 +298,7 @@ def _(expression: expr.Variable) -> z3.ExprRef:
 def _(expression: expr.Attribute) -> z3.ExprRef:
     if not isinstance(
         expression.prefix,
-        (expr.Variable, expr.Literal, expr.TypeName, expr.Selected),
+        expr.Variable | expr.Literal | expr.TypeName | expr.Selected,
     ):
         raise Z3TypeError("illegal prefix of attribute")
     return z3.Int(expression.representation)

@@ -18,7 +18,6 @@ classifiers = [
     "Programming Language :: Ada",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -70,7 +69,7 @@ script = "build.py"
 generate-setup-file = true
 
 [tool.poetry.dependencies]
-python = ">=3.9.2, <4"
+python = ">=3.10, <4"
 attrs = ">=22.1, <24"
 defusedxml = ">=0.7, <0.8"
 lark = ">=1.1.8, <2"

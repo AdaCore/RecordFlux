@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import Final, Union
-
-from typing_extensions import TypeAlias
+from typing import Final, TypeAlias
 
 from rflx.rapidflux.ty import (
     Aggregate as Aggregate,
@@ -27,7 +25,7 @@ from rflx.rapidflux.ty import (
     common_type as common_type,
 )
 
-NamedType: TypeAlias = Union[Enumeration, Integer, Message, Sequence, Structure]
+NamedType: TypeAlias = Enumeration | Integer | Message | Sequence | Structure
 NamedTypeClass = (Enumeration, Integer, Message, Sequence, Structure)
 
 UNDEFINED: Final = Builtins.UNDEFINED

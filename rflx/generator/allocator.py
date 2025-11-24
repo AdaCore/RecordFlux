@@ -352,7 +352,7 @@ class AllocatorGenerator:
 
     @staticmethod
     def _needs_allocation(type_: ty.Type) -> bool:
-        return isinstance(type_, (ty.Message, ty.Sequence))
+        return isinstance(type_, ty.Message | ty.Sequence)
 
     def _allocate_global_slots(
         self,
@@ -420,7 +420,7 @@ class AllocatorGenerator:
                     and isinstance(statement.expression, ir.Comprehension)
                     and isinstance(statement.expression.sequence.type_, ty.Sequence)
                     and isinstance(statement.expression.sequence.type_.element, ty.Message)
-                    and isinstance(statement.expression.sequence, (ir.Var, ir.FieldAccess))
+                    and isinstance(statement.expression.sequence, ir.Var | ir.FieldAccess)
                 ):
                     if isinstance(statement.expression.sequence, ir.FieldAccess):
                         identifier = statement.expression.sequence.message
@@ -456,7 +456,7 @@ class AllocatorGenerator:
                     )
                 if isinstance(statement, ir.Assign) and isinstance(
                     statement.expression,
-                    (ir.Comprehension, ir.Find),
+                    ir.Comprehension | ir.Find,
                 ):
                     alloc_requirements.extend(
                         determine_allocation_requirements(

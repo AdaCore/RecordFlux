@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 from annotated_types import Gt
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -14,16 +14,13 @@ from rflx.model import Model
 from rflx.model.state_machine import StateMachine
 from rflx.rapidflux import ErrorEntry, Location, RecordFluxError, Severity
 
-# TODO(eng/recordflux/RecordFlux#1424): Replace remaining use of Optional
-# and Union. Pydantic has issues with PEP604 type annotations in Python 3.9.
-
 IntSize = Annotated[int, Gt(0)]
 
 
 class StateMachineSize(BaseModel):  # type: ignore[misc]
-    default: Optional[IntSize] = Field(None, alias="Default")  # noqa: UP007
-    global_: Optional[Mapping[str, IntSize]] = Field(None, alias="Global")  # noqa: UP007
-    local_: Optional[Mapping[str, Mapping[str, IntSize]]] = Field(  # noqa: UP007
+    default: IntSize | None = Field(None, alias="Default")
+    global_: Mapping[str, IntSize] | None = Field(None, alias="Global")
+    local_: Mapping[str, Mapping[str, IntSize]] | None = Field(
         None,
         alias="Local",
     )
@@ -32,7 +29,7 @@ class StateMachineSize(BaseModel):  # type: ignore[misc]
 
 
 class StateMachineIntegration(BaseModel):  # type: ignore[misc]
-    buffer_size: Optional[StateMachineSize] = Field(  # noqa: UP007
+    buffer_size: StateMachineSize | None = Field(
         alias="Buffer_Size",
         default=None,
     )

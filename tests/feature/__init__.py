@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from shutil import copytree
-from typing import Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from ruamel.yaml.main import YAML
@@ -16,9 +15,6 @@ from tests.utils import state_machine_main
 
 FEATURES = [f for f in FEATURE_DIR.glob("*") if f.is_dir() and f.name != "__pycache__"]
 
-# TODO(eng/recordflux/RecordFlux#1424): Replace remaining use of Optional
-# and Union. Pydantic has issues with PEP604 type annotations in Python 3.9.
-
 
 class ProofConfig(BaseModel):  # type: ignore[misc]
     enabled: bool = Field(default=True)
@@ -30,12 +26,12 @@ class ProofConfig(BaseModel):  # type: ignore[misc]
 
 
 class Config(BaseModel):  # type: ignore[misc]
-    input: Mapping[str, Optional[Sequence[Union[int, str]]]] = Field(  # noqa: UP007
+    input: Mapping[str, Sequence[int | str] | None] = Field(
         default_factory=dict,
     )
     output: Sequence[str] = Field(default_factory=list)
     sequence: str = Field(default="")
-    proof: Optional[ProofConfig] = Field(default=None)  # noqa: UP007
+    proof: ProofConfig | None = Field(default=None)
     external_io_buffers: int = Field(default=0)
 
     model_config = ConfigDict(extra="forbid")

@@ -152,11 +152,6 @@ def _convert_registry_to_enum_type(
         value_element = record.find(f"iana:{value_tag}", NAMESPACE)
 
         if value_element is None or name_element is None:
-            # https://github.com/nedbat/coveragepy/issues/772
-            # A dummy statement is needed to disable the peephole optimizer, so that the continue
-            # statement is detected during coverage analysis.
-            # CPython 3.8 and 3.9 are affected. The issue is fixed in CPython 3.10.
-            dummy = 0  # noqa: F841
             continue
 
         assert isinstance(value_element.text, str)

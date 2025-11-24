@@ -189,7 +189,7 @@ def messages(  # noqa: PLR0915
 
     def size(pair: FieldPair) -> expr.Expr:
         max_size = 2**29 - 1
-        if isinstance(pair.target_type, (Opaque, Sequence)):
+        if isinstance(pair.target_type, Opaque | Sequence):
             if isinstance(pair.source_type, Integer) and pair.source_type.last.value <= max_size:
                 return expr.Mul(
                     expr.Variable(pair.source.name),

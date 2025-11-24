@@ -159,7 +159,6 @@ class Generator:
         library_files: bool = True,
         top_level_package: bool = True,
     ) -> None:
-
         all_units = units
 
         if library_files:
@@ -282,7 +281,7 @@ class Generator:
                 unit = self._create_unit(d.package, terminating=False)
                 units[d.package] = unit
 
-            if isinstance(d, (Scalar, Composite)):
+            if isinstance(d, Scalar | Composite):
                 units.update(self._create_type(d, d.package, units))
 
             elif isinstance(d, Message):
@@ -828,7 +827,7 @@ class Generator:
 
         assert isinstance(unit, PackageUnit)
 
-        if isinstance(field_type, (Integer, Enumeration)):
+        if isinstance(field_type, Integer | Enumeration):
             unit.declaration_context.append(WithClause(const.PREFIX_ID * const.TYPES))
 
         if isinstance(field_type, Integer):

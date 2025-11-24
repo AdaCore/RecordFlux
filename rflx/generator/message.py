@@ -3830,7 +3830,7 @@ def _create_to_context_procedure(message: Message) -> UnitPart:
 
             type_ = message.field_types[link.target]
 
-            if isinstance(type_, (Scalar, Opaque)):
+            if isinstance(type_, Scalar | Opaque):
                 if isinstance(type_, Opaque) and link.size.variables():
                     size = expr_conv.to_ada(
                         link.size.substituted(

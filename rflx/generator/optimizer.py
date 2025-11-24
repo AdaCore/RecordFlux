@@ -49,7 +49,6 @@ def optimize(project_file: Path) -> None:
     checks: dict[Path, dict[int, Check]] = {}
 
     for f in files:
-
         cs = instrument(f)
         if cs:
             checks[f] = cs

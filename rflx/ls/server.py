@@ -7,7 +7,7 @@ import uuid
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
-from typing import Final
+from typing import Final, ParamSpec
 from urllib.parse import unquote, urlparse
 
 from lsprotocol.types import (
@@ -221,11 +221,13 @@ class RecordFluxLanguageServer(LanguageServer):
         return workspace_files
 
 
-# TODO(eng/recordflux/RecordFlux#1424): Use typing.ParamSpec instead of ... and object
-def debounce(  # type: ignore[misc]
+P = ParamSpec("P")
+
+
+def debounce(
     interval_s: int,
     keyed_by: str | None = None,
-) -> Callable[[Callable[..., None]], Callable[..., None]]:
+) -> Callable[[Callable[P, None]], Callable[P, None]]:
     """
     Debounce calls to this function until interval_s seconds have passed.
 

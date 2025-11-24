@@ -896,7 +896,7 @@ def create_case(error: RecordFluxError, expression: lang.Expr, filename: Path) -
             [
                 create_choice(s, filename)
                 for s in c.f_selectors
-                if isinstance(s, (lang.AbstractID, lang.Expr))
+                if isinstance(s, lang.AbstractID | lang.Expr)
             ],
             create_expression(error, c.f_expression, filename),
         )

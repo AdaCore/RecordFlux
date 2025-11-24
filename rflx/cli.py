@@ -581,7 +581,7 @@ def graph(args: argparse.Namespace) -> None:
                 "end": {"line": d.location.end[0], "column": d.location.end[1]},
             }
             for d in declarations
-            if isinstance(d, (Message, StateMachine)) and d.location and d.location.end
+            if isinstance(d, Message | StateMachine) and d.location and d.location.end
         }
         for package, declarations in model.packages.items()
         if package.location

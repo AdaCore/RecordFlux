@@ -117,7 +117,7 @@ def substitution(
         if isinstance(expression, expr.Or):
             return expr.OrElse(*[func(t) for t in expression.terms])
 
-        if isinstance(expression, (expr.Equal, expr.NotEqual)):
+        if isinstance(expression, expr.Equal | expr.NotEqual):
             field = None
             aggregate = None
             if isinstance(expression.left, expr.Variable) and isinstance(
@@ -485,7 +485,6 @@ def message_structure_invariant(
 def context_predicate(
     message: model.Message,
 ) -> Expr:
-
     return AndThen(
         IfThenElse(
             NotEqual(Variable("Buffer"), Variable("null")),
@@ -791,7 +790,7 @@ def has_scalar_value_dependent_condition(message: model.Message) -> bool:
         True
         for l in message.structure
         for v in l.condition.variables()
-        if v.identifier == l.source.identifier and isinstance(v.type_, (ty.Integer, ty.Enumeration))
+        if v.identifier == l.source.identifier and isinstance(v.type_, ty.Integer | ty.Enumeration)
     )
 
 

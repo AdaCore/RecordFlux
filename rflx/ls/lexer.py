@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import singledispatchmethod
-from typing import Optional, cast
+from typing import cast
 
 from rflx import const, lang
 from rflx.identifier import ID
@@ -110,10 +110,8 @@ class LSLexer:
         state = State(set(), None, [], None, None, top_level=False)
         self._process_ast_node(unit.root, state)
 
-    # TODO(eng/recordflux/RecordFlux#1424): Replace remaining use of Optional
-    # singledispatch has issues with PEP604 type annotations in Python 3.8 and 3.9.
     @singledispatchmethod
-    def _process_ast_node(self, node: Optional[lang.RFLXNode], state: State) -> None:  # noqa: UP007
+    def _process_ast_node(self, node: lang.RFLXNode | None, state: State) -> None:
         if node is None:
             return
 
@@ -243,7 +241,7 @@ class LSLexer:
     def _(self, node: lang.RefinementDecl, state: State) -> None:
         name = node.f_pdu.f_name
         # TODO(eng/recordflux/RecordFlux#1371): Invalid type annotation for optional field
-        if cast(Optional[lang.UnqualifiedID], node.f_pdu.f_package) is None:
+        if cast(lang.UnqualifiedID | None, node.f_pdu.f_package) is None:
             message_identifier = (
                 state.current_package * ID(name.text)
                 if state.current_package is not None

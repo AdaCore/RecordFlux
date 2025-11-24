@@ -69,8 +69,7 @@ class FileLock:
                         ],
                     ) from None
             else:
-                # TODO(eng/recordflux/RecordFlux#1424): Remove no cover pragma
-                break  # pragma: no cover
+                break
 
         self._lock_file.write_text(str(os.getpid()), encoding="utf-8")
 

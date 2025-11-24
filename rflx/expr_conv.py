@@ -539,7 +539,7 @@ def _(expression: expr.Head, prefix: ID) -> ir.Expr:
 
 @_attribute_to_ir.register
 def _(expression: expr.Opaque, prefix: ID) -> ir.Expr:
-    assert isinstance(expression.prefix.type_, (ty.Sequence, ty.Message))
+    assert isinstance(expression.prefix.type_, ty.Sequence | ty.Message)
     return ir.Opaque(prefix, expression.prefix.type_, origin=expression)
 
 
@@ -593,7 +593,7 @@ def _(expression: expr.Selected, variable_id: Generator[ID, None, None]) -> ir.C
                 origin=expression,
             ),
         )
-    if isinstance(expression.type_, (ty.Enumeration, ty.Sequence)):
+    if isinstance(expression.type_, ty.Enumeration | ty.Sequence):
         return ir.ComplexExpr(
             stmts,
             ir.ObjFieldAccess(
@@ -642,7 +642,7 @@ def _(expression: expr.Call, variable_id: Generator[ID, None, None]) -> ir.Compl
             ),
         )
 
-    assert isinstance(expression.type_, (ty.Enumeration, ty.Structure, ty.Message))
+    assert isinstance(expression.type_, ty.Enumeration | ty.Structure | ty.Message)
     return ir.ComplexExpr(
         arguments_stmts,
         ir.ObjCall(
@@ -808,7 +808,7 @@ def _(expression: expr.Comprehension, variable_id: Generator[ID, None, None]) ->
     sequence = to_ir(expression.sequence, variable_id)
     selector = to_ir(expression.selector, variable_id)
     condition = to_ir(expression.condition.simplified(), variable_id)
-    assert isinstance(sequence.expr, (ir.Var, ir.FieldAccess))
+    assert isinstance(sequence.expr, ir.Var | ir.FieldAccess)
     assert isinstance(condition, ir.ComplexBoolExpr)
     return ir.ComplexExpr(
         sequence.stmts,

@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Generator
-from typing import Final, Union
+from typing import Final
 
 from rflx.rapidflux import ID as ID
 
-# TODO(eng/recordflux/RecordFlux#1424): Replace with PEP604 union
-StrID = Union[str, ID]
+StrID = str | ID
 
 ID_PREFIX: Final = "T_"
 

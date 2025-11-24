@@ -369,7 +369,7 @@ class Reset(AttributeStatement):
         ]
 
     def to_ir(self, variable_id: Generator[ID, None, None]) -> list[ir.Stmt]:
-        assert isinstance(self.type_, (ty.Sequence, ty.Message))
+        assert isinstance(self.type_, ty.Sequence | ty.Message)
         associations = {}
         stmts = []
         for i, e in self.associations.items():

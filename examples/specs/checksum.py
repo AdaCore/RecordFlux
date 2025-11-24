@@ -1,12 +1,17 @@
+# noqa: INP001
+
+
 def icmp_checksum(message: bytes, **kwargs: object) -> int:
     first_arg = kwargs.get("Tag'First .. Checksum'First - 1")
     assert isinstance(first_arg, tuple)
     tag_first, checksum_first_minus_one = first_arg
-    assert tag_first == 0 and checksum_first_minus_one == 15
+    assert tag_first == 0
+    assert checksum_first_minus_one == 15
     second_arg = kwargs.get("Checksum'Last + 1 .. Message'Last")
     assert isinstance(second_arg, tuple)
     checksum_last_plus_one, data_last = second_arg
-    assert checksum_last_plus_one == 32 and data_last == 511
+    assert checksum_last_plus_one == 32
+    assert data_last == 511
 
     checksum_bytes = message[tag_first : (checksum_first_minus_one + 1) // 8]
     checksum_bytes += b"\x00" * 2
@@ -18,7 +23,8 @@ def ip_header_checksum(message: bytes, **kwargs: object) -> int:
     first_arg = kwargs.get("Version'First .. Header_Checksum'First - 1")
     assert isinstance(first_arg, tuple)
     version_first, checksum_first_minus_one = first_arg
-    assert version_first == 0 and checksum_first_minus_one == 79
+    assert version_first == 0
+    assert checksum_first_minus_one == 79
     second_arg = kwargs.get("Header_Checksum'Last + 1 .. Payload'First - 1")
     assert isinstance(second_arg, tuple)
     checksum_last_plus_one, options_last = second_arg
@@ -42,7 +48,8 @@ def internet_checksum(checksum_bytes: bytes) -> int:
     intermediary_result = message_in_sixteen_bit_chunks[0]
     for i in range(1, len(message_in_sixteen_bit_chunks)):
         intermediary_result = add_ones_complement(
-            intermediary_result, message_in_sixteen_bit_chunks[i]
+            intermediary_result,
+            message_in_sixteen_bit_chunks[i],
         )
 
     return intermediary_result ^ 0xFFFF

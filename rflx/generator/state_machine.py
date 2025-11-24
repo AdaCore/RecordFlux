@@ -202,7 +202,7 @@ class StateMachineGenerator:
     @staticmethod
     def _verify_formal_parameters(parameters: Sequence[ir.FormalDecl]) -> None:
         for parameter in parameters:
-            if isinstance(parameter, (ir.ChannelDecl, ir.FuncDecl)):
+            if isinstance(parameter, ir.ChannelDecl | ir.FuncDecl):
                 pass
             else:
                 fatal_fail(
@@ -298,7 +298,7 @@ class StateMachineGenerator:
                 ),
             )
 
-            assert isinstance(a.type_, (ty.Integer, ty.Enumeration, ty.Message, ty.Sequence))
+            assert isinstance(a.type_, ty.Integer | ty.Enumeration | ty.Message | ty.Sequence)
 
             self._state_machine_context.referenced_types.append(a.type_.identifier)
 
@@ -366,7 +366,7 @@ class StateMachineGenerator:
                             [
                                 WithClause(const.PREFIX_ID * type_.identifier),
                             ]
-                            if isinstance(type_, (model.Message, model.Sequence))
+                            if isinstance(type_, model.Message | model.Sequence)
                             else []
                         ),
                     ],
@@ -483,7 +483,7 @@ class FSMGenerator:
                             [
                                 WithClause(const.PREFIX_ID * type_.identifier),
                             ]
-                            if isinstance(type_, (model.Message, model.Sequence))
+                            if isinstance(type_, model.Message | model.Sequence)
                             else []
                         ),
                     ],
@@ -613,7 +613,7 @@ class FSMGenerator:
         composite_globals = [
             d
             for d in self._state_machine.declarations
-            if isinstance(d, ir.VarDecl) and isinstance(d.type_, (ty.Message, ty.Sequence))
+            if isinstance(d, ir.VarDecl) and isinstance(d.type_, ty.Message | ty.Sequence)
         ]
 
         channel_reads = self._channel_io(self._state_machine, read=True)
@@ -890,7 +890,7 @@ class FSMGenerator:
                                 ),
                             )
                             for declaration in composite_globals
-                            if isinstance(declaration.type_, (ty.Message, ty.Sequence))
+                            if isinstance(declaration.type_, ty.Message | ty.Sequence)
                             and declaration.type_ != ty.OPAQUE
                         ],
                         *(
@@ -1102,7 +1102,7 @@ class FSMGenerator:
                     s
                     for a in state.actions
                     if isinstance(a, ir.Assign)
-                    and isinstance(a.expression, (ir.Comprehension, ir.Find))
+                    and isinstance(a.expression, ir.Comprehension | ir.Find)
                     for s in [*a.expression.selector.stmts, *a.expression.condition.stmts]
                     if isinstance(s, ir.VarDecl)
                 ],
@@ -1115,7 +1115,7 @@ class FSMGenerator:
             ]
 
             for d in declarations:
-                if isinstance(d.type_, (ty.Message, ty.Sequence)) and d.type_ != ty.OPAQUE:
+                if isinstance(d.type_, ty.Message | ty.Sequence) and d.type_ != ty.OPAQUE:
                     self._state_machine_context.used_packages_body.append(
                         const.TYPES_OPERATORS_PACKAGE,
                     )
@@ -1593,7 +1593,7 @@ class FSMGenerator:
                 True
                 for action in state.actions
                 if (
-                    isinstance(action, (ir.Read, ir.Write))
+                    isinstance(action, ir.Read | ir.Write)
                     and isinstance(action.expression, ir.Var)
                     and isinstance(action.expression.type_, ty.Message)
                 )
@@ -2924,7 +2924,7 @@ class FSMGenerator:
                 declaration.expression,
                 state_machine_global,
             )
-            if isinstance(declaration.type_, (ty.Message, ty.Sequence)):
+            if isinstance(declaration.type_, ty.Message | ty.Sequence):
                 has_composite_declarations |= True
 
         if state_machine_global and self._allocator.required:
@@ -3024,7 +3024,7 @@ class FSMGenerator:
                 location=expression.expr.location,
             )
 
-        if isinstance(type_, (ty.UniversalInteger, ty.Integer, ty.Enumeration)):
+        if isinstance(type_, ty.UniversalInteger | ty.Integer | ty.Enumeration):
             result.global_declarations.append(
                 ObjectDeclaration(
                     [identifier],
@@ -3057,7 +3057,7 @@ class FSMGenerator:
                         location=expression.expr.location,
                     )
 
-        elif isinstance(type_, (ty.Message, ty.Sequence)):
+        elif isinstance(type_, ty.Message | ty.Sequence):
             if expression is not None:
                 fail(
                     f"initialization for {type_} not yet supported",
@@ -3086,7 +3086,7 @@ class FSMGenerator:
                             {
                                 n: First(self._ada_type(t.identifier))
                                 for n, t in type_.parameter_types.items()
-                                if isinstance(t, (ty.Integer, ty.Enumeration))
+                                if isinstance(t, ty.Integer | ty.Enumeration)
                             }
                             if isinstance(type_, ty.Message)
                             else None
@@ -3119,7 +3119,7 @@ class FSMGenerator:
                 location=identifier.location,
             )
 
-        assert isinstance(type_, (ty.NamedTypeClass, ty.UniversalInteger)), type_
+        assert isinstance(type_, (ty.NamedTypeClass, ty.UniversalInteger)), type_  # noqa: UP038
 
         type_identifier = (
             type_.identifier if isinstance(type_, ty.NamedTypeClass) else const.TYPES_BASE_INT
@@ -3211,26 +3211,24 @@ class FSMGenerator:
 
         if isinstance(
             expression,
-            (
-                ir.Var,
-                ir.EnumLit,
-                ir.IntVal,
-                ir.BoolVal,
-                ir.BinaryIntExpr,
-                ir.Relation,
-                ir.Attr,
-                ir.FieldAccessAttr,
-                ir.Agg,
-                ir.BinaryBoolExpr,
-                ir.CaseExpr,
-            ),
+            ir.Var
+            | ir.EnumLit
+            | ir.IntVal
+            | ir.BoolVal
+            | ir.BinaryIntExpr
+            | ir.Relation
+            | ir.Attr
+            | ir.FieldAccessAttr
+            | ir.Agg
+            | ir.BinaryBoolExpr
+            | ir.CaseExpr,
         ) and (
-            isinstance(expression.type_, (ty.AnyInteger, ty.Enumeration, ty.Aggregate))
+            isinstance(expression.type_, ty.AnyInteger | ty.Enumeration | ty.Aggregate)
             or expression.type_ == ty.OPAQUE
         ):
             assert isinstance(
                 target_type,
-                (ty.Integer, ty.Enumeration, ty.Message, ty.Sequence),
+                ty.Integer | ty.Enumeration | ty.Message | ty.Sequence,
             ), target_type
             return [
                 Assignment(
@@ -3241,7 +3239,7 @@ class FSMGenerator:
 
         if isinstance(expression, ir.Var) and isinstance(
             expression.type_,
-            (ty.Message, ty.Sequence),
+            ty.Message | ty.Sequence,
         ):
             _unsupported_expression(expression, "in assignment")
 
@@ -3268,7 +3266,7 @@ class FSMGenerator:
         field = field_access.field
 
         if (
-            isinstance(field_access.type_, (ty.AnyInteger, ty.Enumeration))
+            isinstance(field_access.type_, ty.AnyInteger | ty.Enumeration)
             or field_access.type_ == ty.OPAQUE
         ):
             if field in field_access.message_type.parameter_types:
@@ -3325,7 +3323,7 @@ class FSMGenerator:
             for f, v in message_aggregate.field_values.items()
             if f in message_aggregate.type_.parameter_types
             for t in [message_aggregate.type_.parameter_types[f]]
-            if isinstance(t, (ty.Integer, ty.Enumeration))
+            if isinstance(t, ty.Integer | ty.Enumeration)
         ]
 
         return [
@@ -3404,7 +3402,7 @@ class FSMGenerator:
         state: ID,
         alloc_id: Location,
     ) -> Sequence[Statement]:
-        if not isinstance(head.type_, (ty.Integer, ty.Enumeration, ty.Message)):
+        if not isinstance(head.type_, ty.Integer | ty.Enumeration | ty.Message):
             fatal_fail(
                 f"unexpected sequence element type {head.type_}"
                 f' for "{head}" in assignment of "{target}"',
@@ -3451,13 +3449,13 @@ class FSMGenerator:
             def comprehension_statements(
                 local_exception_handler: ExceptionHandler,
             ) -> list[Statement]:
-                assert isinstance(find.type_, (ty.Integer, ty.Enumeration, ty.Message))
+                assert isinstance(find.type_, ty.Integer | ty.Enumeration | ty.Message)
                 assert isinstance(
                     sequence_element_type,
-                    (ty.Message, ty.Integer, ty.Enumeration),
+                    ty.Message | ty.Integer | ty.Enumeration,
                 )
                 default_assignment = []
-                if isinstance(find.type_, (ty.Integer, ty.Enumeration)):
+                if isinstance(find.type_, ty.Integer | ty.Enumeration):
                     default_assignment = [Assignment(target, First(find.type_.identifier))]
                 return [
                     Declare(
@@ -3546,7 +3544,7 @@ class FSMGenerator:
         alloc_id: Location,
     ) -> Sequence[Statement]:
         assert isinstance(head.prefix_type, ty.Sequence)
-        assert isinstance(head.type_, (ty.Integer, ty.Enumeration, ty.Message))
+        assert isinstance(head.type_, ty.Integer | ty.Enumeration | ty.Message)
 
         target_type = head.type_.identifier
         sequence_type = head.prefix_type.identifier
@@ -3554,7 +3552,7 @@ class FSMGenerator:
         sequence_context = context_id(sequence_id, is_global)
         sequence_identifier = ID(f"{head.prefix}")
 
-        if isinstance(head.type_, (ty.Integer, ty.Enumeration)):
+        if isinstance(head.type_, ty.Integer | ty.Enumeration):
             return [
                 # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
                 self._raise_exception_if(
@@ -3730,7 +3728,7 @@ class FSMGenerator:
         state: ID,
         alloc_id: Location,
     ) -> Sequence[Statement]:
-        assert isinstance(comprehension.type_, (ty.Sequence, ty.Aggregate))
+        assert isinstance(comprehension.type_, ty.Sequence | ty.Aggregate)
         assert isinstance(comprehension.sequence.type_, ty.Sequence)
 
         self._state_machine_context.used_types_body.append(const.TYPES_BIT_LENGTH)
@@ -3909,20 +3907,20 @@ class FSMGenerator:
 
         assert len(call_expr.arguments) == len(call_expr.argument_types)
 
-        for i, (a, t) in enumerate(zip(call_expr.arguments, call_expr.argument_types)):
+        for i, (a, t) in enumerate(
+            zip(call_expr.arguments, call_expr.argument_types, strict=False),
+        ):
             if not isinstance(
                 a,
-                (
-                    ir.BoolVal,
-                    ir.IntVal,
-                    ir.Var,
-                    ir.EnumLit,
-                    ir.FieldAccess,
-                    ir.Size,
-                    ir.Str,
-                    ir.Agg,
-                    ir.Opaque,
-                ),
+                ir.BoolVal
+                | ir.IntVal
+                | ir.Var
+                | ir.EnumLit
+                | ir.FieldAccess
+                | ir.Size
+                | ir.Str
+                | ir.Agg
+                | ir.Opaque,
             ):
                 _unsupported_expression(a, "as function argument")
 
@@ -4021,7 +4019,7 @@ class FSMGenerator:
                 arguments.append(argument)
             elif isinstance(a, ir.Opaque) and isinstance(
                 a.prefix_type,
-                (ty.Message, ty.Sequence),
+                ty.Message | ty.Sequence,
             ):
                 self._state_machine_context.used_types_body.append(const.TYPES_LENGTH)
                 self._state_machine_context.used_packages_body.append(const.TYPES_OPERATORS_PACKAGE)
@@ -4336,8 +4334,8 @@ class FSMGenerator:
                 ),
             ]
 
-        if isinstance(append.type_.element, (ty.Integer, ty.Enumeration)):
-            if isinstance(append.expression, (ir.Var, ir.EnumLit, ir.IntVal)):
+        if isinstance(append.type_.element, ty.Integer | ty.Enumeration):
+            if isinstance(append.expression, ir.Var | ir.EnumLit | ir.IntVal):
                 sequence_type = append.type_.identifier
                 sequence_context = context_id(append.sequence, is_global)
                 element_type = append.type_.element.identifier
@@ -4477,7 +4475,7 @@ class FSMGenerator:
         reset: ir.Reset,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
-        assert isinstance(reset.type_, (ty.Message, ty.Sequence))
+        assert isinstance(reset.type_, ty.Message | ty.Sequence)
 
         target_type = reset.type_.identifier
         target_context = context_id(reset.identifier, is_global)
@@ -4520,12 +4518,12 @@ class FSMGenerator:
 
     @_to_ada_expr.register
     def _(self, expression: ir.First, _is_global: Callable[[ID], bool]) -> Expr:
-        assert isinstance(expression.type_, (ty.AnyInteger, ty.Enumeration))
+        assert isinstance(expression.type_, ty.AnyInteger | ty.Enumeration)
         return First(self._ada_type(expression.prefix))
 
     @_to_ada_expr.register
     def _(self, expression: ir.Last, _is_global: Callable[[ID], bool]) -> Expr:
-        assert isinstance(expression.type_, (ty.AnyInteger, ty.Enumeration))
+        assert isinstance(expression.type_, ty.AnyInteger | ty.Enumeration)
         return Last(self._ada_type(expression.prefix))
 
     @_to_ada_expr.register
@@ -4588,7 +4586,7 @@ class FSMGenerator:
         expression: ir.Relation,
         is_global: Callable[[ID], bool],
     ) -> Expr:
-        assert isinstance(expression, (ir.Equal, ir.NotEqual))
+        assert isinstance(expression, ir.Equal | ir.NotEqual)
         if isinstance(expression.left.type_, ty.Enumeration) and expression.left.type_.always_valid:
             relation = Equal if isinstance(expression, ir.Equal) else NotEqual
 
@@ -4614,14 +4612,14 @@ class FSMGenerator:
                 and isinstance(expression.prefix_type.element, ty.AnyInteger)
             )
             or (
-                isinstance(expression.prefix_type, (ty.Integer, ty.Enumeration))
+                isinstance(expression.prefix_type, ty.Integer | ty.Enumeration)
                 and expression.prefix == expression.prefix_type.identifier
             )
         ):
             return Size(expression.prefix)
 
         if (
-            isinstance(expression.prefix_type, (ty.Message, ty.Sequence))
+            isinstance(expression.prefix_type, ty.Message | ty.Sequence)
             and expression.prefix_type != ty.OPAQUE
         ):
             type_ = expression.prefix_type.identifier
@@ -4665,7 +4663,7 @@ class FSMGenerator:
             type_name
             * (
                 "Valid"
-                if isinstance(expression.field_type, (ty.Integer, ty.Enumeration))
+                if isinstance(expression.field_type, ty.Integer | ty.Enumeration)
                 else "Well_Formed"
             ),
             [
@@ -4682,7 +4680,7 @@ class FSMGenerator:
             type_name
             * (
                 "Valid"
-                if isinstance(expression.field_type, (ty.Integer, ty.Enumeration))
+                if isinstance(expression.field_type, ty.Integer | ty.Enumeration)
                 else "Well_Formed"
             ),
             [
@@ -5082,7 +5080,7 @@ class FSMGenerator:
 
         if isinstance(field_type, ty.Sequence):
             size: Expr
-            if isinstance(value, ir.Var) and isinstance(value.type_, (ty.Message, ty.Sequence)):
+            if isinstance(value, ir.Var) and isinstance(value.type_, ty.Message | ty.Sequence):
                 type_ = value.type_.identifier
                 context = context_id(value.identifier, is_global)
                 # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
@@ -5146,12 +5144,12 @@ class FSMGenerator:
             exception_handler,
         )
 
-        if isinstance(value, (ir.IntVal, ir.BoolVal, ir.FieldAccess, ir.Agg, ir.CaseExpr)) or (
+        if isinstance(value, ir.IntVal | ir.BoolVal | ir.FieldAccess | ir.Agg | ir.CaseExpr) or (
             isinstance(
                 value,
-                (ir.Var, ir.EnumLit, ir.BinaryIntExpr, ir.Size),
+                ir.Var | ir.EnumLit | ir.BinaryIntExpr | ir.Size,
             )
-            and isinstance(value.type_, (ty.AnyInteger, ty.Enumeration, ty.Aggregate))
+            and isinstance(value.type_, ty.AnyInteger | ty.Enumeration | ty.Aggregate)
         ):
             if isinstance(value, ir.Agg) and len(value.elements) == 0:
                 statements.append(
@@ -5172,7 +5170,7 @@ class FSMGenerator:
                     ada_value = Literal(value.identifier)
                 else:
                     ada_value = self._to_ada_expr(value, is_global)
-                    if isinstance(field_type, (ty.Enumeration, ty.Integer)):
+                    if isinstance(field_type, ty.Enumeration | ty.Integer):
                         ada_value = QualifiedExpr(
                             self._ada_type(field_type.identifier),
                             ada_value,
@@ -5206,7 +5204,7 @@ class FSMGenerator:
                                         )
                                         if isinstance(
                                             value.type_,
-                                            (ty.Enumeration, ty.AnyInteger),
+                                            ty.Enumeration | ty.AnyInteger,
                                         )
                                         else None
                                     ),
@@ -5800,9 +5798,9 @@ class FSMGenerator:
         assert not isinstance(selector, ir.MsgAgg)
 
         assert (
-            isinstance(target_type.element, (ty.Integer, ty.Enumeration, ty.Message))
+            isinstance(target_type.element, ty.Integer | ty.Enumeration | ty.Message)
             if isinstance(target_type, ty.Sequence)
-            else isinstance(target_type, (ty.Integer, ty.Enumeration, ty.Message))
+            else isinstance(target_type, ty.Integer | ty.Enumeration | ty.Message)
         )
 
         target_type_id = target_type.identifier
@@ -5850,7 +5848,7 @@ class FSMGenerator:
                 ],
             ),
         ]
-        if isinstance(target_type, (ty.Message, ty.Sequence)):
+        if isinstance(target_type, ty.Message | ty.Sequence):
             target_invariants += [
                 PragmaStatement(
                     "Loop_Invariant",
@@ -6093,7 +6091,7 @@ class FSMGenerator:
                 ),
             ]
 
-        elif isinstance(target_type, (ty.Integer, ty.Enumeration)):
+        elif isinstance(target_type, ty.Integer | ty.Enumeration):
             assign_element = [
                 Assignment(
                     Variable(variable_id(target_identifier, is_global)),
@@ -6177,7 +6175,7 @@ class FSMGenerator:
                 ),
             ]
 
-        elif isinstance(target_type.element, (ty.Integer, ty.Enumeration)):
+        elif isinstance(target_type.element, ty.Integer | ty.Enumeration):
             required_space = Size(
                 (
                     target_type.element.identifier + "_Enum"
@@ -6462,7 +6460,7 @@ class FSMGenerator:
         ):
             return expression
 
-        assert isinstance(target_type, (ty.Integer, ty.Enumeration)), target_type
+        assert isinstance(target_type, ty.Integer | ty.Enumeration), target_type
 
         self._state_machine_context.referenced_types_body.append(target_type.identifier)
 

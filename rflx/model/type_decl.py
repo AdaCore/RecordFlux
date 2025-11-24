@@ -930,7 +930,7 @@ def check_identifier_notation(
 
     def verify_identifier_notation(expression: expr.Expr, error: RecordFluxError) -> expr.Expr:
         if (
-            isinstance(expression, (expr.Variable, expr.Literal, expr.TypeName, expr.Call))
+            isinstance(expression, expr.Variable | expr.Literal | expr.TypeName | expr.Call)
             and expression.identifier in id_map
             and str(expression.identifier) != str(id_map[expression.identifier])
         ):
