@@ -71,6 +71,8 @@ include $(DEVUTILS_DIR)/Makefile.common
 export PYTHONPATH := $(MAKEFILE_DIR)
 export CARGO_HOME := $(CARGO_HOME)
 export PATH := $(CARGO_HOME)/bin:$(PATH)
+export PYO3_PYTHON := $(DEVEL_VENV)/bin/python
+export POETRY_VIRTUALENVS_IN_PROJECT := 1
 
 # --- Helper functions: Management of external repositories ---
 
@@ -303,7 +305,7 @@ $(RAPIDFLUX): target/debug/librapidflux.so
 	cp target/debug/librapidflux.so $@
 
 target/debug/librapidflux.so: $(RAPIDFLUX_SRC)
-	PYO3_PYTHON=$(DEVEL_VENV)/bin/python cargo build
+	cargo build
 
 # --- Setup: Development dependencies ---
 
@@ -694,7 +696,8 @@ wheel: export PYTHONPATH=
 wheel: clean_build $(BUILD_DEPS) $(PARSER) $(VSIX) pyproject.toml $(PACKAGE_SRC)
 	$(RM) rflx/rapidflux*.so
 	@# Build library
-	PYO3_PYTHON=$(DEVEL_VENV)/bin/python cargo build --release
+	cargo clean
+	cargo build --release
 	cp target/release/librapidflux.so $(RAPIDFLUX_PLATFORM)
 	@# Build wheel
 	POETRY_DYNAMIC_VERSIONING_BYPASS=$(VERSION) $(POETRY) build -vv --no-cache -f wheel
@@ -704,7 +707,7 @@ wheel: clean_build $(BUILD_DEPS) $(PARSER) $(VSIX) pyproject.toml $(PACKAGE_SRC)
 
 # Build distributions for all defined Python versions without local version identifier.
 pypi_dist: $(PROJECT_MANAGEMENT)
-	$(MAKE) sdist VERSION=$(SHORT_VERSION)
+	$(POETRY) env use $(word $(words $(PYTHON_VERSIONS)), $(PYTHON_VERSIONS)) && $(POETRY) env info && $(MAKE) sdist VERSION=$(SHORT_VERSION)
 	@$(call assert_sdist_exists,$(SHORT_VERSION))
 	$(foreach version,$(PYTHON_VERSIONS),$(POETRY) env use $(version) && $(POETRY) env info && $(call assert_python_version,$(version)) && $(MAKE) wheel VERSION=$(SHORT_VERSION) || exit;)
 	@$(foreach version, $(PYTHON_VERSIONS), $(call assert_wheel_exists,$(SHORT_VERSION),$(version)))
@@ -758,7 +761,7 @@ touch_build_tree:
 .PHONY: clean clean_build clean_cache clean_ci_sim clean_all
 
 clean: clean_build clean_cache
-	rm -rf .coverage .coverage.* .hypothesis doc/language_reference/build doc/user_guide/build
+	rm -rf .coverage .coverage.* .hypothesis doc/language_reference/build doc/user_guide/build target
 	$(MAKE) -C examples/apps/wireguard clean
 	$(MAKE) -C examples/apps/ping clean
 	$(MAKE) -C examples/apps/dhcp_client clean

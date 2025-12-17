@@ -9,7 +9,7 @@ variables:
   GNAT_BUILD_DATE: "all"
   SPARK_VERSION: "25.0"
   SPARK_BUILD_DATE: "all"
-  PYTHON_VERSION: "3.11"
+  PYTHON_VERSION: "3.12"
   NODE_VERSION: "20.5.1"
 
   # If set to 1, the packaging of RecordFlux including the compilation of the langkit-based parser will be tested.
