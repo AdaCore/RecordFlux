@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path("../..").resolve()))
 # -- Project information -----------------------------------------------------
 
 project = "RecordFlux"
-copyright = f"2023-{datetime.now().year}, AdaCore"  # noqa: A001, DTZ005
+copyright = f"2018-{datetime.now().year}, AdaCore"  # noqa: A001, DTZ005
 author = "AdaCore"
 
 # Omit version to prevent conflicts caused by dynamic versioning
