@@ -1,6 +1,5 @@
 pragma Style_Checks ("L18");
 
-with SPARK; use SPARK;
 with SPARK.Assertions; use SPARK.Assertions;
 with SPARK.File_IO; use SPARK.File_IO;
 

@@ -1,5 +1,5 @@
 pragma Warnings (Off, """Always_Terminates"" is not a valid aspect identifier");
-with SPARK; use SPARK;
+
 with SPARK.Assertions; use SPARK.Assertions;
 with SPARK.File_IO; use SPARK.File_IO;
 

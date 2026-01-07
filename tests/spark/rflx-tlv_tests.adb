@@ -1,4 +1,3 @@
-with SPARK; use SPARK;
 with SPARK.Assertions; use SPARK.Assertions;
 
 with RFLX.RFLX_Builtin_Types;
